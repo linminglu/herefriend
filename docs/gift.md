@@ -438,6 +438,7 @@ type giftInfo struct {
 	 */
 	Type                int
 	Name                string //礼物名称
+    ValidNum            int    //库存数量
 	Description         string //礼物描述
 	ImageUrl            string //礼物图片URL
 	Effect              int    //礼物特效，需要客户端支持
