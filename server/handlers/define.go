@@ -150,6 +150,53 @@ var g_VipLevels = []vipInfo{
 	},
 }
 
+type goldBeansPrice struct {
+	Price     int    //价格
+	Count     int    //普通会员购买数量
+	Count_zs  int    //level 2会员购买数量
+	Count_zz  int    //level 3会员购买数量
+	ProductId string //产品ID
+}
+
+var gGoldBeansPrices = []goldBeansPrice{
+	{
+		Price:     6,
+		Count:     30,
+		Count_zs:  34,
+		Count_zz:  50,
+		ProductId: "6yuan"},
+	{
+		Price:     30,
+		Count:     210,
+		Count_zs:  234,
+		Count_zz:  350,
+		ProductId: "30yuan"},
+	{
+		Price:     98,
+		Count:     784,
+		Count_zs:  872,
+		Count_zz:  1306,
+		ProductId: "98yuan"},
+	{
+		Price:     298,
+		Count:     2682,
+		Count_zs:  2980,
+		Count_zz:  4470,
+		ProductId: "298yuan"},
+	{
+		Price:     588,
+		Count:     5880,
+		Count_zs:  6534,
+		Count_zz:  9800,
+		ProductId: "588yuan"},
+	{
+		Price:     998,
+		Count:     14970,
+		Count_zs:  16634,
+		Count_zz:  24950,
+		ProductId: "998yuan"},
+}
+
 type loveshowcomment struct {
 	Id        int       //用户id
 	Age       int       //年龄

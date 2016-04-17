@@ -55,6 +55,11 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/Action/LoveShowComment", handlers.LoveShowComment)
 
 	/*
+	 * Gift
+	 */
+	m.Get("/gift/GoldPrice", handlers.GoldPrice)
+
+	/*
 	 * CMS
 	 */
 	m.Get("/login", cms.CmsLogin)
