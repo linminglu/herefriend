@@ -22,6 +22,7 @@ type cmsCpuInfo struct {
 type cmsSystemUsersSummary struct {
 	GirlsNum  int // 女生总数
 	GuysNum   int // 男生总数
+	ActiveNum int // 实时在线
 	OnlineNum int // 在线人数
 	RegistNum int // 新注册人数
 }

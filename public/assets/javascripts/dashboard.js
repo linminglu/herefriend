@@ -76,7 +76,7 @@ function refreshUserinfo() {
 		if (null != info) {
 			$("#user_girlsnum").html(info["GirlsNum"])
 			$("#user_guysnum").html(info["GuysNum"])
-			$("#user_onlinenum").html(info["OnlineNum"])
+			$("#user_onlinenum").html(info["OnlineNum"] + " (15分钟在线:" + info["ActiveNum"] + ")")
 			$("#user_registnum").html(info["RegistNum"])
 		}
 	})

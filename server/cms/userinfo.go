@@ -459,6 +459,7 @@ func SystemUserInfo(r *http.Request) string {
 	info := cmsSystemUsersSummary{
 		GirlsNum:  handlers.GetUserCountByGender(0),
 		GuysNum:   handlers.GetUserCountByGender(1),
+		ActiveNum: handlers.GetActiveUserNumber(),
 		OnlineNum: handlers.GetLiveUserNumber(),
 		RegistNum: handlers.GetRegistUserNumber(),
 	}

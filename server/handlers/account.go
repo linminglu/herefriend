@@ -110,6 +110,18 @@ func GetLiveUserNumber() int {
 	return len(g_liveUsersInfo.users)
 }
 
+func GetActiveUserNumber() int {
+	var num int
+
+	for _, user := range g_liveUsersInfo.users {
+		if LIVEUSER_STATUS_ONLINE == user.status {
+			num = num + 1
+		}
+	}
+
+	return num
+}
+
 func GetRegistUserNumber() int {
 	return g_Count_Regist
 }
