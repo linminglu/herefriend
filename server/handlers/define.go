@@ -277,6 +277,10 @@ type unreadMessage struct {
 	Badge           int //badge: the icon number of app
 }
 
+type evaluationMessage struct {
+	ShowMessage string //弹出对话框显示的信息
+}
+
 type notifyMessageInfo struct {
 	/*
 	 * 根据类型不同，消息实体的结构体不同，如下为具体对应关系:
@@ -285,7 +289,7 @@ type notifyMessageInfo struct {
 	 * ------------------------------------------------------
 	 * |    1   |          unreadMessage                    |
 	 * ------------------------------------------------------
-	 * |    2   |                                           |
+	 * |    2   |          evaluationMessage                |
 	 * ------------------------------------------------------
 	 */
 	Type  int    //消息类型
