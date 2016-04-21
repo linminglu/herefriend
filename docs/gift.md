@@ -116,6 +116,7 @@
 |type|礼物的类型：普通礼物、特惠、特殊礼物、免费礼物|
 |name|礼物的名称|
 |description|详细说明|
+|validnumber|库存数量|
 |image_url|礼物的图片地址|
 |effect|礼物的特效，赠送(收到)礼物有的会有特效|
 |price|金币价格（1元=1000金币），一般不会变动|
@@ -216,6 +217,7 @@ CREATE TABLE `bh_db`.`gift` (
   `type` INT NOT NULL,
   `name` VARCHAR(45) NOT NULL,
   `description` VARCHAR(100) NOT NULL,
+  `validnum` INT NOT NULL,
   `imageurl` VARCHAR(256) NOT NULL,
   `effect` INT NOT NULL,
   `price` INT NOT NULL,
