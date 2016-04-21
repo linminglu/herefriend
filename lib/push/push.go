@@ -34,40 +34,40 @@ type pushMsgInfo struct {
 	content string
 }
 
-var g_pushSock thrift.TTransport
-var g_pushclient *pushmsg.PushMsgClient
+var gPushSock thrift.TTransport
+var gPushClient *pushmsg.PushMsgClient
 
-var g_pushlock sync.Mutex
-var g_pushchan chan *pushMsgInfo
-var g_pushactive chan int
-var g_pushmap map[string]*pushMsgInfo
-var g_CountPush int
+var gPushLock sync.Mutex
+var gPushChan chan *pushMsgInfo
+var gPushActive chan int
+var gPushMap map[string]*pushMsgInfo
+var gPushCount int
 
 func InitPush() {
 	var err error
-	g_pushSock, err = thrift.NewTSocket(config.Conf_GeTuiAddr)
+	gPushSock, err = thrift.NewTSocket(config.Conf_GeTuiAddr)
 	if nil != err {
 		panic(err.Error())
 	}
 
 	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
-	g_pushclient = pushmsg.NewPushMsgClientFactory(g_pushSock, protocolFactory)
-	if nil == g_pushclient {
+	gPushClient = pushmsg.NewPushMsgClientFactory(gPushSock, protocolFactory)
+	if nil == gPushClient {
 		panic("create push client failed")
 	}
 
-	g_pushmap = make(map[string]*pushMsgInfo)
-	g_pushchan = make(chan *pushMsgInfo, PUSHMSG_CHAN_SIZE)
-	g_pushactive = make(chan int)
+	gPushMap = make(map[string]*pushMsgInfo)
+	gPushChan = make(chan *pushMsgInfo, PUSHMSG_CHAN_SIZE)
+	gPushActive = make(chan int)
 
 	go pushRoutine()
 	go pushWorkRoutine()
 }
 
 func connectServer() bool {
-	err := g_pushSock.Open()
+	err := gPushSock.Open()
 	if nil != err {
-		g_pushSock.Close()
+		gPushSock.Close()
 		return false
 	}
 
@@ -88,20 +88,20 @@ func Add(badge int, cid string, pushtype, subtype int, title, content string) {
 		}
 	}()
 
-	g_pushlock.Lock()
-	info, ok := g_pushmap[key]
+	gPushLock.Lock()
+	info, ok := gPushMap[key]
 	if true == ok {
 		if PUSHMSG_TYPE_NOTIFYMSG == pushtype {
 			info.content = content
 		}
 	} else {
-		g_pushmap[key] = &pushMsgInfo{msgtype: pushtype, badge: badge, cid: cid, title: title, content: content}
+		gPushMap[key] = &pushMsgInfo{msgtype: pushtype, badge: badge, cid: cid, title: title, content: content}
 	}
-	g_pushlock.Unlock()
+	gPushLock.Unlock()
 }
 
 func DoPush() {
-	g_pushactive <- 1
+	gPushActive <- 1
 }
 
 /*
@@ -115,14 +115,14 @@ func DoPush() {
 */
 func pushRoutine() {
 	for {
-		<-g_pushactive
+		<-gPushActive
 
-		for key, info := range g_pushmap {
-			g_pushlock.Lock()
-			delete(g_pushmap, key)
-			g_pushlock.Unlock()
+		for key, info := range gPushMap {
+			gPushLock.Lock()
+			delete(gPushMap, key)
+			gPushLock.Unlock()
 
-			g_pushchan <- info
+			gPushChan <- info
 		}
 	}
 }
@@ -137,24 +137,24 @@ func pushRoutine() {
  |
 */
 func pushWorkRoutine() {
-	for info := range g_pushchan {
-		if true != g_pushSock.IsOpen() {
+	for info := range gPushChan {
+		if true != gPushSock.IsOpen() {
 			if true != connectServer() {
 				fmt.Println("[GETUI] connect push server failed.")
 				continue
 			}
 		}
 
-		g_CountPush = g_CountPush + 1
-		err := g_pushclient.Notify(int32(info.badge), info.cid, int32(info.msgtype), info.title, info.content)
+		gPushCount = gPushCount + 1
+		err := gPushClient.Notify(int32(info.badge), info.cid, int32(info.msgtype), info.title, info.content)
 		if nil != err {
 			if strings.Contains(err.Error(), "broken pipe") {
-				g_pushSock.Close()
+				gPushSock.Close()
 			}
 		}
 	}
 }
 
 func GetPushNum() int {
-	return g_CountPush
+	return gPushCount
 }

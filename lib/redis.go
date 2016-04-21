@@ -26,10 +26,10 @@ const (
 	REDIS_PREFIX_SEARCHBASE = "searchbase_%s_%d-%d_%d-%d_%d-%d_%s_%s_%s"
 )
 
-var g_redispool *redis.Pool
+var gRedisPool *redis.Pool
 
 func init() {
-	g_redispool = &redis.Pool{
+	gRedisPool = &redis.Pool{
 		MaxIdle: 5,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", ":6379")
@@ -51,7 +51,7 @@ func SetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin
 	}
 
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHINDEX, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(strconv.Itoa(index)))
@@ -59,7 +59,7 @@ func SetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin
 
 func GetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) (int, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHINDEX, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 	content, err := c.Do("Get", key)
 	if nil == content || nil != err {
@@ -73,7 +73,7 @@ func GetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin
 
 func DelRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) {
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHINDEX, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -86,7 +86,7 @@ func SetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomem
 	}
 
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(strconv.Itoa(base)))
@@ -94,7 +94,7 @@ func SetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomem
 
 func GetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) (int, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -109,7 +109,7 @@ func GetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomem
 
 func DelRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) {
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -120,7 +120,7 @@ func DelRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomem
  */
 func SetRedisUserInfo(id int, content []byte) {
 	key := fmt.Sprintf(REDIS_PREFIX_USERINFO, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, content)
@@ -128,7 +128,7 @@ func SetRedisUserInfo(id int, content []byte) {
 
 func GetRedisUserInfo(id int) ([]byte, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_USERINFO, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -141,7 +141,7 @@ func GetRedisUserInfo(id int) ([]byte, bool) {
 
 func DelRedisUserInfo(id int) {
 	key := fmt.Sprintf(REDIS_PREFIX_USERINFO, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -152,7 +152,7 @@ func DelRedisUserInfo(id int) {
  */
 func SetRedisUserGender(id, gender int) {
 	key := fmt.Sprintf(REDIS_PREFIX_USERGENDER, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(strconv.Itoa(gender)))
@@ -160,7 +160,7 @@ func SetRedisUserGender(id, gender int) {
 
 func GetRedisUserGender(id int) (int, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_USERGENDER, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -175,7 +175,7 @@ func GetRedisUserGender(id int) (int, bool) {
 
 func DelRedisUserGender(id int) {
 	key := fmt.Sprintf(REDIS_PREFIX_USERGENDER, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -190,7 +190,7 @@ func SetRedisDistrict(id int, dist string) {
 	}
 
 	key := fmt.Sprintf(REDIS_PREFIX_DISTRICT, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(dist))
@@ -198,7 +198,7 @@ func SetRedisDistrict(id int, dist string) {
 
 func GetRedisDistrict(id int) (string, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_DISTRICT, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -211,7 +211,7 @@ func GetRedisDistrict(id int) (string, bool) {
 
 func DelRedisDistrict(id int) {
 	key := fmt.Sprintf(REDIS_PREFIX_DISTRICT, id)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -226,7 +226,7 @@ func SetRedisProvCount(province string, gender int, count int) {
 	}
 
 	key := fmt.Sprintf(REDIS_PREFIX_PROVCOUNT, province, gender)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(strconv.Itoa(count)))
@@ -234,7 +234,7 @@ func SetRedisProvCount(province string, gender int, count int) {
 
 func GetRedisProvCount(province string, gender int) (int, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_PROVCOUNT, province, gender)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -249,7 +249,7 @@ func GetRedisProvCount(province string, gender int) (int, bool) {
 
 func DelRedisProvCount(province string, gender int) {
 	key := fmt.Sprintf(REDIS_PREFIX_PROVCOUNT, province, gender)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -261,7 +261,7 @@ func SetRedisProvAgeCount(province string, gender, age, count int) {
 	}
 
 	key := fmt.Sprintf(REDIS_PREFIX_PROVAGECOUNT, province, gender, age)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(strconv.Itoa(count)))
@@ -269,7 +269,7 @@ func SetRedisProvAgeCount(province string, gender, age, count int) {
 
 func GetRedisProvAgeCount(province string, gender, age int) (int, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_PROVAGECOUNT, province, gender, age)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -284,7 +284,7 @@ func GetRedisProvAgeCount(province string, gender, age int) (int, bool) {
 
 func DelRedisProvAgeCount(province string, gender, age int) {
 	key := fmt.Sprintf(REDIS_PREFIX_PROVAGECOUNT, province, gender, age)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)
@@ -299,7 +299,7 @@ func SetRedisHeartbeatProvCount(province string, gender int, count int) {
 	}
 
 	key := fmt.Sprintf(REDIS_PREFIX_HEARTBEAT_PROVCOUNT, province, gender)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Set", key, []byte(strconv.Itoa(count)))
@@ -307,7 +307,7 @@ func SetRedisHeartbeatProvCount(province string, gender int, count int) {
 
 func GetRedisHeartbeatProvCount(province string, gender int) (int, bool) {
 	key := fmt.Sprintf(REDIS_PREFIX_HEARTBEAT_PROVCOUNT, province, gender)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	content, err := c.Do("Get", key)
@@ -322,7 +322,7 @@ func GetRedisHeartbeatProvCount(province string, gender int) (int, bool) {
 
 func DelRedisHeartbeatProvCount(province string, gender int) {
 	key := fmt.Sprintf(REDIS_PREFIX_HEARTBEAT_PROVCOUNT, province, gender)
-	c := g_redispool.Get()
+	c := gRedisPool.Get()
 	defer c.Close()
 
 	c.Do("Del", key)

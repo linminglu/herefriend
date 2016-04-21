@@ -8,42 +8,42 @@ import (
 	"herefriend/lib"
 )
 
-var g_districtmap map[string]([]string)
-var g_regex *regexp.Regexp
+var gDistrictMap map[string]([]string)
+var gRegexp *regexp.Regexp
 
 func init() {
 	//values
-	g_RandValueMax[V_INCOME_GIRLS], g_RandValueMap[V_INCOME_GIRLS] = getRandValueResult(g_RandIncomeGirls)
-	g_RandValueMax[V_INCOME_GUYS], g_RandValueMap[V_INCOME_GUYS] = getRandValueResult(g_RandIncomeGuys)
-	g_RandValueMax[V_VIPLEVEL_GIRLS], g_RandValueMap[V_VIPLEVEL_GIRLS] = getRandValueResult(g_RandViplevelGirls)
-	g_RandValueMax[V_VIPLEVEL_GUYS], g_RandValueMap[V_VIPLEVEL_GUYS] = getRandValueResult(g_RandViplevelGuys)
-	g_RandValueMax[V_HEART_VIPLEVEL_GIRLS], g_RandValueMap[V_HEART_VIPLEVEL_GIRLS] = getRandValueResult(g_RandViplevelHeartbeatGirls)
-	g_RandValueMax[V_HEART_VIPLEVEL_GUYS], g_RandValueMap[V_HEART_VIPLEVEL_GUYS] = getRandValueResult(g_RandViplevelHeartbeatGuys)
+	gRandValueMax[V_INCOME_GIRLS], gRandValueMap[V_INCOME_GIRLS] = getRandValueResult(gRandIncomeGirls)
+	gRandValueMax[V_INCOME_GUYS], gRandValueMap[V_INCOME_GUYS] = getRandValueResult(gRandIncomeGuys)
+	gRandValueMax[V_VIPLEVEL_GIRLS], gRandValueMap[V_VIPLEVEL_GIRLS] = getRandValueResult(gRandViplevelGirls)
+	gRandValueMax[V_VIPLEVEL_GUYS], gRandValueMap[V_VIPLEVEL_GUYS] = getRandValueResult(gRandViplevelGuys)
+	gRandValueMax[V_HEART_VIPLEVEL_GIRLS], gRandValueMap[V_HEART_VIPLEVEL_GIRLS] = getRandValueResult(gRandViplevelHeartbeatGirls)
+	gRandValueMax[V_HEART_VIPLEVEL_GUYS], gRandValueMap[V_HEART_VIPLEVEL_GUYS] = getRandValueResult(gRandViplevelHeartbeatGuys)
 
 	//options
-	g_RandOptionMax[O_DISTRICT_GIRLS], g_RandOptionMap[O_DISTRICT_GIRLS] = getRandOptionResult(g_RandDistrictGirls)
-	g_RandOptionMax[O_DISTRICT_GUYS], g_RandOptionMap[O_DISTRICT_GUYS] = getRandOptionResult(g_RandDistrictGuys)
-	g_RandOptionMax[O_OCCUPATION_GIRLS], g_RandOptionMap[O_OCCUPATION_GIRLS] = getRandOptionResult(g_RandOccupationGirls)
-	g_RandOptionMax[O_OCCUPATION_GUYS], g_RandOptionMap[O_OCCUPATION_GUYS] = getRandOptionResult(g_RandOccupationGuys)
-	g_RandOptionMax[O_EDUCATION_GIRLS], g_RandOptionMap[O_EDUCATION_GIRLS] = getRandOptionResult(g_RandEducationGirls)
-	g_RandOptionMax[O_EDUCATION_GUYS], g_RandOptionMap[O_EDUCATION_GUYS] = getRandOptionResult(g_RandEducationGuys)
-	g_RandOptionMax[O_HOUSING_GIRLS], g_RandOptionMap[O_HOUSING_GIRLS] = getRandOptionResult(g_RandHousingGirls)
-	g_RandOptionMax[O_HOUSING_GUYS], g_RandOptionMap[O_HOUSING_GUYS] = getRandOptionResult(g_RandHousingGuys)
-	g_RandOptionMax[O_MARRIAGE_GIRLS], g_RandOptionMap[O_MARRIAGE_GIRLS] = getRandOptionResult(g_RandMarriageGirls)
-	g_RandOptionMax[O_MARRIAGE_GUYS], g_RandOptionMap[O_MARRIAGE_GUYS] = getRandOptionResult(g_RandMarriageGuys)
-	g_RandOptionMax[O_CHARACTOR_GIRLS], g_RandOptionMap[O_CHARACTOR_GIRLS] = getRandOptionResult(g_RandCharactorGirls)
-	g_RandOptionMax[O_CHARACTOR_GUYS], g_RandOptionMap[O_CHARACTOR_GUYS] = getRandOptionResult(g_RandCharactorGuys)
-	g_RandOptionMax[O_HOBBIES_GIRLS], g_RandOptionMap[O_HOBBIES_GIRLS] = getRandOptionResult(g_RandHobbiesGirls)
-	g_RandOptionMax[O_HOBBIES_GUYS], g_RandOptionMap[O_HOBBIES_GUYS] = getRandOptionResult(g_RandHobbiesGuys)
+	gRandOptionMax[O_DISTRICT_GIRLS], gRandOptionMap[O_DISTRICT_GIRLS] = getRandOptionResult(gRandDistrictGirls)
+	gRandOptionMax[O_DISTRICT_GUYS], gRandOptionMap[O_DISTRICT_GUYS] = getRandOptionResult(gRandDistrictGuys)
+	gRandOptionMax[O_OCCUPATION_GIRLS], gRandOptionMap[O_OCCUPATION_GIRLS] = getRandOptionResult(gRandOccupationGirls)
+	gRandOptionMax[O_OCCUPATION_GUYS], gRandOptionMap[O_OCCUPATION_GUYS] = getRandOptionResult(gRandOccupationGuys)
+	gRandOptionMax[O_EDUCATION_GIRLS], gRandOptionMap[O_EDUCATION_GIRLS] = getRandOptionResult(gRandEducationGirls)
+	gRandOptionMax[O_EDUCATION_GUYS], gRandOptionMap[O_EDUCATION_GUYS] = getRandOptionResult(gRandEducationGuys)
+	gRandOptionMax[O_HOUSING_GIRLS], gRandOptionMap[O_HOUSING_GIRLS] = getRandOptionResult(gRandHousingGirls)
+	gRandOptionMax[O_HOUSING_GUYS], gRandOptionMap[O_HOUSING_GUYS] = getRandOptionResult(gRandHousingGuys)
+	gRandOptionMax[O_MARRIAGE_GIRLS], gRandOptionMap[O_MARRIAGE_GIRLS] = getRandOptionResult(gRandMarriageGirls)
+	gRandOptionMax[O_MARRIAGE_GUYS], gRandOptionMap[O_MARRIAGE_GUYS] = getRandOptionResult(gRandMarriageGuys)
+	gRandOptionMax[O_CHARACTOR_GIRLS], gRandOptionMap[O_CHARACTOR_GIRLS] = getRandOptionResult(gRandCharactorGirls)
+	gRandOptionMax[O_CHARACTOR_GUYS], gRandOptionMap[O_CHARACTOR_GUYS] = getRandOptionResult(gRandCharactorGuys)
+	gRandOptionMax[O_HOBBIES_GIRLS], gRandOptionMap[O_HOBBIES_GIRLS] = getRandOptionResult(gRandHobbiesGirls)
+	gRandOptionMax[O_HOBBIES_GUYS], gRandOptionMap[O_HOBBIES_GUYS] = getRandOptionResult(gRandHobbiesGuys)
 
 	//districts of prov
-	g_districtmap = make(map[string]([]string))
+	gDistrictMap = make(map[string]([]string))
 	districtinfo := lib.GetDistrictJsonArray()
 	for _, s := range *districtinfo {
-		g_districtmap[s.Province] = s.District
+		gDistrictMap[s.Province] = s.District
 	}
 
-	g_regex = regexp.MustCompile("(.*)?(?:(现在常[住|驻]地点)([^，]*)?，)(.*)?")
+	gRegexp = regexp.MustCompile("(.*)?(?:(现在常[住|驻]地点)([^，]*)?，)(.*)?")
 }
 
 func getRandomProvDist(gender int) (string, string) {
@@ -52,11 +52,11 @@ func getRandomProvDist(gender int) (string, string) {
 		index = O_DISTRICT_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	prov := g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	prov := gRandOptionMap[index][r]
 
-	r = lib.Intn(len(g_districtmap[prov]))
-	dist := g_districtmap[prov][r]
+	r = lib.Intn(len(gDistrictMap[prov]))
+	dist := gDistrictMap[prov][r]
 
 	return prov, dist
 }
@@ -67,8 +67,8 @@ func getRandomIncomeRange(gender int) (int, int) {
 		index = V_INCOME_GUYS
 	}
 
-	r := lib.Intn(g_RandValueMax[index])
-	node := g_RandValueMap[index][r]
+	r := lib.Intn(gRandValueMax[index])
+	node := gRandValueMap[index][r]
 
 	return node.value1, node.value2
 }
@@ -79,8 +79,8 @@ func getRandomViplevel(gender int) (int, int) {
 		index = V_VIPLEVEL_GUYS
 	}
 
-	r := lib.Intn(g_RandValueMax[index])
-	node := g_RandValueMap[index][r]
+	r := lib.Intn(gRandValueMax[index])
+	node := gRandValueMap[index][r]
 
 	return node.value1, node.value2
 }
@@ -91,8 +91,8 @@ func getRandomOccupation(gender int) string {
 		index = O_OCCUPATION_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	return g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	return gRandOptionMap[index][r]
 }
 
 func getRandomEducation(gender int) string {
@@ -101,8 +101,8 @@ func getRandomEducation(gender int) string {
 		index = O_EDUCATION_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	return g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	return gRandOptionMap[index][r]
 }
 
 func getRandomHoursing(gender int) string {
@@ -111,8 +111,8 @@ func getRandomHoursing(gender int) string {
 		index = O_HOUSING_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	return g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	return gRandOptionMap[index][r]
 }
 
 func getRandomMarriage(gender int) string {
@@ -121,8 +121,8 @@ func getRandomMarriage(gender int) string {
 		index = O_MARRIAGE_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	return g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	return gRandOptionMap[index][r]
 }
 
 func getRandomCharactor(gender int) string {
@@ -131,8 +131,8 @@ func getRandomCharactor(gender int) string {
 		index = O_CHARACTOR_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	return g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	return gRandOptionMap[index][r]
 }
 
 func getRandomHobbies(gender int) string {
@@ -141,8 +141,8 @@ func getRandomHobbies(gender int) string {
 		index = O_HOBBIES_GUYS
 	}
 
-	r := lib.Intn(g_RandOptionMax[index])
-	return g_RandOptionMap[index][r]
+	r := lib.Intn(gRandOptionMax[index])
+	return gRandOptionMap[index][r]
 }
 
 func updateHeartbeatByGender(gender int) {
@@ -190,7 +190,7 @@ func updateHeartbeatByGender(gender int) {
 
 			bsimple = true
 			lib.SQLQueryRow(sentenceSelectIntro, id).Scan(&intro)
-			strarray := g_regex.FindAllStringSubmatch(intro, -1)
+			strarray := gRegexp.FindAllStringSubmatch(intro, -1)
 			if nil != strarray {
 				if 5 == len(strarray[0]) {
 					intro = strarray[0][1] + strarray[0][4]
@@ -278,7 +278,7 @@ func updatePersonByGender(gender int) {
 
 			bsimple = true
 			lib.SQLQueryRow(sentenceSelectIntro, id).Scan(&intro)
-			strarray := g_regex.FindAllStringSubmatch(intro, -1)
+			strarray := gRegexp.FindAllStringSubmatch(intro, -1)
 			if nil != strarray {
 				if 5 == len(strarray[0]) {
 					intro = strarray[0][1] + strarray[0][4]

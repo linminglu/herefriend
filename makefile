@@ -26,7 +26,6 @@ CRAW_GOFILES := \
 		$(wildcard ./lib/push/*.go) \
 		$(wildcard ./crawler/dbtables/*.go) \
 		$(wildcard ./crawler/idsearch/*.go) \
-		$(wildcard ./crawler/loveshow/*.go) \
 		$(wildcard ./crawler/image/*.go) \
 		$(wildcard ./crawler/page/*.go) \
 		$(wildcard ./crawler/request/*.go) \

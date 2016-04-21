@@ -16,15 +16,15 @@ import (
 	"herefriend/config"
 )
 
-var g_kodoClient *kodo.Client
-var g_bucket kodo.Bucket
-var g_ctx context.Context
+var gKodoClient *kodo.Client
+var gBucket kodo.Bucket
+var gCtx context.Context
 
 func init() {
 	kodo.SetMac(config.Conf_AccessKey, config.Conf_SecretKey)
-	g_kodoClient = kodo.New(0, nil)
-	g_bucket = g_kodoClient.Bucket(config.Conf_QiniuScope)
-	g_ctx = context.Background()
+	gKodoClient = kodo.New(0, nil)
+	gBucket = gKodoClient.Bucket(config.Conf_QiniuScope)
+	gCtx = context.Background()
 }
 
 func getQiniuUserImagePath(id int, filename string) string {
@@ -55,7 +55,7 @@ func PutImageToQiniuByPath(path string, data io.Reader) error {
 	}
 
 	r := bytes.NewReader(buf)
-	err = g_bucket.Put(g_ctx, nil, path, r, r.Size(), nil)
+	err = gBucket.Put(gCtx, nil, path, r, r.Size(), nil)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -86,7 +86,7 @@ func PutImageToQiniu(id int, filename string, data io.Reader) error {
  |
 */
 func DeleteImageFromQiniu(id int, filename string) error {
-	err := g_bucket.Delete(g_ctx, getQiniuUserImagePath(id, filename))
+	err := gBucket.Delete(gCtx, getQiniuUserImagePath(id, filename))
 	if nil != err {
 		fmt.Println(err)
 	}

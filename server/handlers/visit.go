@@ -16,12 +16,12 @@ const (
 	VISIT_MAX_UNREADNUMBER = 15
 )
 
-var g_VisitUnreadSentence string
-var g_VisitInsertSentence string
+var gVisitUnreadSentence string
+var gVisitInsertSentence string
 
 func init() {
-	g_VisitUnreadSentence = lib.SQLSentence(lib.SQLMAP_Select_VisitUnreadCount)
-	g_VisitInsertSentence = lib.SQLSentence(lib.SQLMAP_Insert_Visit)
+	gVisitUnreadSentence = lib.SQLSentence(lib.SQLMAP_Select_VisitUnreadCount)
+	gVisitInsertSentence = lib.SQLSentence(lib.SQLMAP_Insert_Visit)
 	go visitRobotRoutine()
 }
 
@@ -131,7 +131,7 @@ func visitAddVisitor(id, visitor int, timemin, timemax int64) {
 		t = timemin + lib.Int63n(timemax-timemin)
 	}
 
-	lib.SQLExec(g_VisitInsertSentence, visitor, id, t)
+	lib.SQLExec(gVisitInsertSentence, visitor, id, t)
 	RecommendPushMessage(visitor, id, 0, 1, push.PUSHMSG_TYPE_VISIT, "", t)
 }
 
@@ -152,10 +152,10 @@ func visitRobotRoutine() {
 		time.Sleep(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTVISIT))
 
 		needpush = false
-		g_liveUsersInfo.lock.RLock()
-		for id, user := range g_liveUsersInfo.users {
+		gLiveUsersInfo.lock.RLock()
+		for id, user := range gLiveUsersInfo.users {
 			count = 0
-			err := lib.SQLQueryRow(g_VisitUnreadSentence, id).Scan(&count)
+			err := lib.SQLQueryRow(gVisitUnreadSentence, id).Scan(&count)
 			if nil != err || VISIT_MAX_UNREADNUMBER <= count {
 				continue
 			}
@@ -186,7 +186,7 @@ func visitRobotRoutine() {
 			visitAddVisitor(id, fromid, 0, 0)
 			needpush = true
 		}
-		g_liveUsersInfo.lock.RUnlock()
+		gLiveUsersInfo.lock.RUnlock()
 
 		if true == needpush {
 			push.DoPush()

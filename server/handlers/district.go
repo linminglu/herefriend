@@ -10,10 +10,10 @@ import (
 	"herefriend/lib"
 )
 
-var g_regex *regexp.Regexp
+var gRegexp *regexp.Regexp
 
 func init() {
-	g_regex, _ = regexp.Compile("(?:</code>&nbsp;来自：)([^<]+)(?:</p>)")
+	gRegexp, _ = regexp.Compile("(?:</code>&nbsp;来自：)([^<]+)(?:</p>)")
 }
 
 func getDistrictString(addStr string) (string, string) {
@@ -98,7 +98,7 @@ func GetIpAddress(r *http.Request) (string, string) {
 
 	addStr := ""
 	buf, _ := lib.GetResultByMethod("GET", "http://www.ip.cn/index.php?ip="+ipstrs[0], nil)
-	descStr := g_regex.FindStringSubmatch(string(buf))
+	descStr := gRegexp.FindStringSubmatch(string(buf))
 	if nil != descStr {
 		addStr = descStr[1]
 	}

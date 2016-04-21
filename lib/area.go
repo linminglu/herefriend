@@ -11,25 +11,25 @@ type DistrictJson struct {
 	District []string
 }
 
-var g_provmap map[string]string
-var g_distmap map[string]string
-var g_DistrictJson []DistrictJson
+var gProvMap map[string]string
+var gDistMap map[string]string
+var gDistrictJson []DistrictJson
 
 func init() {
 	/* init maps */
-	g_provmap = make(map[string]string)
-	g_distmap = make(map[string]string)
+	gProvMap = make(map[string]string)
+	gDistMap = make(map[string]string)
 
 	var ok bool
 	for _, dist := range G_DistrictB {
-		_, ok = g_provmap[dist.Provcode]
+		_, ok = gProvMap[dist.Provcode]
 		if true != ok {
-			g_provmap[dist.Provcode] = dist.Province
+			gProvMap[dist.Provcode] = dist.Province
 		}
 
-		_, ok = g_distmap[dist.Distcode]
+		_, ok = gDistMap[dist.Distcode]
 		if true != ok {
-			g_distmap[dist.Distcode] = dist.District
+			gDistMap[dist.Distcode] = dist.District
 		}
 	}
 
@@ -41,23 +41,23 @@ func init() {
 		} else if G_DistrictB[i].Province == districtJson.Province {
 			districtJson.District = append(districtJson.District, G_DistrictB[i].District)
 		} else {
-			g_DistrictJson = append(g_DistrictJson, districtJson)
+			gDistrictJson = append(gDistrictJson, districtJson)
 			districtJson.Province = G_DistrictB[i].Province
 			districtJson.District = []string{G_DistrictB[i].District}
 		}
 	}
 
-	g_DistrictJson = append(g_DistrictJson, districtJson)
+	gDistrictJson = append(gDistrictJson, districtJson)
 }
 
 func getProvinceByCode(code string) string {
-	s, _ := g_provmap[code]
+	s, _ := gProvMap[code]
 
 	return s
 }
 
 func getDistrictByCode(code string) string {
-	s, _ := g_distmap[code]
+	s, _ := gDistMap[code]
 
 	return s
 }
@@ -99,5 +99,5 @@ func GetDistrictString(addStr string) (string, string) {
 }
 
 func GetDistrictJsonArray() *[]DistrictJson {
-	return &g_DistrictJson
+	return &gDistrictJson
 }

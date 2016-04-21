@@ -72,7 +72,7 @@ func GetUserInfos(req *http.Request) (int, string) {
 	 * Second get the persons' infos
 	 */
 	page, count := lib.Get_pageid_count_fromreq(req)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_BriefInfoByRows, gender)
+	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfoByRows, gender)
 	rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 	if nil != err {
 		return 404, ""
@@ -93,7 +93,7 @@ func GetUserInfos(req *http.Request) (int, string) {
 			info.Province = userinfo.Province
 
 			/* check if is heartbeat selected */
-			checkSql := lib.SQLSentence(lib.SQLMAP_Select_CheckHeatbeatValid)
+			checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
 			lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
 			if idChk == info.Id {
 				info.Selected = true
@@ -141,7 +141,7 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
 	info.Name = userinfo.Name
 	info.Province = userinfo.Province
 
-	checkSql := lib.SQLSentence(lib.SQLMAP_Select_CheckHeatbeatValid)
+	checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
 	lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
 	if idChk == info.Id {
 		info.Selected = true
@@ -205,7 +205,7 @@ func ChangeHeadImage(w http.ResponseWriter, req *http.Request) {
 
 	gender, _ := strconv.Atoi(genderStr)
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_Pictures, gender)
+	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_Pictures, gender)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		w.WriteHeader(404)
@@ -275,7 +275,7 @@ func DeleteHeadImage(w http.ResponseWriter, req *http.Request) {
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_Pictures, gender)
+	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_Pictures, gender)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		w.WriteHeader(404)
@@ -360,7 +360,7 @@ func AddBlacklist(req *http.Request) (int, string) {
 	lib.DelRedisUserInfo(id)
 
 	var idChk int
-	checkSql := lib.SQLSentence(lib.SQLMAP_Select_CheckHeatbeatValid)
+	checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
 	lib.SQLQueryRow(checkSql, id).Scan(&idChk)
 	if idChk == id {
 		delSql := lib.SQLSentence(lib.SQLMAP_Delete_Heartbeat)
@@ -408,7 +408,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
 	var searchInfo cmsSearchInfo
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchBriefInfoHead, gender)
+		sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfo, gender)
 		sentence += fmt.Sprintf(" where position('%s' in %s) order by id desc limit ?,?", keyStr, field)
 
 		page, count := lib.Get_pageid_count_fromreq(req)
@@ -431,7 +431,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
 				info.Province = userinfo.Province
 
 				/* check if is heartbeat selected */
-				checkSql := lib.SQLSentence(lib.SQLMAP_Select_CheckHeatbeatValid)
+				checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
 				lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
 				if idChk == info.Id {
 					info.Selected = true
@@ -519,7 +519,7 @@ func RegistUserInfo(req *http.Request) (int, string) {
 	var searchInfo cmsSearchInfo
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchBriefInfoHead, gender) + " where usertype=1 order by id desc limit ?,?"
+		sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfo, gender) + " where usertype=1 order by id desc limit ?,?"
 
 		page, count := lib.Get_pageid_count_fromreq(req)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)

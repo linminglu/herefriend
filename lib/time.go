@@ -52,7 +52,7 @@ const (
 	SLEEP_TYPE_ROBOTVISIT     = 2
 )
 
-var g_hourDuration = [24]time.Duration{
+var gHourDuration = [24]time.Duration{
 	time.Minute * 10, //0
 	time.Hour * 4,    //1
 	time.Hour * 3,    //2
@@ -89,7 +89,7 @@ var g_hourDuration = [24]time.Duration{
  |
 */
 func SleepTimeDuration(sleeptype int) time.Duration {
-	base := int64(g_hourDuration[time.Now().Hour()%24])
+	base := int64(gHourDuration[time.Now().Hour()%24])
 
 	src := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(src)

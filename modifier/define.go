@@ -25,7 +25,7 @@ type valuenode struct {
 非心动用户：无：65%；1级: 5%；2级:10%；3级:20%。
 心动用户：无：30%；1级：10%；2级：20%；3级：40%。
 */
-var g_RandViplevelGirls = []randValue{
+var gRandViplevelGirls = []randValue{
 	{0, 0, 250},
 	{1, 30, 30},
 	{1, 60, 10},
@@ -38,9 +38,9 @@ var g_RandViplevelGirls = []randValue{
 	{3, 90, 30},
 }
 
-var g_RandViplevelGuys = g_RandViplevelGirls
+var gRandViplevelGuys = gRandViplevelGirls
 
-var g_RandViplevelHeartbeatGirls = []randValue{
+var gRandViplevelHeartbeatGirls = []randValue{
 	{0, 0, 90},
 	{1, 30, 30},
 	{1, 60, 10},
@@ -53,7 +53,7 @@ var g_RandViplevelHeartbeatGirls = []randValue{
 	{3, 90, 30},
 }
 
-var g_RandViplevelHeartbeatGuys = g_RandViplevelHeartbeatGirls
+var gRandViplevelHeartbeatGuys = gRandViplevelHeartbeatGirls
 
 /*
 +---收入
@@ -63,7 +63,7 @@ var g_RandViplevelHeartbeatGuys = g_RandViplevelHeartbeatGirls
 	  +---10000-20000
 	  +---20000及以上
 */
-var g_RandIncomeGirls = []randValue{
+var gRandIncomeGirls = []randValue{
 	{0, 2000, 60},     //0 ~ 2000
 	{2000, 5000, 60},  //2000 ~ 5000
 	{5000, 10000, 5},  //5000 ~ 10000
@@ -72,7 +72,7 @@ var g_RandIncomeGirls = []randValue{
 	{0, 0, 20},        //不限
 }
 
-var g_RandIncomeGuys = []randValue{
+var gRandIncomeGuys = []randValue{
 	{0, 2000, 0},       //0 ~ 2000
 	{2000, 5000, 20},   //2000 ~ 5000
 	{5000, 10000, 40},  //5000 ~ 10000
@@ -84,7 +84,7 @@ var g_RandIncomeGuys = []randValue{
 /*
  * district
  */
-var g_RandDistrictGirls = []randOption{
+var gRandDistrictGirls = []randOption{
 	{"北京市", 30},
 	{"天津市", 10},
 	{"河北省", 10},
@@ -119,7 +119,7 @@ var g_RandDistrictGirls = []randOption{
 	{"台湾省", 5},
 }
 
-var g_RandDistrictGuys = g_RandDistrictGirls
+var gRandDistrictGuys = gRandDistrictGirls
 
 /*
 +---职业
@@ -132,7 +132,7 @@ var g_RandDistrictGuys = g_RandDistrictGirls
 	  +---艺术行业
 	  +---其它
 */
-var g_RandOccupationGirls = []randOption{
+var gRandOccupationGirls = []randOption{
 	{"企业职工", 10},
 	{"在校学生", 10},
 	{"商业贸易", 10},
@@ -144,7 +144,7 @@ var g_RandOccupationGirls = []randOption{
 	{"", 30}, //不限
 }
 
-var g_RandOccupationGuys = g_RandOccupationGirls
+var gRandOccupationGuys = gRandOccupationGirls
 
 /*
 +---学历
@@ -154,7 +154,7 @@ var g_RandOccupationGuys = g_RandOccupationGirls
 	  +---本科
 	  +---硕士及以上
 */
-var g_RandEducationGirls = []randOption{
+var gRandEducationGirls = []randOption{
 	{"初中及以下", 30},
 	{"高中及中专", 30},
 	{"大专", 10},
@@ -163,7 +163,7 @@ var g_RandEducationGirls = []randOption{
 	{"", 30}, //不限
 }
 
-var g_RandEducationGuys = []randOption{
+var gRandEducationGuys = []randOption{
 	{"初中及以下", 8},
 	{"高中及中专", 10},
 	{"大专", 15},
@@ -178,13 +178,13 @@ var g_RandEducationGuys = []randOption{
 	  +---租房
 	  +---不限
 */
-var g_RandHousingGirls = []randOption{
+var gRandHousingGirls = []randOption{
 	{"买房", 10},
 	{"租房", 40},
 	{"", 30},
 }
 
-var g_RandHousingGuys = []randOption{
+var gRandHousingGuys = []randOption{
 	{"买房", 40},
 	{"租房", 10},
 	{"", 30},
@@ -197,14 +197,14 @@ var g_RandHousingGuys = []randOption{
 	  +---离异
 	  +---丧偶
 */
-var g_RandMarriageGirls = []randOption{
+var gRandMarriageGirls = []randOption{
 	{"未婚", 80},
 	{"已婚", 10},
 	{"离异", 5},
 	{"丧偶", 1},
 }
 
-var g_RandMarriageGuys = []randOption{
+var gRandMarriageGuys = []randOption{
 	{"未婚", 80},
 	{"已婚", 10},
 	{"离异", 15},
@@ -231,7 +231,7 @@ var g_RandMarriageGuys = []randOption{
 	  +---冷静
 	  +---温柔
 */
-var g_RandCharactorGirls = []randOption{
+var gRandCharactorGirls = []randOption{
 	{"温柔", 30},
 	{"感性", 20},
 	{"贤惠", 10},
@@ -243,7 +243,7 @@ var g_RandCharactorGirls = []randOption{
 	{"", 20},
 }
 
-var g_RandCharactorGuys = []randOption{
+var gRandCharactorGuys = []randOption{
 	{"幽默", 20},
 	{"感性", 10},
 	{"体贴", 20},
@@ -266,7 +266,7 @@ var g_RandCharactorGuys = []randOption{
 	  +---养小动物
 	  +---旅游
 */
-var g_RandHobbiesGirls = []randOption{
+var gRandHobbiesGirls = []randOption{
 	{"运动", 10},
 	{"烹饪", 20},
 	{"看电影", 20},
@@ -278,7 +278,7 @@ var g_RandHobbiesGirls = []randOption{
 	{"", 20},
 }
 
-var g_RandHobbiesGuys = []randOption{
+var gRandHobbiesGuys = []randOption{
 	{"运动", 30},
 	{"烹饪", 10},
 	{"看电影", 10},
@@ -300,8 +300,8 @@ const (
 	V_SIZE
 )
 
-var g_RandValueMax [V_SIZE]int
-var g_RandValueMap [V_SIZE]map[int]valuenode
+var gRandValueMax [V_SIZE]int
+var gRandValueMap [V_SIZE]map[int]valuenode
 
 const (
 	O_DISTRICT_GIRLS = iota
@@ -321,8 +321,8 @@ const (
 	O_SIZE
 )
 
-var g_RandOptionMax [O_SIZE]int
-var g_RandOptionMap [O_SIZE]map[int]string
+var gRandOptionMax [O_SIZE]int
+var gRandOptionMap [O_SIZE]map[int]string
 
 /*
  |    Function: getRandOptionResult

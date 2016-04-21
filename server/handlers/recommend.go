@@ -29,24 +29,24 @@ const (
 	RECOMMEND_MAX_UNREADNUMBER = 20
 )
 
-var g_recommend_reg *regexp.Regexp
-var g_recommend_reg_user *regexp.Regexp
-var g_recommend_Queue *list.List
-var g_recommend_QueueLock sync.RWMutex
-var g_recommend_InUnreadCount string
-var g_recommend_Number int
-var g_Count_ApiRecommend int
-var g_msgTemplates []string
-var g_RobotUrl string
+var gRecommendReg *regexp.Regexp
+var gRecommendRegUser *regexp.Regexp
+var gRecommendQueue *list.List
+var gRecommendQueueLock sync.RWMutex
+var gRecommendInUnreadCount string
+var gRecommendNumber int
+var gCountApiRecommend int
+var gMsgTemplates []string
+var gRobotUrl string
 
 func init() {
-	g_recommend_reg, _ = regexp.Compile("(?:#)([^#]+)(?:#)")
-	g_recommend_reg_user, _ = regexp.Compile("(?:#USER_)([^#]+)(?:#)")
-	g_recommend_InUnreadCount = lib.SQLSentence(lib.SQLMAP_Select_InRecommendUnreadCount)
-	g_recommend_Queue = list.New()
+	gRecommendReg, _ = regexp.Compile("(?:#)([^#]+)(?:#)")
+	gRecommendRegUser, _ = regexp.Compile("(?:#USER_)([^#]+)(?:#)")
+	gRecommendInUnreadCount = lib.SQLSentence(lib.SQLMAP_Select_UnreadMessageCount)
+	gRecommendQueue = list.New()
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_AllRecommendCount)
-	lib.SQLQueryRow(sentence).Scan(&g_recommend_Number)
+	lib.SQLQueryRow(sentence).Scan(&gRecommendNumber)
 
 	ReloadRecommendTemplates()
 	InitRobotUrl()
@@ -58,11 +58,11 @@ func init() {
 }
 
 func GetRecommendNumber() int {
-	return g_recommend_Number
+	return gRecommendNumber
 }
 
 func InitRobotUrl() {
-	lib.SQLQueryRow("select url from robotURL where id=1").Scan(&g_RobotUrl)
+	lib.SQLQueryRow("select url from robotURL where id=1").Scan(&gRobotUrl)
 }
 
 func ReloadRecommendTemplates() {
@@ -74,13 +74,13 @@ func ReloadRecommendTemplates() {
 
 	defer rows.Close()
 
-	g_msgTemplates = make([]string, 0)
+	gMsgTemplates = make([]string, 0)
 
 	template := ""
 	for rows.Next() {
 		err = rows.Scan(&template)
 		if nil == err {
-			g_msgTemplates = append(g_msgTemplates, template)
+			gMsgTemplates = append(gMsgTemplates, template)
 		}
 	}
 }
@@ -106,7 +106,7 @@ func RecommendInsertMessageToDB(fromid, toid int, msgtype int, msg string, timev
 		return -1, err
 	}
 
-	g_recommend_Number = g_recommend_Number + 1
+	gRecommendNumber = gRecommendNumber + 1
 
 	return int(lastid), nil
 }
@@ -158,7 +158,7 @@ type reobotResponse struct {
 
 func getPostMessageBySessionId(sessionid string, msg string) (int, string) {
 	msg = url.QueryEscape(msg)
-	buffer, err := lib.GetResultByMethod("GET", g_RobotUrl+msg, nil)
+	buffer, err := lib.GetResultByMethod("GET", gRobotUrl+msg, nil)
 	if nil != err {
 		return 404, ""
 	}
@@ -173,13 +173,13 @@ func getPostMessageBySessionId(sessionid string, msg string) (int, string) {
 }
 
 func getFormatMsg(id int) (bool, string) {
-	if 0 == len(g_msgTemplates) {
+	if 0 == len(gMsgTemplates) {
 		return false, ""
 	}
 
-	replyStr := g_msgTemplates[lib.Intn(len(g_msgTemplates))]
+	replyStr := gMsgTemplates[lib.Intn(len(gMsgTemplates))]
 
-	kws := g_recommend_reg.FindAllStringSubmatch(replyStr, -1)
+	kws := gRecommendReg.FindAllStringSubmatch(replyStr, -1)
 	if nil != kws {
 		keywords := make(map[string]bool)
 
@@ -223,7 +223,7 @@ func tulingResponseCheck(str string) bool {
 		return false
 	}
 
-	for _, s := range g_tulinkResponseCheckList {
+	for _, s := range gRobotResponseCheckList {
 		if true == strings.Contains(str, s) {
 			return false
 		}
@@ -239,7 +239,7 @@ func tulingResponseChange(id int) string {
 	}
 
 	if !ok {
-		replacestr = g_helloArray[lib.Intn(len(g_helloArray))]
+		replacestr = gHelloArray[lib.Intn(len(gHelloArray))]
 	}
 
 	return replacestr
@@ -278,18 +278,18 @@ func getResponseMsg(node *recommendQueueNode) string {
  |
 */
 func RemoveCommentToPush(fromid, toid int) {
-	g_recommend_QueueLock.Lock()
-	for e := g_recommend_Queue.Front(); e != nil; {
+	gRecommendQueueLock.Lock()
+	for e := gRecommendQueue.Front(); e != nil; {
 		n := e.Value.(*recommendQueueNode)
 		if n.fromid == toid && n.toid == fromid {
 			next := e.Next()
-			g_recommend_Queue.Remove(e)
+			gRecommendQueue.Remove(e)
 			e = next
 		} else {
 			e = e.Next()
 		}
 	}
-	g_recommend_QueueLock.Unlock()
+	gRecommendQueueLock.Unlock()
 }
 
 /*
@@ -306,8 +306,8 @@ func recommendPushRoutine() {
 		time.Sleep(lib.SLEEP_DURATION_PUSH_QUEUEMSG)
 		needpush = false
 
-		g_recommend_QueueLock.Lock()
-		for e := g_recommend_Queue.Front(); e != nil; {
+		gRecommendQueueLock.Lock()
+		for e := gRecommendQueue.Front(); e != nil; {
 			n := e.Value.(*recommendQueueNode)
 			n.timewait = n.timewait - 1
 
@@ -343,13 +343,13 @@ func recommendPushRoutine() {
 				}
 
 				next := e.Next()
-				g_recommend_Queue.Remove(e)
+				gRecommendQueue.Remove(e)
 				e = next
 			} else {
 				e = e.Next()
 			}
 		}
-		g_recommend_QueueLock.Unlock()
+		gRecommendQueueLock.Unlock()
 
 		if true == needpush {
 			push.DoPush()
@@ -373,10 +373,10 @@ func recommendRobotRoutine() {
 		time.Sleep(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTRECOMMEND))
 		needpush = false
 
-		g_liveUsersInfo.lock.RLock()
-		for id, user := range g_liveUsersInfo.users {
+		gLiveUsersInfo.lock.RLock()
+		for id, user := range gLiveUsersInfo.users {
 			count = 0
-			err := lib.SQLQueryRow(g_recommend_InUnreadCount, id).Scan(&count)
+			err := lib.SQLQueryRow(gRecommendInUnreadCount, id).Scan(&count)
 			if nil != err || RECOMMEND_MAX_UNREADNUMBER <= count {
 				continue
 			}
@@ -408,7 +408,7 @@ func recommendRobotRoutine() {
 
 			ok, msg := getFormatMsg(fromid)
 			if !ok {
-				msg = g_helloArray[lib.Intn(len(g_helloArray))]
+				msg = gHelloArray[lib.Intn(len(gHelloArray))]
 			}
 
 			timevalue := lib.CurrentTimeUTCInt64()
@@ -416,7 +416,7 @@ func recommendRobotRoutine() {
 			RecommendPushMessage(fromid, id, 0, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
 			needpush = true
 		}
-		g_liveUsersInfo.lock.RUnlock()
+		gLiveUsersInfo.lock.RUnlock()
 
 		if true == needpush {
 			push.DoPush()
@@ -548,7 +548,7 @@ func ActionRecommend(req *http.Request) (int, string) {
 
 			ok, msg := getFormatMsg(id)
 			if !ok {
-				msg = g_helloArray[lib.Intn(len(g_helloArray))]
+				msg = gHelloArray[lib.Intn(len(gHelloArray))]
 			}
 
 			msgStr = msg
@@ -561,7 +561,7 @@ func ActionRecommend(req *http.Request) (int, string) {
 		return 404, err.Error()
 	}
 
-	g_Count_ApiRecommend = g_Count_ApiRecommend + 1
+	gCountApiRecommend = gCountApiRecommend + 1
 
 	if 1 != toid {
 		go func(_fromid, _toid int, _msgtyp int, _msg string, _timevalue int64) {
@@ -575,8 +575,8 @@ func ActionRecommend(req *http.Request) (int, string) {
 				RecommendPushMessage(_fromid, _toid, 1, 1, pushtype, _msg, _timevalue)
 				push.DoPush()
 			} else {
-				g_recommend_QueueLock.Lock()
-				g_recommend_Queue.PushBack(&recommendQueueNode{
+				gRecommendQueueLock.Lock()
+				gRecommendQueue.PushBack(&recommendQueueNode{
 					timewait:     int64(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTREPLY) / time.Second),
 					fromid:       _fromid,
 					toid:         _toid,
@@ -585,7 +585,7 @@ func ActionRecommend(req *http.Request) (int, string) {
 					msgtype:      _msgtyp,
 					message:      _msg,
 					timevalue:    _timevalue})
-				g_recommend_QueueLock.Unlock()
+				gRecommendQueueLock.Unlock()
 			}
 		}(id, toid, msgtype, msgStr, timevalue)
 	}
@@ -632,7 +632,7 @@ func DelRecommend(req *http.Request) (int, string) {
 	talkid, _ := strconv.Atoi(talkidStr)
 	sentence := lib.SQLSentence(lib.SQLMAP_Delete_Recommend)
 	lib.SQLExec(sentence, msgid, talkid, id, id, talkid)
-	g_recommend_Number = g_recommend_Number - 1
+	gRecommendNumber = gRecommendNumber - 1
 
 	return 200, ""
 }
@@ -719,7 +719,7 @@ func GetWaterFlow(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_TalkRecommend)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_MessageHistory)
 	rows, err := lib.SQLQuery(sentence, RECOMMEND_MSGTYPE_TALK, lastMsgId, id, talkid, talkid, id, (pageid-1)*count, count)
 	if nil != err {
 		return 404, ""
@@ -807,12 +807,12 @@ func GetAllMessage(req *http.Request) (int, string) {
 func recommend_GetUnreadNum(id int) int {
 	var count int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_InRecommendUnreadCount)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_UnreadMessageCount)
 	lib.SQLQueryRow(sentence, id).Scan(&count)
 
 	return count
 }
 
 func GetApiRecommendCount() int {
-	return g_Count_ApiRecommend
+	return gCountApiRecommend
 }

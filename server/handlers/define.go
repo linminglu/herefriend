@@ -57,7 +57,7 @@ type vipInfo struct {
 	PriceList    []vipPriceInfo
 }
 
-var g_VipLevels = []vipInfo{
+var gVipLevels = []vipInfo{
 	{
 		VipLevel:     1,
 		DiscountDesc: "限时特惠,优惠截止2016年7月12日",
@@ -307,7 +307,7 @@ type recommendQueueNode struct {
 	timevalue    int64
 }
 
-var g_helloArray = [...]string{
+var gHelloArray = [...]string{
 	"你好呀",
 	"在吗",
 	"你好可以认识一下吗",
@@ -319,7 +319,7 @@ var g_helloArray = [...]string{
 	"打个招呼，嘿嘿",
 }
 
-var g_tulinkResponseCheckList = [...]string{
+var gRobotResponseCheckList = [...]string{
 	"我叫",
 	"小黄鸡",
 	"小小鸡",

@@ -381,7 +381,7 @@ func GetTalkHistory(r *http.Request) (int, string) {
 		}
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_TalkRecommend)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_MessageHistory)
 	pageid, count := lib.Get_pageid_count_fromreq(r)
 	rows, err := lib.SQLQuery(sentence, handlers.RECOMMEND_MSGTYPE_TALK, lastMsgId, id, talkid, talkid, id, (pageid-1)*count, count)
 	if nil != err {

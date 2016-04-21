@@ -27,39 +27,39 @@ const (
 	LIVEUSER_STATUS_BACKGROUND = 2
 )
 
-var g_regLock sync.Mutex
-var g_liveUsersInfo *liveUsersInfo
-var g_vipUsersInfo *vipUsersInfo
-var g_AddAgeNum = []int{7, 3}
-var g_SubAgeNum = []int{3, 7}
+var gRegLock sync.Mutex
+var gLiveUsersInfo *liveUsersInfo
+var gVipUsersInfo *vipUsersInfo
+var gAddAgeNum = []int{7, 3}
+var gSubAgeNum = []int{3, 7}
 
-var g_Count_Girls int
-var g_Count_Guys int
-var g_Count_Regist int
-var g_Count_BuyVIP int
+var gCountGirls int
+var gCountGuys int
+var gCountRegist int
+var gCountBuyVIP int
 
 func init() {
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserCount, 0)).Scan(&g_Count_Girls)
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserCount, 1)).Scan(&g_Count_Guys)
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserActive)).Scan(&g_Count_Regist, &g_Count_BuyVIP)
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserCount, 0)).Scan(&gCountGirls)
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserCount, 1)).Scan(&gCountGuys)
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserActive)).Scan(&gCountRegist, &gCountBuyVIP)
 
-	g_liveUsersInfo = &liveUsersInfo{users: make(map[int]*liveUser), lock: sync.RWMutex{}}
+	gLiveUsersInfo = &liveUsersInfo{users: make(map[int]*liveUser), lock: sync.RWMutex{}}
 	go liveUserGoRoute()
 	go liveUserNotifyMsgRoutine()
 
-	g_vipUsersInfo = &vipUsersInfo{users: make(map[int]*vipUser), lock: sync.RWMutex{}}
+	gVipUsersInfo = &vipUsersInfo{users: make(map[int]*vipUser), lock: sync.RWMutex{}}
 	go vipUserGoRoute()
 }
 
 func updateUserActive() {
-	lib.SQLExec(lib.SQLSentence(lib.SQLMAP_Update_UserActive), g_Count_Regist, g_Count_BuyVIP)
+	lib.SQLExec(lib.SQLSentence(lib.SQLMAP_Update_UserActive), gCountRegist, gCountBuyVIP)
 }
 
 func GetUserCountByGender(gender int) int {
 	if 0 == gender {
-		return g_Count_Girls
+		return gCountGirls
 	} else {
-		return g_Count_Guys
+		return gCountGuys
 	}
 }
 
@@ -100,20 +100,20 @@ func deleteLiveUserInfo(usersinfo *liveUsersInfo, id int) {
 }
 
 func DeleteLiveUser(id int) {
-	g_Count_Regist = g_Count_Regist - 1
+	gCountRegist = gCountRegist - 1
 	updateUserActive()
 
-	deleteLiveUserInfo(g_liveUsersInfo, id)
+	deleteLiveUserInfo(gLiveUsersInfo, id)
 }
 
 func GetLiveUserNumber() int {
-	return len(g_liveUsersInfo.users)
+	return len(gLiveUsersInfo.users)
 }
 
 func GetActiveUserNumber() int {
 	var num int
 
-	for _, user := range g_liveUsersInfo.users {
+	for _, user := range gLiveUsersInfo.users {
 		if LIVEUSER_STATUS_ONLINE == user.status {
 			num = num + 1
 		}
@@ -123,7 +123,7 @@ func GetActiveUserNumber() int {
 }
 
 func GetRegistUserNumber() int {
-	return g_Count_Regist
+	return gCountRegist
 }
 
 func updateVipUserInfo(usersinfo *vipUsersInfo, id, gender, level, days int, expiretime int64) bool {
@@ -175,8 +175,8 @@ func getSearchAgeRange(gender int, age int) (int, int) {
 	min, max := 0, 0
 	if config.Conf_AgeMin <= age && age <= config.Conf_AgeMax {
 		if 0 == gender {
-			min = age - g_SubAgeNum[gender]
-			max = age + g_AddAgeNum[gender]
+			min = age - gSubAgeNum[gender]
+			max = age + gAddAgeNum[gender]
 
 			if min < config.Conf_AgeMin {
 				min = config.Conf_AgeMin
@@ -296,9 +296,9 @@ func getRandomUserId(id, gender int) int {
 	/* the third step: get random id from all data
 	 */
 	if 0 == gender {
-		baselimit = lib.Intn(g_Count_Girls)
+		baselimit = lib.Intn(gCountGirls)
 	} else {
-		baselimit = lib.Intn(g_Count_Guys)
+		baselimit = lib.Intn(gCountGuys)
 	}
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_RandomId, gender)
@@ -377,14 +377,14 @@ func getGenderById(id int) (bool, int) {
 
 	var idstr int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckIdValid, 0)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidId, 0)
 	err := lib.SQLQueryRow(sentence, id).Scan(&idstr)
 	if nil == err {
 		lib.SetRedisUserGender(id, 0)
 		return true, 0
 	}
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIdValid, 1)
+	sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidId, 1)
 	err = lib.SQLQueryRow(sentence, id).Scan(&idstr)
 	if nil == err {
 		lib.SetRedisUserGender(id, 1)
@@ -406,13 +406,13 @@ func getGenderByIdPw(id int, pw string) (bool, int) {
 	if 0 != id {
 		var idScan int
 
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckIdPasswordValid, 0)
+		sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidPasswd, 0)
 		err := lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 0
 		}
 
-		sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIdPasswordValid, 1)
+		sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidPasswd, 1)
 		err = lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 1
@@ -567,7 +567,7 @@ func GetUserInfo(id int, gender int) (int, personInfo) {
 	}
 
 	var timeValue int64
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_PersonInfoById, gender)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_PersonInfo, gender)
 	err := lib.SQLQueryRow(sentence, id).Scan(&info.Id, &info.Name, &info.Age, &info.Gender, &info.OnlineStatus, &info.VipLevel, &timeValue, &info.Height, &info.Weight,
 		&info.LoveType, &info.BodyType, &info.Marriage, &info.Province, &info.District, &info.Native, &info.Education, &info.Income, &info.IncomeMin, &info.IncomeMax,
 		&info.Occupation, &info.Housing, &info.Carstatus, &info.Introduction, &info.School, &info.Speciality,
@@ -814,7 +814,7 @@ func DeleteImage(req *http.Request) (int, string) {
  |
 */
 func getSearchBaselineSQLSentence(gender int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) string {
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchCountHead, 1-gender)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_Count, 1-gender)
 
 	if "在线" == status {
 		sentence += "((usertype=1 and onlineStatus=1) or usertype!=1) and "
@@ -874,7 +874,7 @@ func getSearchBaseline(gender, agemin, agemax, heightmin, heightmax, incomemin, 
  |
 */
 func getUserSearchIndexSQLSentence(gender int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) string {
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchHead, 1-gender)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_Search, 1-gender)
 
 	if 0 != agemax {
 		sentence += "age<=" + strconv.Itoa(agemax) + " and "
@@ -1078,8 +1078,8 @@ func Register(req *http.Request) (int, string) {
 	gender, _ := strconv.Atoi(genderStr)
 	insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_Info, gender)
 
-	g_regLock.Lock()
-	defer g_regLock.Unlock()
+	gRegLock.Lock()
+	defer gRegLock.Unlock()
 
 	/* First get the girls last id */
 	var girlsLastId int
@@ -1146,15 +1146,15 @@ func Register(req *http.Request) (int, string) {
 		}()
 
 		//add the count of user
-		g_Count_Regist = g_Count_Regist + 1
+		gCountRegist = gCountRegist + 1
 		updateUserActive()
 		if 0 == gender {
-			g_Count_Girls = g_Count_Girls + 1
+			gCountGirls = gCountGirls + 1
 		} else {
-			g_Count_Guys = g_Count_Guys + 1
+			gCountGuys = gCountGuys + 1
 		}
 
-		go updateLiveUserInfo(g_liveUsersInfo, lastId, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+		go updateLiveUserInfo(gLiveUsersInfo, lastId, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 
 		jsonRlt, _ := json.Marshal(info)
 		return 200, string(jsonRlt)
@@ -1216,7 +1216,7 @@ func Login(req *http.Request) (int, string) {
 	}
 
 	go visitLoginProc(id, gender, lastlogintime, curlogintime)
-	go updateLiveUserInfo(g_liveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+	go updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 
 	lib.DelRedisUserInfo(id)
 	code, info := GetUserInfo(id, gender)
@@ -1239,7 +1239,7 @@ func WatchDog(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	ok := updateLiveUserInfo(g_liveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+	ok := updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 	if true != ok {
 		if _, exist := lib.GetRedisDistrict(id); false == exist {
 			province, _ := GetIpAddress(req)
@@ -1265,7 +1265,7 @@ func Logout(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	deleteLiveUserInfo(g_liveUsersInfo, id)
+	deleteLiveUserInfo(gLiveUsersInfo, id)
 	OfflineProc(id, gender)
 	lib.DelRedisDistrict(id)
 
@@ -1292,9 +1292,9 @@ func liveUserGoRoute() {
 			err = rows.Scan(&onlineid, &onlineStatus)
 			if nil == err {
 				if LIVEUSER_STATUS_ONLINE == onlineStatus {
-					updateLiveUserInfo(g_liveUsersInfo, onlineid, 0, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 0, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 				} else {
-					updateLiveUserInfo(g_liveUsersInfo, onlineid, 0, LIVEUSER_STATUS_BACKGROUND, LIVEUSER_TICK_BACKGROUND)
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 0, LIVEUSER_STATUS_BACKGROUND, LIVEUSER_TICK_BACKGROUND)
 				}
 			}
 		}
@@ -1309,9 +1309,9 @@ func liveUserGoRoute() {
 			err = rows.Scan(&onlineid, &onlineStatus)
 			if nil == err {
 				if LIVEUSER_STATUS_ONLINE == onlineStatus {
-					updateLiveUserInfo(g_liveUsersInfo, onlineid, 1, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 1, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 				} else {
-					updateLiveUserInfo(g_liveUsersInfo, onlineid, 1, LIVEUSER_STATUS_BACKGROUND, LIVEUSER_TICK_BACKGROUND)
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 1, LIVEUSER_STATUS_BACKGROUND, LIVEUSER_TICK_BACKGROUND)
 				}
 			}
 		}
@@ -1322,12 +1322,12 @@ func liveUserGoRoute() {
 	for {
 		time.Sleep(lib.SLEEP_DURATION_LIVESTATUS)
 
-		g_liveUsersInfo.lock.Lock()
-		for id, user := range g_liveUsersInfo.users {
+		gLiveUsersInfo.lock.Lock()
+		for id, user := range gLiveUsersInfo.users {
 			user.livetick = user.livetick - 1
 			if 0 == user.livetick {
 				if LIVEUSER_STATUS_BACKGROUND == user.status {
-					delete(g_liveUsersInfo.users, id)
+					delete(gLiveUsersInfo.users, id)
 					OfflineProc(id, user.gender)
 					lib.DelRedisDistrict(id)
 				} else {
@@ -1350,7 +1350,7 @@ func liveUserGoRoute() {
 				}
 			}
 		}
-		g_liveUsersInfo.lock.Unlock()
+		gLiveUsersInfo.lock.Unlock()
 	}
 }
 
@@ -1370,8 +1370,8 @@ func liveUserNotifyMsgRoutine() {
 		time.Sleep(lib.SLEEP_DURATION_NOTIFYMSG)
 		needpush = false
 
-		g_liveUsersInfo.lock.Lock()
-		for id, user := range g_liveUsersInfo.users {
+		gLiveUsersInfo.lock.Lock()
+		for id, user := range gLiveUsersInfo.users {
 			if LIVEUSER_STATUS_ONLINE == user.status {
 				recommendCount := recommend_GetUnreadNum(id)
 				visitCount := visit_GetUnreadNum(id)
@@ -1386,7 +1386,7 @@ func liveUserNotifyMsgRoutine() {
 				needpush = true
 			}
 		}
-		g_liveUsersInfo.lock.Unlock()
+		gLiveUsersInfo.lock.Unlock()
 
 		if true == needpush {
 			push.DoPush()
@@ -1420,7 +1420,7 @@ func vipUserGoRoute() {
 				if curtime >= expiretime {
 					detachVipFromUser(userid, 0, level)
 				} else {
-					updateVipUserInfo(g_vipUsersInfo, userid, 0, level, days, expiretime)
+					updateVipUserInfo(gVipUsersInfo, userid, 0, level, days, expiretime)
 				}
 			}
 		}
@@ -1437,7 +1437,7 @@ func vipUserGoRoute() {
 				if curtime >= expiretime {
 					detachVipFromUser(userid, 1, level)
 				} else {
-					updateVipUserInfo(g_vipUsersInfo, userid, 1, level, days, expiretime)
+					updateVipUserInfo(gVipUsersInfo, userid, 1, level, days, expiretime)
 				}
 			}
 		}
@@ -1450,8 +1450,8 @@ func vipUserGoRoute() {
 		time.Sleep(lib.SLEEP_DURATION_VIPSTATUS)
 		needpush = false
 
-		g_vipUsersInfo.lock.Lock()
-		for id, user := range g_vipUsersInfo.users {
+		gVipUsersInfo.lock.Lock()
+		for id, user := range gVipUsersInfo.users {
 			curtime = lib.CurrentTimeUTCInt64()
 
 			if curtime >= user.expiretime {
@@ -1468,7 +1468,7 @@ func vipUserGoRoute() {
 				}
 			}
 		}
-		g_vipUsersInfo.lock.Unlock()
+		gVipUsersInfo.lock.Unlock()
 
 		if true == needpush {
 			push.DoPush()
@@ -1477,7 +1477,7 @@ func vipUserGoRoute() {
 }
 
 func detachVipFromUser(id, gender, level int) {
-	deleteVipUserInfo(g_vipUsersInfo, id)
+	deleteVipUserInfo(gVipUsersInfo, id)
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
 	_, err := lib.SQLExec(sentence, 0, 0, 0, id)
@@ -1537,11 +1537,11 @@ func BuyVip(req *http.Request) (int, string) {
 		return 404, err.Error()
 	}
 
-	g_Count_BuyVIP = g_Count_BuyVIP + 1
+	gCountBuyVIP = gCountBuyVIP + 1
 	updateUserActive()
 
 	//更新到线程
-	go updateVipUserInfo(g_vipUsersInfo, id, gender, level, days, expiretime)
+	go updateVipUserInfo(gVipUsersInfo, id, gender, level, days, expiretime)
 
 	//发送信息, VIP已经开通
 	expireUTC := lib.Int64_To_UTCTime(expiretime)
@@ -1568,22 +1568,22 @@ func BuyVip(req *http.Request) (int, string) {
  *
  */
 func VipPrice() (int, string) {
-	jsonRlt, _ := json.Marshal(g_VipLevels)
+	jsonRlt, _ := json.Marshal(gVipLevels)
 	return 200, string(jsonRlt)
 }
 
 func GetBuyVIPCount() int {
-	return g_Count_BuyVIP
+	return gCountBuyVIP
 }
 
 func SubUserCount(gender int) {
 	if 0 == gender {
-		if g_Count_Girls > 0 {
-			g_Count_Girls = g_Count_Girls - 1
+		if gCountGirls > 0 {
+			gCountGirls = gCountGirls - 1
 		}
 	} else {
-		if g_Count_Guys > 0 {
-			g_Count_Guys = g_Count_Guys - 1
+		if gCountGuys > 0 {
+			gCountGuys = gCountGuys - 1
 		}
 	}
 }

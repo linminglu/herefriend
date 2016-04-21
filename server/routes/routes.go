@@ -50,9 +50,7 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	 */
 	m.Get("/User/Search", handlers.Search)
 	m.Get("/User/Heartbeat", handlers.Heartbeat)
-	m.Get("/User/LoveShow", handlers.GetLoveShow)
 	m.Get("/User/GetDistrict", handlers.GetDistrict)
-	m.Get("/Action/LoveShowComment", handlers.LoveShowComment)
 
 	/*
 	 * Gift
