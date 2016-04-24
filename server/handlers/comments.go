@@ -866,7 +866,7 @@ func PeriodOnlineCommentPush(id, gender int) {
 	jsonRlt, _ = json.Marshal(notifymsg)
 
 	push.Add(0, GetClientIdByUserId(id), push.PUSHMSG_TYPE_NOTIFYMSG, push.PUSH_NOTIFYMSG_EVALUATION, "", string(jsonRlt))
-	fmt.Printf("Notify evaluation to %d: %s", id, string(jsonRlt))
+	push.DoPush()
 
 	return
 }
