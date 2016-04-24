@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>概览</title>
+        <title>Log</title>
         <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport' />
 
         <link href='assets/stylesheets/bootstrap/bootstrap.css' media='all' rel='stylesheet' type='text/css' />
@@ -56,7 +56,8 @@
                 <div class='navbar-inner'>
                     <div class='container-fluid'>
                         <a class='brand'>
-                            <i class='icon-heart-empty'></i>
+                            <i class='icon-heart-empty'>
+                            </i>
                             <span class='hidden-phone'>寂寞同城搭讪</span>
                         </a>
                         <a class='toggle-nav btn pull-left' href='#'>
@@ -174,7 +175,7 @@
             <nav class='' id='main-nav'>
                 <div class='navigation'>
                     <ul class='nav nav-stacked'>
-                        <li class="active">
+                        <li>
                             <a href='dashboard.html'>
                                 <i class='icon-dashboard'>
                                 </i>
@@ -231,7 +232,7 @@
                                 </li>
                             </ul>
                         </li>
-                        <li class=''>
+                        <li class='active'>
                             <a href='log.html'>
                                 <i class='icon-info'>
                                 </i>
@@ -247,18 +248,18 @@
                         <div class='span12'>
                             <div class='page-header'>
                                 <h1 class='pull-left'>
-                                    <i class='icon-dashboard'>
+                                    <i class='icon-info'>
                                     </i>
-                                    <span>概览</span>
+                                    <span>Log</span>
                                 </h1>
                             </div>
                             <div class='row-fluid'>
-                                <div class='span6 box'>
+                                <div class='span12 box'>
                                     <div class='box-header'>
                                         <div class='title'>
-                                            <div class='icon-laptop'>
-                                            </div>
-                                            系统
+                                            <i class='icon-info-sign'>
+                                            </i>
+                                            日志
                                         </div>
                                         <div class='actions'>
                                             <a href="#" class="btn box-remove btn-mini btn-link">
@@ -271,188 +272,9 @@
                                             </a>
                                         </div>
                                     </div>
-                                    <div class='row-fluid'>
-                                        <div class='span12'>
-                                            <div class='box-content box-statistic'>
-                                                <small>设备</small>
-                                                <small class='title' id="sys_describe"></small>
-                                                <div class='icon-info-sign align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>磁盘</small>
-                                                <h3 class='title' id="sys_hdd"></h3>
-                                                <div class='icon-hdd align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>内存</small>
-                                                <h3 class='title' id="sys_mem"></h3>
-                                                <div class='icon-ticket align-right'>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class='box-content' id="log-content">
                                     </div>
                                 </div>
-                                <div class='span3 box'>
-                                    <div class='box-header'>
-                                        <div class='title'>
-                                            <i class='icon-user'></i>
-                                            用户
-                                        </div>
-                                        <div class='actions'>
-                                            <a href="#" class="btn box-remove btn-mini btn-link">
-                                                <i class='icon-remove'>
-                                                </i>
-                                            </a>
-                                            <a href="#" class="btn box-collapse btn-mini btn-link">
-                                                <i>
-                                                </i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class='row-fluid'>
-                                        <div class='span12'>
-                                            <div class='box-content box-statistic'>
-                                                <small>活动用户</small>
-                                                <h3 class='title text-error' id="user_onlinenum"></h3>
-                                                <div class='text-error icon-mobile-phone align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>已注册</small>
-                                                <h3 class='title text-error' id="user_registnum"></h3>
-                                                <div class='text-error icon-pencil align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>女生</small>
-                                                <h3 class='title text-info' id="user_girlsnum"></h3>
-                                                <div class='text-info icon-user align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>男生</small>
-                                                <h3 class='title text-primary' id="user_guysnum"></h3>
-                                                <div class='text-primary icon-user align-right'>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class='span3 box'>
-                                    <div class='box-header'>
-                                        <div class='title'>
-                                            <i class='icon-comments'></i>
-                                            消息
-                                        </div>
-                                        <div class='actions'>
-                                            <a href="#" class="btn box-remove btn-mini btn-link">
-                                                <i class='icon-remove'>
-                                                </i>
-                                            </a>
-                                            <a href="#" class="btn box-collapse btn-mini btn-link">
-                                                <i>
-                                                </i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class='row-fluid'>
-                                        <div class='span12'>
-                                            <div class='box-content box-statistic'>
-                                                <small>购买VIP消息</small>
-                                                <h3 class='title text-error' id="comment_buyvipnum"></h3>
-                                                <div class='text-error icon-money align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>聊天消息</small>
-                                                <h3 class='title' id="comment_talknum"></h3>
-                                                <div class='icon-envelope align-right'>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-statistic'>
-                                                <small>推送消息</small>
-                                                <h3 class='title' id="comment_pushnum"></h3>
-                                                <div class='icon-comment-alt align-right'>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class='hr-drouble' />
-                            <div class='row-fluid'>
-                                <div class='span6 box'>
-                                    <div class='box-header'>
-                                        <div class='title'>
-                                            <i class='icon-reorder'></i>
-                                           CPU利用率 
-                                        </div>
-                                        <div class='actions'>
-                                            <a href="#" class="btn box-remove btn-mini btn-link">
-                                                <i class='icon-remove'>
-                                                </i>
-                                            </a>
-                                            <a href="#" class="btn box-collapse btn-mini btn-link">
-                                                <i>
-                                                </i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class='box-content'>
-                                        <div id='sys-cpu-chart' style="height:200px;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class='hr-drouble' />
-                            <div class='row-fluid'>
-                                <div class='span12'>
-                                    <div class='row-fluid recent-activity'>
-                                        <div class='span12 box box-nomargin'>
-                                            <div class='box-header'>
-                                                <div class='title'>
-                                                    <i class='icon-refresh'></i>
-                                                    最新消息
-                                                </div>
-                                                <div class='actions'>
-                                                    <a href="#" class="btn box-remove btn-mini btn-link">
-                                                        <i class='icon-remove'>
-                                                        </i>
-                                                    </a>
-                                                    <a href="#" class="btn box-collapse btn-mini btn-link">
-                                                        <i>
-                                                        </i>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                            <div class='box-content box-no-padding'>
-                                                <ul class='nav nav-tabs nav-tabs-simple'>
-                                                    <li class='active'>
-                                                        <a href="#tab-comments" class="purple-border" data-toggle="tab">
-                                                            <i class='icon-comments text-purple'>
-                                                            </i>
-                                                            消息
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                                <div class='tab-content'>
-                                                    <div class='tab-pane fade' id='tab-users'>
-                                                        <ul class='unstyled users list-hover list-striped'>
-                                                        </ul>
-                                                    </div>
-                                                    <div class='tab-pane fade in active' id='tab-comments' style="height:400px">
-                                                        <ul class='unstyled comments list-hover list-striped' id="recent_comments">
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class='row-fluid'>
                             </div>
                         </div>
                     </div>
@@ -470,8 +292,6 @@
         </script>
         <!-- / jquery ui -->
         <script src='assets/javascripts/jquery_ui/jquery-ui.min.js' type='text/javascript'>
-        </script>
-        <script src='assets/javascripts/jquery_ui/jquery.lazyload.js' type='text/javascript'>
         </script>
         <!-- / bootstrap -->
         <script src='assets/javascripts/bootstrap/bootstrap.min.js' type='text/javascript'>
@@ -521,6 +341,7 @@
         </script>
         <!-- / modernizr -->
         <script src='assets/javascripts/plugins/modernizr/modernizr.min.js' type='text/javascript'>
+        </script>
         </script>
         <!-- / fileupload -->
         <script src='assets/javascripts/plugins/fileupload/tmpl.min.js' type='text/javascript'>
@@ -609,11 +430,8 @@
         </script>
         <script src='assets/javascripts/theme.js' type='text/javascript'>
         </script>
-        <!-- / demo -->
-        <script src='assets/javascripts/demo/demo.js' type='text/javascript'>
-        </script>
         <!-- / data -->
-        <script src='assets/javascripts/dashboard.js' type='text/javascript'>
+        <script src='assets/javascripts/log.js' type='text/javascript'>
         </script>
     </body>
 </html>

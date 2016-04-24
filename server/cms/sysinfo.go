@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"herefriend/lib"
+	"html/template"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -111,4 +112,17 @@ func CpuInfo(r *http.Request) string {
 
 	jsonRlt, _ := json.Marshal(info)
 	return string(jsonRlt)
+}
+
+/*
+ |    Function: Log
+ |      Author: Mr.Sancho
+ |        Date: 2016-05-08
+ | Description:
+ |      Return:
+ |
+*/
+func Log(w http.ResponseWriter) {
+	t, _ := template.ParseFiles("log/roll.log")
+	t.Execute(w, nil)
 }

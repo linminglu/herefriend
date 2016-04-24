@@ -2,6 +2,8 @@
 
 
 
+
+
 <!-- toc -->
 
 * [1.说明](#1说明)
@@ -27,6 +29,7 @@
   * [3.9 添加用户黑名单](#39-添加用户黑名单)
   * [3.10 删除用户黑名单](#310-删除用户黑名单)
   * [3.11 查询用户黑名单](#311-查询用户黑名单)
+  * [3.12 获取未读消息数量](#312-获取未读消息数量)
 * [4.功能接口](#4功能接口)
   * [4.1 搜索用户](#41-搜索用户)
   * [4.2 心动列表](#42-心动列表)
@@ -44,12 +47,29 @@
   * [6.4 loveShow](#64-loveshow)
   * [6.5 DistrictJson](#65-districtjson)
   * [6.6 VipLevel信息](#66-viplevel信息)
-  * [6.7 新版本信息](#67-新版本信息)
-  * [6.8 用户黑名单](#68-用户黑名单)
+  * [6.7 用户黑名单](#67-用户黑名单)
+  * [6.8 GoldPrice信息](#68-goldprice信息)
+  * [6.9 GoldList信息](#69-goldlist信息)
+  * [6.10 送礼物后的变化信息](#610-送礼物后的变化信息)
+  * [6.11 礼物列表详情](#611-礼物列表详情)
+  * [6.12 未读消息信息](#612-未读消息信息)
+  * [6.13 魅力排行](#613-魅力排行)
 * [7.管理页面](#7管理页面)
   * [7.1 管理页面](#71-管理页面)
+* [8.礼物系统](#8礼物系统)
+  * [8.1 金币价格](#81-金币价格)
+  * [8.2 购买金币](#82-购买金币)
+  * [8.3 礼物列表](#83-礼物列表)
+  * [8.4 送出礼物](#84-送出礼物)
+  * [8.5 收到礼物详情](#85-收到礼物详情)
+  * [8.6 送出礼物详情](#86-送出礼物详情)
+  * [8.7 异性魅力排行榜](#87-异性魅力排行榜)
 
 <!-- toc stop -->
+
+
+
+
 
 ##1.说明
 本文档对各接口进行说明，最新请参考源码：[https://github.com/gemail/herefriend](https://github.com/gemail/herefriend)
@@ -270,7 +290,7 @@
     |id|int|非0|否|/|用户id|
     |password|int|非0|否|/|用户密码|
     |toid|int|非0|否|/|打招呼对象的id|
-    |type|int|1 (打招呼)<br>2 (聊天)<br>3 (心动)|否|/|打招呼和心动可以不附带消息|
+    |type|int|1 (打招呼)<br>2 (聊天)<br>3 (心动)<br>4 (索要)|否|/|打招呼和心动可以不附带消息|
     |msg|string|/|是|空字符串|附带消息|
 
 - 返回值
@@ -504,7 +524,29 @@
     |数据名称|数据类型/范围|说明|
     |:-- |:-- |:-- |
     |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
-    |HTTP内容|[参考6.8]|/|
+    |HTTP内容|[参考6.7]|/|
+
+### 3.12 获取未读消息数量
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/User/UnreadMessage`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |id|int|非0|否|/|用户id|
+    |password|int|非0|否|/|用户密码|
+    |lasttime|string|格林尼治时间|是|0代表的格林尼治时间|用于指定某个日期之后的信息,类似格式：<br>2016-01-01T06:03:32Z|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|unreadMessageInfo, [参考6.12]|/|
 
 ##4.功能接口
 ###4.1 搜索用户
@@ -670,29 +712,32 @@
 - 透传消息部分为如下结构体：
 
     ```go
-    type PushMsgUnread struct {
-    	UnreadRecommend int //未读的聊天消息
-    	UnreadVisit     int //未读的访问消息
-    	Badge           int //badge: the icon number of app
-    }
-    
     type PushMsgEvaluation struct {
     	Enable      bool   //是否要弹出评价对话框
     	ShowMessage string //弹出对话框显示的信息
     }
+
+    type PushMsgRecvGift struct {
+    	SenderId    int    //赠送者ID
+    	GiftId      int    //礼物ID
+    	GiftNum     int    //礼物数量
+    	GiftName    string //礼物名称
+    	ShowMessage string //弹出对话框显示的信息
+    }
     
     type PushMessageInfo struct {
-    	/*
-    	 * 根据类型不同，消息实体的结构体不同，如下为具体对应关系:
-    	 * 目前只有接收到Type=1的时候，APP应该修改Badge图标显示值
-    	 * ------------------------------------------------------
-    	 * | Type值 |         Value对应的数据结构               |
-    	 * ------------------------------------------------------
-    	 * |    1   |          PushMsgUnread                    |
-    	 * ------------------------------------------------------
-    	 * |    2   |          PushMsgEvaluation                |
-    	 * ------------------------------------------------------
-    	 */
+	    /*
+	     * 根据类型不同，消息实体的结构体不同，如下为具体对应关系:
+	     * ------------------------------------------------------
+	     * |   Type |				Value						|
+	     * ------------------------------------------------------
+	     * |    1   |          PushMsgUnread (NOT Avaliable)    |
+	     * ------------------------------------------------------
+	     * |    2   |          PushMsgEvaluation                |
+	     * ------------------------------------------------------
+	     * |    3   |          PushMsgRecvGift                  |
+	     * ------------------------------------------------------
+	     */
     	Type  int    //消息类型
     	Value string //消息实体, 可以解析为对应的数据结构
     }
@@ -701,70 +746,77 @@
 ##6.JSON结构体
 ###6.1 personInfo
 1. **结构体说明**
+
 	存放用户信息，无信息字段为空值。
 
 2. **CODE**
+
     ```go
     /*
      * Infomation shows to the clients
      */
     type PersonInfo struct {
-    	Id              int       //ID号
-    	Height          int       //身高
-    	Weight          int       //体重
-    	Age             int       //年龄
-    	Gender          int       //性别: 0(女) 1(男)
-    	OnlineStatus    int       //在线状态
-    	VipLevel        int       //Vip级别
-    	VipExpireTime   time.Time //会员到期时间
-    	Name            string    //姓名
-    	Province        string    //所在省/直辖市/自治区
-    	District        string    //所在区域
-    	Native          string    //家乡
-    	LoveType        string    //恋爱类型
-    	BodyType        string    //体型
-    	BloodType       string    //体型
-    	Animal          string    //属相
-    	Constellation   string    //星座
-    	Lang            string    //语言
-    	Introduction    string    //自我介绍
-    	Selfjudge       string    //自评
-    	Education       string    //教育程度
-    	Income          string    //收入情况
-    	IncomeMin       int       //收入最低
-    	IncomeMax       int       //收入最高
-    	School          string    //毕业学校
-    	Occupation      string    //职业
-    	Housing         string    //购房情况
-    	Carstatus       string    //购车情况
-    	Speciality      string    //技能
-    	Marriage        string    //婚姻状况
-    	Companytype     string    //公司类型
-    	Companyindustry string    //公司领域
-    	Nationnality    string    //民族
-    	Religion        string    //信仰
-    	Charactor       string    //性格类型
-    	Hobbies         string    //兴趣爱好
-    	CityLove        int       //是否接受异地恋: 0(视情况而定) 1(接受) 2(不接受)
-    	Naken           int       //是否接受婚前性行为: 0(视情况而定) 1(接受) 2(不接受)
-    	Allow_age       string    //择偶条件:年龄
-    	Allow_residence string    //择偶条件:居住地
-    	Allow_height    string    //择偶条件:身高
-    	Allow_marriage  string    //择偶条件:婚姻状况
-    	Allow_education string    //择偶条件:教育程度
-    	Allow_housing   string    //择偶条件:购房情况
-    	Allow_income    string    //择偶条件:收入
-    	Allow_kidstatus string    //择偶条件:子女情况
-    	IconUrl         string    //头像url
-    	Pics            []string  //照片列表
+    	Id              int                `json:",omitempty"` //ID号
+    	Height          int                `json:",omitempty"` //身高
+    	Weight          int                `json:",omitempty"` //体重
+    	Age             int                `json:",omitempty"` //年龄
+    	Gender          int                `json:",omitempty"` //性别: 0(女) 1(男)
+    	OnlineStatus    int                `json:",omitempty"` //在线状态
+    	VipLevel        int                `json:",omitempty"` //Vip级别
+    	VipExpireTime   time.Time          `json:",omitempty"` //会员到期时间
+    	Name            string             `json:",omitempty"` //姓名
+    	Province        string             `json:",omitempty"` //所在省/直辖市/自治区
+    	District        string             `json:",omitempty"` //所在区域
+    	Native          string             `json:",omitempty"` //家乡
+    	LoveType        string             `json:",omitempty"` //恋爱类型
+    	BodyType        string             `json:",omitempty"` //体型
+    	BloodType       string             `json:",omitempty"` //体型
+    	Animal          string             `json:",omitempty"` //属相
+    	Constellation   string             `json:",omitempty"` //星座
+    	Lang            string             `json:",omitempty"` //语言
+    	Introduction    string             //自我介绍
+    	Selfjudge       string             `json:",omitempty"` //自评
+    	Education       string             `json:",omitempty"` //教育程度
+    	Income          string             `json:",omitempty"` //收入情况
+    	IncomeMin       int                `json:",omitempty"` //收入最低
+    	IncomeMax       int                `json:",omitempty"` //收入最高
+    	School          string             `json:",omitempty"` //毕业学校
+    	Occupation      string             `json:",omitempty"` //职业
+    	Housing         string             `json:",omitempty"` //购房情况
+    	Carstatus       string             `json:",omitempty"` //购车情况
+    	Speciality      string             `json:",omitempty"` //技能
+    	Marriage        string             `json:",omitempty"` //婚姻状况
+    	Companytype     string             `json:",omitempty"` //公司类型
+    	Companyindustry string             `json:",omitempty"` //公司领域
+    	Nationnality    string             `json:",omitempty"` //民族
+    	Religion        string             `json:",omitempty"` //信仰
+    	Charactor       string             `json:",omitempty"` //性格类型
+    	Hobbies         string             `json:",omitempty"` //兴趣爱好
+    	CityLove        int                `json:",omitempty"` //是否接受异地恋: 0(视情况而定) 1(接受) 2(不接受)
+    	Naken           int                `json:",omitempty"` //是否接受婚前性行为: 0(视情况而定) 1(接受) 2(不接受)
+    	Allow_age       string             `json:",omitempty"` //择偶条件:年龄
+    	Allow_residence string             `json:",omitempty"` //择偶条件:居住地
+    	Allow_height    string             `json:",omitempty"` //择偶条件:身高
+    	Allow_marriage  string             `json:",omitempty"` //择偶条件:婚姻状况
+    	Allow_education string             `json:",omitempty"` //择偶条件:教育程度
+    	Allow_housing   string             `json:",omitempty"` //择偶条件:购房情况
+    	Allow_income    string             `json:",omitempty"` //择偶条件:收入
+    	Allow_kidstatus string             `json:",omitempty"` //择偶条件:子女情况
+    	IconUrl         string             `json:",omitempty"` //头像url
+    	Pics            []string           `json:",omitempty"` //照片列表
+    	GoldBeans       int                `json:",omitempty"` //用户的金币数量
+    	RecvGiftList    []GiftSendRecvInfo `json:",omitempty"` //收到的礼物列表
+    	SendGiftList    []GiftSendRecvInfo `json:",omitempty"` //送出的礼物列表
     }
     ```
 
 ###6.2 registerInfo
 1. **结构体说明**
+
 	存放用户注册信息，无信息字段为空值。
 
 2. **CODE**
+
     ```go
     type reviewInfo struct {
         FoceShowReviewAlert bool
@@ -786,9 +838,11 @@
 
 ###6.3 聊天信息与访问资料信息
 1. **结构体说明**
+
 	存放打招呼信息，无信息字段为空值。
 
 2. **CODE**
+
     ```go
 	type messageInfo struct {
 		MsgId     int        //消息Id
@@ -808,9 +862,11 @@
 
 ###6.4 loveShow
 1. **结构体说明**
+
 	存放恋爱秀信息，无信息字段自动隐藏。
 
 2. **CODE**
+
     ```go
     type comment struct {
         Id        int       //用户id
@@ -847,9 +903,11 @@
 
 ###6.5 DistrictJson
 1. **结构体说明**
+
 	存放全国地区信息，包括省和地区。
 
 2. **CODE**
+
     ```go
     type DistrictJson struct {
         Province string
@@ -859,6 +917,7 @@
 
 ###6.6 VipLevel信息
 1. **结构体说明**
+
 	存放vip price信息。
 
 2. **CODE**
@@ -881,29 +940,127 @@
     }
     ```
 
-###6.7 新版本信息
+###6.7 用户黑名单
 1. **结构体说明**
-	存放新版本信息。
 
-2. **CODE**
-    ```go
-    type versionInfo struct {
-    	Version string //版本
-    	Url     string //channel渠道
-    	Msg     string //版本说明
-    	Force   bool
-    }
-    ```
-
-###6.8 用户黑名单
-1. **结构体说明**
 	存放用户自己的黑名单信息。
 
 2. **CODE**
+
     ```go
     type userBlacklist struct {
     	Id        int   //用户id
     	Blacklist []int //用户id的黑名单
+    }
+    ```
+
+###6.8 GoldPrice信息
+1. **结构体说明**
+
+	存放金币信息。
+
+2. **CODE**
+
+    ```go
+    type goldBeansPrice struct {
+    	Price     int    //价格
+    	Count     int    //普通会员购买数量
+    	Count_zs  int    //level 2会员购买数量
+    	Count_zz  int    //level 3会员购买数量
+    	ProductId string //产品ID
+    }
+    ```
+
+###6.9 GoldList信息
+1. **结构体说明**
+
+	存放礼物信息。
+
+2. **CODE**
+
+    ```go
+    type giftInfo struct {
+    	Id int //礼物固定id
+    	/* 礼物类型：
+    	 * 0 免费
+    	 * 1 普通礼物
+    	 * 2 折扣礼物
+    	 * 3 名人礼物
+    	 * ...
+    	 */
+    	Type                int
+    	Name                string //礼物名称
+    	ValidNum            int    //库存数量
+    	Description         string //礼物描述
+    	ImageUrl            string //礼物图片URL
+    	Effect              int    //礼物特效，需要客户端支持
+    	Price               int    //价格(beans)
+    	OriginPrice         int    //原价(beans)，对于折扣礼物和Price不同
+    	DiscountDescription string //折扣描述信息，对折扣作说明
+    }
+    ```
+
+###6.10 送礼物后的变化信息
+1. **结构体说明**
+
+	送出礼物后，送礼物和收礼物的人的个人信息发生变化，APP需要更新这两个用户的个人信息。
+
+2. **CODE**
+
+    ```go
+    type presentGiftInfo struct {
+    	UserInfo    personInfo //个人信息
+    	WhoRecvGift personInfo //收到礼物的人的信息
+    }
+    ```
+
+###6.11 礼物列表详情
+1. **结构体说明**
+
+	对于收到或者送出的礼物详情，如果返回的数据代表收到的礼物详情，那么UserId代表送礼物的用户ID。如果返回的数据代表送出的礼物详情，那么UserId代表收到礼物的用户ID。
+
+2. **CODE**
+
+    ```go
+    /*
+     * 礼物列表详情
+     */
+    type giftListVerbose struct {
+    	UserId  int       //赠送礼物或者收到礼物的用户ID
+    	GiftId  int       //礼物ID
+    	GiftNum int       //礼物数量
+    	Message string    //礼物留言
+    	TimeUTC time.Time //送礼物的时间
+    }
+    ```
+
+###6.12 未读消息信息
+1. **结构体说明**
+
+	未读消息数量信息，用户替代未读消息推送消息
+
+2. **CODE**
+
+    ```go
+    type unreadMessageInfo struct {
+    	UnreadRecommend int //未读的聊天消息
+    	UnreadVisit     int //未读的访问消息
+    	Badge           int //badge: the icon number of app
+    }
+    ```
+
+###6.13 魅力排行
+1. **结构体说明**
+
+	用户魅力信息
+
+2. **CODE**
+
+    ```go
+    type userCharmInfo struct {
+    	Person      personInfo //用户信息
+    	GiftValue   int        //收到礼物的总价值
+    	AdmireCount int        //被心仪的数量,暂无统计
     }
     ```
 
@@ -918,3 +1075,154 @@
 - 说明
 
 	登陆后进入CMS(content manage system, 内容管理系统)
+
+##8.礼物系统
+###8.1 金币价格
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/Gift/GoldPrice`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |(无参数)|/|/|/|/|/|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|goldBeansPrice数组[参考6.8]|/|
+
+###8.2 购买金币
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/Gift/BuyBeans`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |id|int|非0|否|/|用户id|
+    |password|int|非0|否|/|用户密码|
+    |beans|int|非0|否|/|购买的金币数量|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|personInfo, [参考6.1]|/|
+
+###8.3 礼物列表
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/Gift/GiftList`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |(无参数)|/|/|/|/|/|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|giftInfo数组[参考6.9]|/|
+
+###8.4 送出礼物
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/Gift/PresentGift`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |id|int|非0|否|/|用户id|
+    |password|int|非0|否|/|用户密码|
+    |toid|int|非0|否|/|被赠送用户id|
+    |giftid|int|非0|否|/|赠送的礼物id|
+    |num|int|非0|否|/|赠送礼物的数量|
+    |message|string|/|是|/|留言|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|presentGiftInfo, [参考6.10]|/|
+
+###8.5 收到礼物详情
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/Gift/RecvListVerbose`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |id|int|非0|否|/|用户id|
+    |password|int|非0|否|/|用户密码|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|giftListVerbose数组, [参考6.11]|/|
+
+###8.6 送出礼物详情
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/Gift/SendListVerbose`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |id|int|非0|否|/|用户id|
+    |password|int|非0|否|/|用户密码|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|giftListVerbose数组, [参考6.11]|/|
+
+###8.7 异性魅力排行榜
+- [x] 已实现
+
+- API
+
+	**`GET`** *`/User/CharmTopList`*
+
+- 参数
+
+    |参数名|参数类型|取值范围|可选|默认值|参数说明|
+    |:-- |:-- |:-- |:-- |:-- |:-- |
+    |id|int|非0|否|/|用户id|
+    |password|int|非0|否|/|用户密码|
+
+- 返回值
+
+    |数据名称|数据类型/范围|说明|
+    |:-- |:-- |:-- |
+    |HTTPCODE|200 (OK)<br>404 (FAILED)|HTTP Get 返回值|
+    |HTTP内容|userCharmInfo数组, [参考6.13]|/|

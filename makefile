@@ -5,7 +5,7 @@ TRIM := trimimage
 MODIFY := modify
 
 # the command macro
-GOBUILD := go build
+GOBUILD := go build -ldflags '-s'
 SCP := scp -P 10022
 ALIYUN := sunchao@112.126.66.162:/root/workspace/hf
 

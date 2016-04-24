@@ -28,11 +28,11 @@ const (
 	SQLMAP_Select_Count
 	SQLMAP_Select_UnreadMessageCount
 	SQLMAP_Select_MessageHistory
+	SQLMAP_Select_HaveSameReply
 	SQLMAP_Select_RecommendCount
 	SQLMAP_Select_AllRecommendCount
 	SQLMAP_Select_DistinctRecommend
-	SQLMAP_Select_CheckGreetReommend
-	SQLMAP_Select_CheckHeartbeatReommend
+	SQLMAP_Select_CheckCommentDailyLock
 	SQLMAP_Select_VisitByRows
 	SQLMAP_Select_VisitUnreadCount
 	SQLMAP_Select_RandomId
@@ -40,6 +40,7 @@ const (
 	SQLMAP_Select_HeartbeatRandomProvId
 	SQLMAP_Select_RandomProvAgeId
 	SQLMAP_Select_LastLoginTime
+	SQLMAP_Select_LastEvaluationTime
 	SQLMAP_Select_ClientID
 	SQLMAP_Select_VIPRows
 	SQLMAP_Select_VipLevelByID
@@ -49,9 +50,17 @@ const (
 	SQLMAP_Select_AllMsgTemplate
 	SQLMAP_Select_UserBlacklist
 	SQLMAP_Select_CheckUserBlacklist
-	SQLMAP_Insert_Info
 	SQLMAP_Select_CountByProv
 	SQLMAP_Select_CountByProvAge
+	SQLMAP_Select_GiftInfo
+	SQLMAP_Select_GiftById
+	SQLMAP_Select_GiftRecvSum
+	SQLMAP_Select_GiftSendSum
+	SQLMAP_Select_GiftRecvVerbose
+	SQLMAP_Select_GiftSendVerbose
+	SQLMAP_Select_GiftRecvListByGender
+	SQLMAP_Select_GoldBeansById
+	SQLMAP_Insert_Info
 	SQLMAP_Insert_Picture
 	SQLMAP_Insert_Heartbeat
 	SQLMAP_Insert_Recomment
@@ -60,6 +69,8 @@ const (
 	SQLMAP_Insert_Report
 	SQLMAP_Insert_Blacklist
 	SQLMAP_Insert_UserBlacklist
+	SQLMAP_Insert_PresentGift
+	SQLMAP_Insert_GoldBeansById
 	SQLMAP_Update_Info
 	SQLMAP_Update_InfoPictureFlag
 	SQLMAP_Update_RandomInfo
@@ -76,6 +87,9 @@ const (
 	SQLMAP_Update_VGirlId
 	SQLMAP_Update_SetPictureFlag
 	SQLMAP_Update_SetPictureTag
+	SQLMAP_Update_ConsumeGift
+	SQLMAP_Update_GoldBeansById
+	SQLMAP_Update_EvaluationTime
 	SQLMAP_Delete_UserId
 	SQLMAP_Delete_Picture
 	SQLMAP_Delete_HeadPicture
@@ -118,33 +132,43 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_Heartbeat_RandRows:     {"d", "select id from heartbeat where gender=%d and flag=0 limit 1000"},
 	SQLMAP_Select_Search:                 {"s", "select id from %s where usertype!=1 and "},
 	SQLMAP_Select_Count:                  {"s", "select count(*) from %s where "},
-	SQLMAP_Select_UnreadMessageCount:     {"", "select count(distinct fromid) from recommend where type=2 and toid=? and readed=0"},
-	SQLMAP_Select_MessageHistory:         {"", "select id, fromid, toid, readed, time, msg from recommend where type=? and id>? and ((fromid=? and toid=?) or (fromid=? and toid=?)) order by id desc limit ?,?"},
-	SQLMAP_Select_RecommendCount:         {"", "select count(*) from recommend where type=? and fromid=? and toid=?"},
-	SQLMAP_Select_AllRecommendCount:      {"", "select count(*) from recommend where type=1 or type=2"},
+	SQLMAP_Select_UnreadMessageCount:     {"", "select count(distinct fromid) from recommend where type=2 and toid=? and readed=0 and time>?"},
+	SQLMAP_Select_MessageHistory: {"", "select id, fromid, toid, readed, time, msg from recommend where type=? and id>? and " +
+		"((fromid=? and toid=?) or (fromid=? and toid=?)) order by id desc limit ?,?"},
+	SQLMAP_Select_HaveSameReply:     {"", "select count(*) from recommend where type=2 and toid=? and msg=?"},
+	SQLMAP_Select_RecommendCount:    {"", "select count(*) from recommend where type=? and fromid=? and toid=?"},
+	SQLMAP_Select_AllRecommendCount: {"", "select count(*) from recommend where type=1 or type=2"},
 	SQLMAP_Select_DistinctRecommend: {"", "select id, fromid, toid, readed, time, msg from recommend where id in (select * from (select id from (" +
-		"select id, toid as talker from recommend where fromid=? and type=? and time>? union select id, fromid as talker from recommend where toid=? and type=? and time>? order by id desc) as A" +
-		" group by talker) as B) order by id desc limit ?, ?"},
-	SQLMAP_Select_CheckGreetReommend:     {"", "select time from recommend where fromid=? and toid=? and type=1 order by time desc limit 1"},
-	SQLMAP_Select_CheckHeartbeatReommend: {"", "select time from recommend where fromid=? and toid=? and type=3 order by time desc limit 1"},
-	SQLMAP_Select_VisitByRows:            {"", "select id, fromid, readed, time from visit where toid=? and time>? order by id desc limit ?,?"},
-	SQLMAP_Select_VisitUnreadCount:       {"", "select count(*) from visit where toid=? and readed=0"},
-	SQLMAP_Select_RandomId:               {"s", "select id from %s where usertype!=1 limit ?,1"},
-	SQLMAP_Select_RandomProvId:           {"s", "select id from %s where usertype!=1 and province=? limit ?,1"},
-	SQLMAP_Select_HeartbeatRandomProvId:  {"d", "select id from heartbeat where gender=%d and province=? limit ?,1"},
-	SQLMAP_Select_RandomProvAgeId:        {"s", "select id from %s where usertype!=1 and province=? and age>=? and age<=? limit ?,1"},
-	SQLMAP_Select_LastLoginTime:          {"s", "select logintime from %s where id=?"},
-	SQLMAP_Select_ClientID:               {"s", "select clientid from %s where id=?"},
-	SQLMAP_Select_VIPRows:                {"s", "select id, viplevel, vipdays, vipexpiretime from %s where usertype=1 and viplevel!=0"},
-	SQLMAP_Select_VipLevelByID:           {"s", "select viplevel, vipdays from %s where id=?"},
-	SQLMAP_Select_CountByProv:            {"s", "select count(*) from %s where usertype!=1 and province=?"},
-	SQLMAP_Select_CountByProvAge:         {"s", "select count(*) from %s where usertype!=1 and province=? and age=?"},
-	SQLMAP_Select_VGirlProcess:           {"", "select areaindex, page from vgirlprocess where base=0"},
-	SQLMAP_Select_CheckVGirlId:           {"", "select id from vgirlsid where id=?"},
-	SQLMAP_Select_RandomUncrawlGirlsId:   {"", "select id from girlsid where age>=18 and age<=28 limit ?,1"},
-	SQLMAP_Select_AllMsgTemplate:         {"", "select msg from msgtemplate where type=? and gender=?"},
-	SQLMAP_Select_UserBlacklist:          {"", "select blackid from userblacklist where fromid=?"},
-	SQLMAP_Select_CheckUserBlacklist:     {"", "select blackid from userblacklist where fromid=? and blackid=?"},
+		"select id, toid as talker from recommend where fromid=? and type=? and time>? union select id, fromid as talker from recommend where toid=? " +
+		"and type=? and time>? order by id desc) as A group by talker) as B) order by id desc limit ?,?"},
+	SQLMAP_Select_CheckCommentDailyLock: {"", "select time from recommend where fromid=? and toid=? and type=? order by time desc limit 1"},
+	SQLMAP_Select_VisitByRows:           {"", "select id, fromid, readed, time from visit where toid=? and time>? order by id desc limit ?,?"},
+	SQLMAP_Select_VisitUnreadCount:      {"", "select count(*) from visit where toid=? and readed=0 and time>?"},
+	SQLMAP_Select_RandomId:              {"s", "select id from %s where usertype!=1 limit ?,1"},
+	SQLMAP_Select_RandomProvId:          {"s", "select id from %s where usertype!=1 and province=? limit ?,1"},
+	SQLMAP_Select_HeartbeatRandomProvId: {"d", "select id from heartbeat where gender=%d and province=? limit ?,1"},
+	SQLMAP_Select_RandomProvAgeId:       {"s", "select id from %s where usertype!=1 and province=? and age>=? and age<=? limit ?,1"},
+	SQLMAP_Select_LastLoginTime:         {"s", "select logintime from %s where id=?"},
+	SQLMAP_Select_LastEvaluationTime:    {"s", "select evaluationtime from %s where id=?"},
+	SQLMAP_Select_ClientID:              {"s", "select clientid from %s where id=?"},
+	SQLMAP_Select_VIPRows:               {"s", "select id, viplevel, vipdays, vipexpiretime from %s where usertype=1 and viplevel!=0"},
+	SQLMAP_Select_VipLevelByID:          {"s", "select viplevel, vipdays from %s where id=?"},
+	SQLMAP_Select_VGirlProcess:          {"", "select areaindex, page from vgirlprocess where base=0"},
+	SQLMAP_Select_CheckVGirlId:          {"", "select id from vgirlsid where id=?"},
+	SQLMAP_Select_RandomUncrawlGirlsId:  {"", "select id from girlsid where age>=18 and age<=28 limit ?,1"},
+	SQLMAP_Select_AllMsgTemplate:        {"", "select msg from msgtemplate where type=? and gender=?"},
+	SQLMAP_Select_UserBlacklist:         {"", "select blackid from userblacklist where fromid=?"},
+	SQLMAP_Select_CheckUserBlacklist:    {"", "select blackid from userblacklist where fromid=? and blackid=?"},
+	SQLMAP_Select_CountByProv:           {"s", "select count(*) from %s where usertype!=1 and province=?"},
+	SQLMAP_Select_CountByProvAge:        {"s", "select count(*) from %s where usertype!=1 and province=? and age=?"},
+	SQLMAP_Select_GiftInfo:              {"", "select id,type,name,description,validnum,imageurl,effect,price,origin_price,discount_desciption from gift"},
+	SQLMAP_Select_GiftById:              {"", "select id, name, price, validnum from gift where id=?"},
+	SQLMAP_Select_GiftRecvSum:           {"", "select giftid, sum(giftnum) from giftconsume where toid=? group by giftid"},
+	SQLMAP_Select_GiftSendSum:           {"", "select giftid, sum(giftnum) from giftconsume where fromid=? group by giftid"},
+	SQLMAP_Select_GiftRecvVerbose:       {"", "select fromid, giftid, giftnum, time, message from giftconsume where toid=? order by time desc limit ?,?"},
+	SQLMAP_Select_GiftSendVerbose:       {"", "select toid, giftid, giftnum, time, message from giftconsume where fromid=? order by time desc limit ?,?"},
+	SQLMAP_Select_GiftRecvListByGender:  {"", "select toid, giftid, giftnum from giftconsume where fromgender=? order by toid"},
+	SQLMAP_Select_GoldBeansById:         {"", "select beans from wealth where id=?"},
 	SQLMAP_Insert_Info: {"s", "insert into %s (id, password, name, gender, logintime, age, usertype, clientid, height, weight, " +
 		"province, district, citylove, naken) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"},
 	SQLMAP_Insert_Picture:       {"s", "insert into %s_picture (id, filename, tag, flag) value (?,?,?,1)"},
@@ -155,13 +179,16 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Insert_Report:        {"", "insert into report (fromid, reportedid, reason) values (?,?,?)"},
 	SQLMAP_Insert_Blacklist:     {"s", "insert into blacklist (select * from %s where id=?)"},
 	SQLMAP_Insert_UserBlacklist: {"", "insert into userblacklist (fromid, blackid) value (?,?)"},
+	SQLMAP_Insert_PresentGift:   {"", "insert into giftconsume (fromid, fromgender, toid, giftid, giftnum, time, message) values (?,?,?,?,?,?,?)"},
+	SQLMAP_Insert_GoldBeansById: {"", "insert into wealth (id, beans) values (?,?)"},
 	SQLMAP_Update_Info: {"s", "update %s set lovetype=?, bodytype=?, marriage=?, province=?, district=?, native=?, education=?, " +
 		"occupation=?, housing=?, carstatus=?, introduction=?, school=?, speciality=?, animal=?, astrology=?, lang=?, " +
 		"bloodtype=?, selfjudge=?, companytype=?, companyindustry=?, nationnality=?, religion=?, charactor=?, hobbies=?, " +
 		"allow_age=?, allow_residence=?, allow_height=?, allow_marriage=?, allow_education=?, allow_housing=?, allow_income=?, " +
 		"allow_kidstatus=? where id=?"},
-	SQLMAP_Update_InfoPictureFlag:        {"s", "update %s set pictureflag=1 where id=?"},
-	SQLMAP_Update_RandomInfo:             {"s", "update %s set province=?,district=?,incomemin=?,incomemax=?,occupation=?,education=?,housing=?,marriage=?,charactor=?,hobbies=?,allow_residence=?,allow_education=?,allow_income where id=?"},
+	SQLMAP_Update_InfoPictureFlag: {"s", "update %s set pictureflag=1 where id=?"},
+	SQLMAP_Update_RandomInfo: {"s", "update %s set province=?,district=?,incomemin=?,incomemax=?,occupation=?,education=?," +
+		"housing=?,marriage=?,charactor=?,hobbies=?,allow_residence=?,allow_education=?,allow_income where id=?"},
 	SQLMAP_Update_Online:                 {"s", "update %s set onlineStatus=1, logintime=? where id=?"},
 	SQLMAP_Update_Background:             {"s", "update %s set onlineStatus=2 where id=?"},
 	SQLMAP_Update_Offline:                {"s", "update %s set onlineStatus=0 where id=?"},
@@ -175,6 +202,9 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Update_VGirlId:                {"", "update vgirlsid set flag=1 where id=?"},
 	SQLMAP_Update_SetPictureFlag:         {"s", "update %s_picture set flag=1 where id=? and filename=? and tag=?"},
 	SQLMAP_Update_SetPictureTag:          {"s", "update %s_picture set tag=? where id=? and filename=?"},
+	SQLMAP_Update_ConsumeGift:            {"", "update gift set validnum=? where id=?"},
+	SQLMAP_Update_GoldBeansById:          {"", "update wealth set beans=? where id=?"},
+	SQLMAP_Update_EvaluationTime:         {"s", "update %s set evaluationtime=? where id=?"},
 	SQLMAP_Delete_UserId:                 {"s", "delete from %s where id=?"},
 	SQLMAP_Delete_Picture:                {"s", "delete from %s_picture where id=? and filename=?"},
 	SQLMAP_Delete_HeadPicture:            {"s", "delete from %s_picture where id=? and tag=1"},

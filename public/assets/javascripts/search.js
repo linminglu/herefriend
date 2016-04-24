@@ -89,6 +89,7 @@ function getUserProfilePicture(item) {
 function refreshProfileInfo(userid) {
     $.getJSON("/User/GetPersonInfo?id=" + userid, function(item) {
    	    if (null != item) {
+            $("#search_edit_userid").text(("" == item["Id"]) ? "Empty" : item["Id"])
             $("#search_edit_username").text(("" == item["Name"]) ? "Empty" : item["Name"])
             $("#search_edit_age").text(item["Age"])
             $("#search_edit_introduction").text(("" == item["Introduction"])? "Empty" : item["Introduction"])
@@ -111,6 +112,7 @@ function refreshProfilePicture(userid) {
             $("#profile_picture").html("")
             $("#profile_picture").html("<li id='profileuser_" + userid + "'>" + getUserProfilePicture(item) + "</li>")
             $("img#img_"+userid).addClass("focus")
+		    $("img#img_"+userid).lazyload({effect: "fadeIn", failure_limit: 6, effect_speed: 1000});
         }
     })
 }
@@ -163,6 +165,7 @@ function doDeleteHeatPic(userid) {
 			        $("li#user_" + userid + " img").lazyload();
                     $("#profile_picture").html("")
                     $("#profile_picture").html("<li id='profileuser_" + userid + "'>" + getUserProfilePicture(item) + "</li>")
+		            $("img#img_"+userid).lazyload({effect: "fadeIn", failure_limit: 6, effect_speed: 1000});
 				}
 			}
 		})

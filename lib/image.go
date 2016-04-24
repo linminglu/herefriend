@@ -35,6 +35,10 @@ func GetQiniuUserImageURL(id int, filename string) string {
 	return config.Conf_QiniuPre + fmt.Sprintf("images/%d/%s", id, filename)
 }
 
+func GetQiniuGiftImageURL(filename string) string {
+	return config.Conf_QiniuPre + fmt.Sprintf("images/gift/%s", filename)
+}
+
 func GetQiniuLoveShowPicturePrefix(loveshowid int) string {
 	return config.Conf_QiniuPre + fmt.Sprintf("loveshow/%d/", loveshowid)
 }

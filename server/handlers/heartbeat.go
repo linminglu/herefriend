@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
+
+	log "github.com/cihub/seelog"
 
 	"herefriend/lib"
 )
@@ -53,7 +54,7 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_HeartbeatInfoByRows, gender)
 	rows, err := lib.SQLQuery(sentence, info.Province, lib.Intn(baseline-count), count)
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err.Error())
 		return 404, ""
 	}
 	defer rows.Close()
@@ -75,6 +76,7 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 		}
 	}
 
+	go log.Tracef("获取推荐列表: Id=%d gender=%d", id, gender)
 	jsonRlt, _ := json.Marshal(infos)
 	return 200, string(jsonRlt)
 }

@@ -4,7 +4,6 @@ import (
 	"container/list"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/cihub/seelog"
 
 	"herefriend/common"
 	"herefriend/lib"
@@ -23,9 +24,10 @@ import (
  * 聊天消息类型,存放到数据库中
  */
 const (
-	RECOMMEND_MSGTYPE_GREET = 1
-	RECOMMEND_MSGTYPE_TALK  = 2
-	RECOMMEND_MSGTYPE_HEART = 3
+	RECOMMEND_MSGTYPE_GREET  = 1 //打招呼
+	RECOMMEND_MSGTYPE_TALK   = 2 //普通聊天信息
+	RECOMMEND_MSGTYPE_HEART  = 3 //心动消息
+	RECOMMEND_MSGTYPE_ASKMSG = 4 //请求上传图片...
 )
 
 const (
@@ -149,13 +151,13 @@ func RecommendPushMessage(fromid, toid int, fromusertyp, tousertyp int, pushtype
 			}
 		}
 
-		recommendCount := recommend_GetUnreadNum(toid)
-		visitCount := visit_GetUnreadNum(toid)
+		recommendCount := recommend_GetUnreadNum(toid, 0)
+		visitCount := visit_GetUnreadNum(toid, 0)
 		push.Add(recommendCount+visitCount, clientid, pushtype, 0, title, msg)
 	}
 
 	//虚拟用户给该用户发普通信(打招呼、回招呼、回消息)后,25%概率出现在此,访问时间为发信时间±1分钟随机
-	if push.PUSHMSG_TYPE_VISIT != pushtype && 0 == fromusertyp && 1 != fromid && true == lib.RandomHitPercent(25) {
+	if push.PUSHMSG_TYPE_VISIT != pushtype && common.USERTYPE_RB == fromusertyp && 1 != fromid && true == lib.RandomHitPercent(25) {
 		visitAddVisitor(toid, fromid, timevalue-60, timevalue+60)
 	}
 }
@@ -226,7 +228,7 @@ func getFormatMsg(id int) (bool, string) {
 	return true, replyStr
 }
 
-func tulingResponseCheck(str string) bool {
+func tulingResponseCheck(str string, id int) bool {
 	//长度太长返回失败
 	if len(str) > 80 {
 		return false
@@ -236,6 +238,14 @@ func tulingResponseCheck(str string) bool {
 		if true == strings.Contains(str, s) {
 			return false
 		}
+	}
+
+	//如果回复过相同的话，不再回复
+	var count int
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_HaveSameReply)
+	lib.SQLQueryRow(sentence, id, str).Scan(&count)
+	if 0 != count {
+		return false
 	}
 
 	return true
@@ -267,7 +277,7 @@ func getResponseMsg(node *recommendQueueNode) string {
 	code, message := getPostMessageBySessionId(sessionid, node.message)
 
 	if 200 == code {
-		if true != tulingResponseCheck(message) {
+		if true != tulingResponseCheck(message, node.fromid) {
 			message = tulingResponseChange(node.toid)
 		}
 	} else {
@@ -335,18 +345,11 @@ func recommendPushRoutine() {
 				}
 
 				if needreplay {
-					msg := ""
-					pushtype := push.PUSHMSG_TYPE_GREET
 					timevalue := lib.CurrentTimeUTCInt64()
-
-					if RECOMMEND_MSGTYPE_TALK == n.msgtype {
-						msg = getResponseMsg(n)
-						pushtype = push.PUSHMSG_TYPE_RECOMMEND
-					}
-
+					msg := getResponseMsg(n)
 					if "" != msg {
 						RecommendInsertMessageToDB(n.toid, n.fromid, n.msgtype, msg, timevalue)
-						RecommendPushMessage(n.toid, n.fromid, n.tousertype, n.fromusertype, pushtype, msg, timevalue)
+						RecommendPushMessage(n.toid, n.fromid, n.tousertype, n.fromusertype, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
 						needpush = true
 					}
 				}
@@ -435,16 +438,16 @@ func recommendRobotRoutine() {
 
 /*
  *
- *    Function: checkAlreadyGreetToday
+ *    Function: checkAlreadySendSameCommentToday
  *      Author: sunchao
  *        Date: 15/11/15
  * Description: 检查今天是否打过招呼
  *
  */
-func checkAlreadyGreetToday(fromid, toid int) bool {
+func checkAlreadySendSameCommentToday(fromid, toid, msgtype int) bool {
 	var timevalue int64
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckGreetReommend)
-	err := lib.SQLQueryRow(sentence, fromid, toid).Scan(&timevalue)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckCommentDailyLock)
+	err := lib.SQLQueryRow(sentence, fromid, toid, msgtype).Scan(&timevalue)
 	if nil != err || 0 == timevalue {
 		return false
 	}
@@ -459,28 +462,157 @@ func checkAlreadyGreetToday(fromid, toid int) bool {
 }
 
 /*
- *
- *    Function: checkAlreadyHeartbeatToday
- *      Author: sunchao
- *        Date: 15/11/15
- * Description: 检查今天是否发送过心动消息
- *
- */
-func checkAlreadyHeartbeatToday(fromid, toid int) bool {
-	var timevalue int64
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckHeartbeatReommend)
-	err := lib.SQLQueryRow(sentence, fromid, toid).Scan(&timevalue)
-	if nil != err || 0 == timevalue {
-		return false
+ |    Function: incomeGreetCommentProc
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 打招呼消息处理
+ |      Return: int->httpcode, string->返回消息, bool->是否推送消息
+ |
+*/
+func incomeGreetCommentProc(id, gender, toid, togender int, msg string, timevalue int64) (int, int, string, bool) {
+	if gender == togender {
+		return 403, -1, "抱歉,同性之间不能打招呼.", false
 	}
 
-	timeUTC := lib.Int64_To_UTCTime(timevalue)
-	todyUTC := time.Now().UTC()
-	if timeUTC.Year() == todyUTC.Year() && timeUTC.Month() == todyUTC.Month() && timeUTC.Day() == todyUTC.Day() {
-		return true
+	if true == checkAlreadySendSameCommentToday(id, toid, RECOMMEND_MSGTYPE_GREET) {
+		return 403, -1, "抱歉,一天只能向同一个人打招呼一次.", false
 	}
 
-	return false
+	RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_GREET, "", timevalue)
+	ok, replymsg := getFormatMsg(id)
+	if !ok {
+		replymsg = gHelloArray[lib.Intn(len(gHelloArray))]
+	}
+
+	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_TALK, replymsg, timevalue)
+	if nil != err {
+		return 404, -1, err.Error(), false
+	}
+
+	//后续推送自动选择的消息
+	return 200, lastid, replymsg, true
+}
+
+/*
+ |    Function: incomeHeartCommentProc
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 心动消息处理
+ |      Return: int->httpcode, string->返回消息, bool->是否推送消息
+ |
+*/
+func incomeHeartCommentProc(id, gender, toid, togender int, msg string, timevalue int64) (int, int, string, bool) {
+	if gender == togender {
+		return 403, -1, "抱歉,同性之间不能发心动消息.", false
+	}
+
+	if true == checkAlreadySendSameCommentToday(id, toid, RECOMMEND_MSGTYPE_HEART) {
+		return 403, -1, "抱歉,一天只能向同一个人发送一次心动消息.", false
+	}
+
+	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_HEART, "", timevalue)
+	if nil != err {
+		return 404, -1, err.Error(), false
+	}
+
+	return 200, lastid, "", false
+}
+
+/*
+ |    Function: incomeAskCommentProc
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 邀请(索要)消息处理
+ |      Return: int->httpcode, string->返回消息, bool->是否推送消息
+ |
+*/
+func incomeAskCommentProc(id, gender, toid, togender int, msg string, timevalue int64) (int, int, string, bool) {
+	if gender == togender {
+		return 403, -1, "抱歉,同性之间不能发消息.", false
+	}
+
+	if true == checkAlreadySendSameCommentToday(id, toid, RECOMMEND_MSGTYPE_ASKMSG) {
+		return 403, -1, "抱歉,一天只能向同一个人邀请一次.", false
+	}
+
+	RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_ASKMSG, "", timevalue)
+	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
+	if nil != err {
+		return 404, -1, err.Error(), false
+	}
+
+	//后续推送自动选择的消息
+	return 200, lastid, msg, true
+}
+
+/*
+ |    Function: incomeTalkCommentProc
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 聊天消息处理
+ |      Return: int->httpcode, string->返回消息, bool->是否推送消息
+ |
+*/
+func incomeTalkCommentProc(id, gender, toid, togender int, msg string, timevalue int64) (int, int, string, bool) {
+	if gender == togender {
+		return 403, -1, "抱歉,同性之间不能发消息.", false
+	}
+
+	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
+	if nil != err {
+		return 404, -1, err.Error(), false
+	}
+
+	return 200, lastid, msg, true
+}
+
+/*
+ |    Function: incomeCommentPushMsgProc
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-25
+ | Description: 推送消息处理
+ |      Return:
+ |
+*/
+func incomeCommentPushMsgProc(id, gender, toid, msgtype int, msg string, timevalue int64) {
+	if 1 == toid {
+		return
+	}
+
+	_, _, tousertype := GetGenderUsertypeById(toid)
+	if common.USERTYPE_USER == tousertype {
+		/*
+		 * 注册用户直接发送
+		 * 这里发送者一定是注册用户
+		 */
+		RecommendPushMessage(id, toid, common.USERTYPE_USER, common.USERTYPE_USER, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+		push.DoPush()
+	} else {
+		/*
+		 * 自动回复缓存, 例外如下
+		 * 1.索要照片等信息除外
+		 * 2.如果发消息用户为VIP用户,也不会缓存
+		 */
+		if RECOMMEND_MSGTYPE_ASKMSG == msgtype {
+			return
+		}
+
+		if true == checkIfUserHaveViplevel(id, gender) {
+			return
+		}
+
+		gRecommendQueueLock.Lock()
+		gRecommendQueue.PushBack(&recommendQueueNode{
+			timewait:     int64(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTREPLY) / time.Second),
+			fromid:       id,
+			toid:         toid,
+			fromusertype: common.USERTYPE_USER,
+			tousertype:   common.USERTYPE_RB,
+			msgtype:      RECOMMEND_MSGTYPE_TALK,
+			message:      msg,
+			timevalue:    timevalue})
+		gRecommendQueueLock.Unlock()
+	}
 }
 
 /*
@@ -492,7 +624,7 @@ func checkAlreadyHeartbeatToday(fromid, toid int) bool {
  *
  */
 func ActionRecommend(req *http.Request) (int, string) {
-	exist, id, fromgender := getIdGenderByRequest(req)
+	exist, id, gender := getIdGenderByRequest(req)
 	if true != exist {
 		return 404, http.ErrNotSupported.Error()
 	}
@@ -501,7 +633,7 @@ func ActionRecommend(req *http.Request) (int, string) {
 	toidStr := v.Get("toid")
 	typeStr := v.Get("type")
 	if "" == toidStr || "" == typeStr {
-		return 404, http.ErrNotSupported.Error()
+		return 404, ""
 	}
 
 	msgtype, _ := strconv.Atoi(typeStr)
@@ -513,95 +645,44 @@ func ActionRecommend(req *http.Request) (int, string) {
 		return 404, http.ErrNotSupported.Error()
 	}
 
-	if fromgender == togender && 1 != toid {
-		if RECOMMEND_MSGTYPE_GREET == msgtype {
-			return 403, "抱歉,同性之间不能打招呼."
-		} else if RECOMMEND_MSGTYPE_TALK == msgtype {
-			return 403, "抱歉,同性之间不能发消息."
-		} else if RECOMMEND_MSGTYPE_HEART == msgtype {
-			return 403, "抱歉,同性之间不能发心动消息."
-		}
-	}
-
-	msgStr := v.Get("msg")
-	if 0 == strings.Compare("我对你感兴趣，方便聊一下吗？", msgStr) {
+	msg := v.Get("msg")
+	if 0 == strings.Compare("我对你感兴趣，方便聊一下吗？", msg) {
 		msgtype = RECOMMEND_MSGTYPE_GREET
 	}
 
 	t := time.Now()
 	timevalue := lib.Time_To_UTCInt64(t)
 
-	if RECOMMEND_MSGTYPE_HEART == msgtype {
-		var lastid int
-		if true == checkAlreadyHeartbeatToday(id, toid) {
-			return 403, "抱歉,一天只能向同一个人发送一次心动消息."
-		} else {
-			lastid, _ = RecommendInsertMessageToDB(id, toid, msgtype, msgStr, timevalue)
-		}
+	var code, lastid int
+	var replymsg string
+	var bpush bool
 
-		jsonRlt, _ := json.Marshal(messageInfo{
-			MsgId:     lastid,
-			MsgText:   msgStr,
-			UserId:    toid,
-			Direction: MESSAGE_DIRECTION_FROMME,
-			Readed:    false,
-			TimeUTC:   t,
-		})
-
-		return 200, string(jsonRlt)
-	} else if RECOMMEND_MSGTYPE_GREET == msgtype {
-		if true == checkAlreadyGreetToday(id, toid) {
-			return 403, "抱歉,一天只能向同一个人打招呼一次."
-		} else {
-			RecommendInsertMessageToDB(id, toid, msgtype, msgStr, timevalue)
-
-			ok, msg := getFormatMsg(id)
-			if !ok {
-				msg = gHelloArray[lib.Intn(len(gHelloArray))]
-			}
-
-			msgStr = msg
-			msgtype = RECOMMEND_MSGTYPE_TALK
-		}
+	switch msgtype {
+	case RECOMMEND_MSGTYPE_GREET:
+		code, lastid, replymsg, bpush = incomeGreetCommentProc(id, gender, toid, togender, msg, timevalue)
+	case RECOMMEND_MSGTYPE_HEART:
+		code, lastid, replymsg, bpush = incomeHeartCommentProc(id, gender, toid, togender, msg, timevalue)
+	case RECOMMEND_MSGTYPE_ASKMSG:
+		code, lastid, replymsg, bpush = incomeAskCommentProc(id, gender, toid, togender, msg, timevalue)
+	case RECOMMEND_MSGTYPE_TALK:
+		code, lastid, replymsg, bpush = incomeTalkCommentProc(id, gender, toid, togender, msg, timevalue)
+	default:
+		return 404, ""
 	}
 
-	lastid, err := RecommendInsertMessageToDB(id, toid, msgtype, msgStr, timevalue)
-	if nil != err {
-		return 404, err.Error()
+	//不继续处理
+	if 200 != code {
+		return code, replymsg
+	}
+
+	if true == bpush {
+		go incomeCommentPushMsgProc(id, gender, toid, msgtype, replymsg, timevalue)
 	}
 
 	gCountApiRecommend = gCountApiRecommend + 1
-
-	if 1 != toid {
-		go func(_fromid, _toid int, _msgtyp int, _msg string, _timevalue int64) {
-			_, _, tousertype := GetGenderUsertypeById(_toid)
-			if common.USERTYPE_USER == tousertype { /* 注册用户直接发送 */
-				pushtype := push.PUSHMSG_TYPE_GREET
-				if RECOMMEND_MSGTYPE_TALK == _msgtyp {
-					pushtype = push.PUSHMSG_TYPE_RECOMMEND
-				}
-
-				RecommendPushMessage(_fromid, _toid, 1, 1, pushtype, _msg, _timevalue)
-				push.DoPush()
-			} else {
-				gRecommendQueueLock.Lock()
-				gRecommendQueue.PushBack(&recommendQueueNode{
-					timewait:     int64(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTREPLY) / time.Second),
-					fromid:       _fromid,
-					toid:         _toid,
-					fromusertype: common.USERTYPE_USER,
-					tousertype:   common.USERTYPE_BH,
-					msgtype:      _msgtyp,
-					message:      _msg,
-					timevalue:    _timevalue})
-				gRecommendQueueLock.Unlock()
-			}
-		}(id, toid, msgtype, msgStr, timevalue)
-	}
-
 	jsonRlt, _ := json.Marshal(messageInfo{
 		MsgId:     lastid,
-		MsgText:   msgStr,
+		MsgText:   replymsg,
 		UserId:    toid,
 		Direction: MESSAGE_DIRECTION_FROMME,
 		Readed:    false,
@@ -685,7 +766,7 @@ func getRecommendByRows(id int, rows *sql.Rows) []messageInfo {
 
 			infos = append(infos, info)
 		} else {
-			fmt.Println(err)
+			log.Error(err.Error())
 		}
 	}
 
@@ -783,7 +864,7 @@ func GetRecommendAll(timeline int64, id, pageid, count int) ([]messageInfo, erro
  *
  */
 func GetAllMessage(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
+	exist, id, gender := getIdGenderByRequest(req)
 	if true != exist {
 		return 404, ""
 	}
@@ -809,15 +890,45 @@ func GetAllMessage(req *http.Request) (int, string) {
 		allmessage.VisitArray = visitAlls
 	}
 
+	go log.Tracef("获取所有聊天信息: Id=%d gender=%d", id, gender)
 	jsonRlt, _ := json.Marshal(allmessage)
 	return 200, string(jsonRlt)
 }
 
-func recommend_GetUnreadNum(id int) int {
+/*
+ |    Function: GetUnreadMessage
+ |      Author: Mr.Sancho
+ |        Date: 2016-05-06
+ | Description: get the unread message
+ |      Return:
+ |
+*/
+func GetUnreadMessage(req *http.Request) (int, string) {
+	exist, id, _ := getIdGenderByRequest(req)
+	if true != exist {
+		return 404, ""
+	}
+
+	var timeline int64
+
+	v := req.URL.Query()
+	timelinestr := v.Get("lasttime")
+	if "" != timelinestr {
+		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+	}
+
+	recommendCount := recommend_GetUnreadNum(id, timeline)
+	visitCount := visit_GetUnreadNum(id, timeline)
+	unreadmsg := unreadMessageInfo{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
+	jsonRlt, _ := json.Marshal(unreadmsg)
+	return 200, string(jsonRlt)
+}
+
+func recommend_GetUnreadNum(id int, timeline int64) int {
 	var count int
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_UnreadMessageCount)
-	lib.SQLQueryRow(sentence, id).Scan(&count)
+	lib.SQLQueryRow(sentence, id, timeline).Scan(&count)
 
 	return count
 }
@@ -847,26 +958,20 @@ func PeriodOnlineCommentSet(enable bool, msg string) {
  |      Return:
  |
 */
-func PeriodOnlineCommentPush(id, gender int) {
-	if false == gEnableEvaluation {
-		return
+func PeriodOnlineCommentPush(id, gender int, lastEvaluationTime int64) {
+	curTime := lib.CurrentTimeUTCInt64()
+	if 0 == lastEvaluationTime || 43200 <= (curTime-lastEvaluationTime) {
+		evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: gEvaluationMsgContent}
+		jsonRlt, _ := json.Marshal(evaluationMsg)
+		notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_EVALUATION, Value: string(jsonRlt)}
+		jsonRlt, _ = json.Marshal(notifymsg)
+
+		push.Add(0, GetClientIdByUserId(id), push.PUSHMSG_TYPE_NOTIFYMSG, push.PUSH_NOTIFYMSG_EVALUATION, "", string(jsonRlt))
+		push.DoPush()
+
+		sentence := lib.SQLSentence(lib.SQLMAP_Update_EvaluationTime, gender)
+		lib.SQLExec(sentence, curTime, id)
 	}
-
-	var lastlogintime int64
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_LastLoginTime, gender)
-	lib.SQLQueryRow(sentence, id).Scan(&lastlogintime)
-
-	curlogintime := lib.CurrentTimeUTCInt64()
-	if 0 == lastlogintime || 43200 > (curlogintime-lastlogintime) {
-	}
-
-	evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: gEvaluationMsgContent}
-	jsonRlt, _ := json.Marshal(evaluationMsg)
-	notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_EVALUATION, Value: string(jsonRlt)}
-	jsonRlt, _ = json.Marshal(notifymsg)
-
-	push.Add(0, GetClientIdByUserId(id), push.PUSHMSG_TYPE_NOTIFYMSG, push.PUSH_NOTIFYMSG_EVALUATION, "", string(jsonRlt))
-	push.DoPush()
 
 	return
 }

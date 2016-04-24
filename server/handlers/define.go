@@ -197,43 +197,6 @@ var gGoldBeansPrices = []goldBeansPrice{
 		ProductId: "998yuan"},
 }
 
-type loveshowcomment struct {
-	Id        int       //用户id
-	Age       int       //年龄
-	Name      string    //姓名
-	District  string    //地区
-	Education string    //教育程度
-	Text      string    //评论内容
-	TimeUTC   time.Time //评论时间(标准时间)
-}
-
-type loverInfo struct {
-	Id       int    //用户id
-	Age      int    //年龄
-	Name     string //姓名
-	Imgurl   string //小头像地址
-	District string //地区
-}
-
-type loveShow struct {
-	Id           int               //爱情秀编号
-	Girl         loverInfo         //女生信息
-	Guy          loverInfo         //男生信息
-	Daysfalllove int               //见面多少天之后就恋爱了
-	Blessnum     int               //收到的祝福数量
-	Lovestatus   string            //目前的恋爱状态
-	Lovetitle    string            //爱情秀主题
-	Lovestory    string            //爱情故事
-	TimeUTC      time.Time         //故事时间(标准时间)
-	ShowPics     []string          //恋爱秀照片
-	Comments     []loveshowcomment //评论
-}
-
-type loveShowList struct {
-	loveShow
-	Hide bool
-}
-
 type liveUser struct {
 	gender   int
 	status   int
@@ -271,6 +234,12 @@ type allMessageInfo struct {
 	VisitArray     []messageInfo
 }
 
+type unreadMessageInfo struct {
+	UnreadRecommend int //未读的聊天消息
+	UnreadVisit     int //未读的访问消息
+	Badge           int //badge: the icon number of app
+}
+
 type PushMsgUnread struct {
 	UnreadRecommend int //未读的聊天消息
 	UnreadVisit     int //未读的访问消息
@@ -286,15 +255,25 @@ type PushMsgRefreshVIP struct {
 	ShowMessage string //弹出对话框显示的信息
 }
 
+type PushMsgRecvGift struct {
+	SenderId    int    //赠送者ID
+	GiftId      int    //礼物ID
+	GiftNum     int    //礼物数量
+	GiftName    string //礼物名称
+	ShowMessage string //弹出对话框显示的信息
+}
+
 type PushMessageInfo struct {
 	/*
 	 * 根据类型不同，消息实体的结构体不同，如下为具体对应关系:
 	 * ------------------------------------------------------
-	 * | Type值 |         Value对应的数据结构               |
+	 * |   Type |				Value						|
 	 * ------------------------------------------------------
 	 * |    1   |          PushMsgUnread                    |
 	 * ------------------------------------------------------
 	 * |    2   |          PushMsgEvaluation                |
+	 * ------------------------------------------------------
+	 * |    3   |          PushMsgRecvGift                  |
 	 * ------------------------------------------------------
 	 */
 	Type  int    //消息类型
@@ -336,4 +315,52 @@ var gRobotResponseCheckList = [...]string{
 	"2鸡",
 	"对不起 是我不好",
 	"器官",
+}
+
+type giftInfo struct {
+	Id int //礼物固定id
+	/* 礼物类型：
+	 * 0 免费
+	 * 1 普通礼物
+	 * 2 折扣礼物
+	 * 3 名人礼物
+	 * ...
+	 */
+	Type                int
+	Name                string //礼物名称
+	ValidNum            int    //库存数量
+	Description         string //礼物描述
+	ImageUrl            string //礼物图片URL
+	Effect              int    //礼物特效，需要客户端支持
+	Price               int    //价格(beans)
+	OriginPrice         int    //原价(beans)，对于折扣礼物和Price不同
+	DiscountDescription string //折扣描述信息，对折扣作说明
+}
+
+type presentGiftInfo struct {
+	UserInfo    personInfo //个人信息
+	WhoRecvGift personInfo //收到礼物的人的信息
+}
+
+/*
+ * 礼物列表详情
+ */
+type giftListVerbose struct {
+	UserId  int       //赠送礼物或者收到礼物的用户ID
+	GiftId  int       //礼物ID
+	GiftNum int       //礼物数量
+	Message string    //礼物留言
+	TimeUTC time.Time //送礼物的时间
+}
+
+type giftRecvListInfo struct {
+	toid    int
+	giftid  int
+	giftnum int
+}
+
+type userCharmInfo struct {
+	Person      personInfo //用户信息
+	GiftValue   int        //收到礼物的总价值
+	AdmireCount int        //被心仪的数量
 }

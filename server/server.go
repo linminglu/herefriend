@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/cihub/seelog"
 	"github.com/go-martini/martini"
 
 	"herefriend/lib"
@@ -13,6 +14,8 @@ import (
 const gPidFile = "./herefriend.pid"
 
 func main() {
+	log.Info("Start")
+
 	f, err := os.Create(gPidFile)
 	if nil == err {
 		f.WriteString(fmt.Sprintf("%d", os.Getpid()))

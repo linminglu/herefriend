@@ -17,21 +17,24 @@ import (
  */
 func InstallRoutes(m *martini.ClassicMartini) {
 	/*
-	 * 基本接口
+	 * Base
 	 */
 	m.Get("/User/Register", handlers.Register)
 	m.Get("/User/Login", handlers.Login)
 	m.Get("/User/Logout", handlers.Logout)
 	m.Get("/User/WatchDog", handlers.WatchDog)
 	m.Get("/User/SetProfile", handlers.SetProfile)
+	m.Get("/User/GetDistrict", handlers.GetDistrict)
 	m.Get("/User/GetPersonInfo", handlers.GetPersonInfo)
+	m.Get("/User/Search", handlers.Search)
+	m.Get("/User/Heartbeat", handlers.Heartbeat)
 	m.Post("/User/PostImage", handlers.PostImage)
 	m.Get("/User/DelImage", handlers.DeleteImage)
 	m.Get("/vip/price", handlers.VipPrice)
 	m.Get("/User/BuyVIP", handlers.BuyVip)
 
 	/*
-	 * 消息接口
+	 * Comments
 	 */
 	m.Get("/Action/Recommend", handlers.ActionRecommend)
 	m.Get("/Action/DelRecommend", handlers.DelRecommend)
@@ -40,22 +43,22 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/User/DelVisit", handlers.DeleteVisit)
 	m.Get("/User/WaterFlow", handlers.GetWaterFlow)
 	m.Get("/User/AllMessage", handlers.GetAllMessage)
+	m.Get("/User/UnreadMessage", handlers.GetUnreadMessage)
 	m.Get("/User/Report", handlers.Report)
 	m.Get("/User/AddBlacklist", handlers.UserAddBlacklist)
 	m.Get("/User/DelBlacklist", handlers.UserDelBlacklist)
 	m.Get("/User/GetBlacklist", handlers.UserGetBlacklist)
 
 	/*
-	 * 功能接口
-	 */
-	m.Get("/User/Search", handlers.Search)
-	m.Get("/User/Heartbeat", handlers.Heartbeat)
-	m.Get("/User/GetDistrict", handlers.GetDistrict)
-
-	/*
 	 * Gift
 	 */
-	m.Get("/gift/GoldPrice", handlers.GoldPrice)
+	m.Get("/Gift/GoldPrice", handlers.GoldPrice)
+	m.Get("/Gift/BuyBeans", handlers.BuyBeans)
+	m.Get("/Gift/GiftList", handlers.GiftList)
+	m.Get("/Gift/PresentGift", handlers.PresentGift)
+	m.Get("/Gift/RecvListVerbose", handlers.RecvListVerbose)
+	m.Get("/Gift/SendListVerbose", handlers.SendListVerbose)
+	m.Get("/User/CharmTopList", handlers.CharmTopList)
 
 	/*
 	 * CMS
@@ -66,6 +69,7 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/cms/cpuinfo", cms.CpuInfo)
 	m.Get("/cms/sysuserinfo", cms.SystemUserInfo)
 	m.Get("/cms/commentinfo", cms.CommentInfo)
+	m.Get("/cms/log", cms.Log)
 	m.Get("/cms/recommendhistory", cms.Recommendhistory)
 	m.Get("/cms/msgtemplate", cms.MsgTemplate)
 	m.Get("/cms/msgtemplateadd", cms.MsgTemplateAdd)

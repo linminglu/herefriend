@@ -3,10 +3,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	log "github.com/cihub/seelog"
 
 	"herefriend/lib"
 	"herefriend/lib/push"
@@ -173,7 +174,7 @@ func ReadVisit(req *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Update_VisitRead)
 	_, err := lib.SQLExec(sentence, visitid)
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err.Error())
 		return 404, ""
 	}
 
@@ -210,7 +211,7 @@ func DoVisit(req *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Visit)
 	_, err := lib.SQLExec(sentence, id, toid, t.Unix())
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err.Error())
 		return 404, ""
 	}
 
@@ -250,11 +251,11 @@ func DeleteVisit(req *http.Request) (int, string) {
 	return 200, ""
 }
 
-func visit_GetUnreadNum(id int) int {
+func visit_GetUnreadNum(id int, timeline int64) int {
 	var count int
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_VisitUnreadCount)
-	lib.SQLQueryRow(sentence, id).Scan(&count)
+	lib.SQLQueryRow(sentence, id, timeline).Scan(&count)
 
 	return count
 }

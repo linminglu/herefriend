@@ -1,6 +1,8 @@
 # GIFT系统说明书
 (2016年2月12日)
 
+
+
 <!-- toc -->
 
 * [1. 系统简介](#1-系统简介)
@@ -22,6 +24,7 @@
   * [3.10 可以查看收到的礼物列表和送出的礼物列表](#310-可以查看收到的礼物列表和送出的礼物列表)
 
 <!-- toc stop -->
+
 
 ## 1. 系统简介
 
@@ -217,11 +220,11 @@ CREATE TABLE `bh_db`.`gift` (
   `type` INT NOT NULL,
   `name` VARCHAR(45) NOT NULL,
   `description` VARCHAR(100) NOT NULL DEFAULT '',
-  `validnum` INT NOT NULL,
+  `validnum` INT NOT NULL DEFAULT 0,
   `imageurl` VARCHAR(256) NOT NULL,
-  `effect` INT NOT NULL,
-  `price` INT NOT NULL,
-  `origin_price` INT NOT NULL,
+  `effect` INT NOT NULL DEFAULT 0,
+  `price` INT NOT NULL DEFAULT 0,
+  `origin_price` INT NOT NULL DEFAULT 0,
   `discount_desciption` VARCHAR(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC));
@@ -232,8 +235,8 @@ CREATE TABLE `bh_db`.`gift` (
 ```sql
 CREATE TABLE `bh_db`.`wealth` (
   `id` INT NOT NULL,
-  `beans` INT NOT NULL,
-  `consumend` INT NOT NULL,
+  `beans` INT NOT NULL DEFAULT 0,
+  `consumend` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC));
 ```
@@ -415,7 +418,7 @@ type PersonInfo struct {
 
 > 1.获取礼物信息
 
-**`[GET] /Present/PresentList`**
+**`[GET] /Gift/GiftList`**
 
 *（输入）
 	无
@@ -452,7 +455,7 @@ type giftInfo struct {
 
 > 2.赠送礼物：
 
-**`[GET] /Present/PresentGift`**
+**`[GET] /Gift/PresentGift`**
 
 *（输入）
 
@@ -476,7 +479,7 @@ type giftInfo struct {
 
 > 3.赠送VIP：
 
-**`[GET] /Present/PresentVIP`**
+**`[GET] /Gift/PresentVIP`**
 
 *（输入）
 
@@ -550,7 +553,7 @@ type PersonInfo struct {
 
 > 2.获取魅力值排行
 
-**`[GET] /User/AdmireTopList`**
+**`[GET] /User/CharmTopList`**
 
 *（输入）
 

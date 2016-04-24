@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/cihub/seelog"
+
 	"herefriend/common"
 	"herefriend/config"
 	"herefriend/lib"
@@ -548,6 +550,79 @@ func GetUserInfoById(id int) (int, personInfo) {
 }
 
 /*
+ |    Function: GetUserBeans
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-30
+ | Description: 获取用户的金币数量
+ |      Return:
+ |
+*/
+func GetUserGoldBeans(id int) int {
+	var beans int
+
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
+	lib.SQLQueryRow(sentence, id).Scan(&beans)
+
+	return beans
+}
+
+/*
+ |    Function: GetUserRecvGiftList
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 获取收到的礼物列表
+ |      Return:
+ |
+*/
+func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
+	infolist := make([]common.GiftSendRecvInfo, 0)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvSum)
+	rows, err := lib.SQLQuery(sentence, id)
+	if nil != err {
+		return infolist
+	}
+
+	defer rows.Close()
+	var info common.GiftSendRecvInfo
+	for rows.Next() {
+		err = rows.Scan(&info.GiftId, &info.Number)
+		if nil == err {
+			infolist = append(infolist, info)
+		}
+	}
+
+	return infolist
+}
+
+/*
+ |    Function: GetUserSendGiftList
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 获取送出的礼物列表
+ |      Return:
+ |
+*/
+func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
+	infolist := make([]common.GiftSendRecvInfo, 0)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftSendSum)
+	rows, err := lib.SQLQuery(sentence, id)
+	if nil != err {
+		return infolist
+	}
+
+	defer rows.Close()
+	var info common.GiftSendRecvInfo
+	for rows.Next() {
+		err = rows.Scan(&info.GiftId, &info.Number)
+		if nil == err {
+			infolist = append(infolist, info)
+		}
+	}
+
+	return infolist
+}
+
+/*
  *
  *    Function: GetUserInfo
  *      Author: sunchao
@@ -562,6 +637,8 @@ func GetUserInfo(id int, gender int) (int, personInfo) {
 	if true == exist {
 		err := json.Unmarshal(content, &info)
 		if nil == err {
+			info.GoldBeans = GetUserGoldBeans(id)
+			info.RecvGiftList = GetUserRecvGiftList(id)
 			return 200, info
 		}
 	}
@@ -584,6 +661,8 @@ func GetUserInfo(id int, gender int) (int, personInfo) {
 		return 404, info
 	}
 
+	info.GoldBeans = GetUserGoldBeans(id)
+	info.RecvGiftList = GetUserRecvGiftList(id)
 	jsonRlt, _ := json.Marshal(info)
 	lib.SetRedisUserInfo(id, jsonRlt)
 
@@ -635,7 +714,7 @@ func UpdateProfile(req *http.Request, id, gender int) int {
 		sentense := lib.SQLSentence(lib.SQLMAP_Update_Password, gender)
 		_, err := lib.SQLExec(sentense, newpassword, id)
 		if nil != err {
-			fmt.Println(err.Error())
+			log.Error(err.Error())
 			return 404
 		}
 	}
@@ -692,6 +771,7 @@ func GetPersonInfo(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
+	info.SendGiftList = GetUserSendGiftList(id)
 	jsonRlt, _ := json.Marshal(info)
 	return 200, string(jsonRlt)
 }
@@ -1006,6 +1086,8 @@ func Search(req *http.Request) (int, string) {
 		}
 	}
 
+	go log.Tracef("搜索: %v", queries)
+
 	page, count := lib.Get_pageid_count_fromreq(req)
 	if 1 == gender && true == useheartbeat && page <= 2 {
 		return doReqHeartbeat(id, gender, count)
@@ -1116,6 +1198,7 @@ func Register(req *http.Request) (int, string) {
 	weight := [2]int{45, 65}[gender]
 
 	province, district := GetIpAddress(req)
+
 	_, err := lib.SQLExec(insertSentence, lastId, password, name, gender, lib.CurrentTimeUTCInt64(), age, common.USERTYPE_USER, cid, height, weight, province, district, 0, 0)
 	if nil == err {
 		var info registerInfo
@@ -1137,6 +1220,8 @@ func Register(req *http.Request) (int, string) {
 
 		//发送欢迎信息
 		go func() {
+			log.Tracef("注册: %s%s Age=%d Gender=%d", province, district, age, gender)
+
 			msg := "欢迎你来到寂寞同城搭讪"
 			timevalue := lib.CurrentTimeUTCInt64()
 			RecommendInsertMessageToDB(1, lastId, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
@@ -1159,7 +1244,7 @@ func Register(req *http.Request) (int, string) {
 		jsonRlt, _ := json.Marshal(info)
 		return 200, string(jsonRlt)
 	} else {
-		fmt.Println(err.Error())
+		log.Error(err.Error())
 		return 404, ""
 	}
 }
@@ -1212,6 +1297,8 @@ func Login(req *http.Request) (int, string) {
 
 	lib.DelRedisUserInfo(id)
 	code, info := GetUserInfo(id, gender)
+	info.GoldBeans = GetUserGoldBeans(id)
+	info.SendGiftList = GetUserSendGiftList(id)
 	jsonRlt, _ := json.Marshal(info)
 
 	return code, string(jsonRlt)
@@ -1231,7 +1318,14 @@ func WatchDog(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	go PeriodOnlineCommentPush(id, gender)
+	if true == gEnableEvaluation {
+		var lastEvaluationTime int64
+		sentence := lib.SQLSentence(lib.SQLMAP_Select_LastEvaluationTime, gender)
+		lib.SQLQueryRow(sentence, id).Scan(&lastEvaluationTime)
+
+		go PeriodOnlineCommentPush(id, gender, lastEvaluationTime)
+	}
+
 	ok := updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 	if true != ok {
 		go func() {
@@ -1334,7 +1428,7 @@ func liveUserGoRoute() {
 			}
 
 			user.livetime = user.livetime + 1
-			if 1 == user.livetime && LIVEUSER_STATUS_ONLINE == user.status {
+			if 5 == user.livetime && LIVEUSER_STATUS_ONLINE == user.status {
 				if true != checkIfUserHavePicture(id, user.gender) {
 					//管理员发送第二封信
 					msg := "您还没有更新照片哦,上传照片获得更高的推荐机会!"
@@ -1368,8 +1462,8 @@ func liveUserNotifyMsgRoutine() {
 		gLiveUsersInfo.lock.Lock()
 		for id, user := range gLiveUsersInfo.users {
 			if LIVEUSER_STATUS_ONLINE == user.status {
-				recommendCount := recommend_GetUnreadNum(id)
-				visitCount := visit_GetUnreadNum(id)
+				recommendCount := recommend_GetUnreadNum(id, 0)
+				visitCount := visit_GetUnreadNum(id, 0)
 
 				unreadmsg := PushMsgUnread{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
 				jsonRlt, _ := json.Marshal(unreadmsg)
