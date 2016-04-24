@@ -1196,16 +1196,9 @@ func Login(req *http.Request) (int, string) {
 	sentence = lib.SQLSentence(lib.SQLMAP_Delete_MultiClientID, 1)
 	lib.SQLExec(sentence, cid)
 
-	var lastlogintime, curlogintime int64
-
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_LastLoginTime, gender)
-	lib.SQLQueryRow(sentence, id).Scan(&lastlogintime)
-
-	curlogintime = lib.CurrentTimeUTCInt64()
 	sentence = lib.SQLSentence(lib.SQLMAP_Update_LoginInfo, gender)
-	_, err := lib.SQLExec(sentence, cid, curlogintime, id)
+	_, err := lib.SQLExec(sentence, cid, lib.CurrentTimeUTCInt64(), id)
 	if nil != err {
-		fmt.Println(err)
 		return 404, ""
 	}
 
@@ -1215,7 +1208,6 @@ func Login(req *http.Request) (int, string) {
 		lib.SetRedisDistrict(id, province)
 	}
 
-	go visitLoginProc(id, gender, lastlogintime, curlogintime)
 	go updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 
 	lib.DelRedisUserInfo(id)
@@ -1239,12 +1231,15 @@ func WatchDog(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
+	go PeriodOnlineCommentPush(id, gender)
 	ok := updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
 	if true != ok {
-		if _, exist := lib.GetRedisDistrict(id); false == exist {
-			province, _ := GetIpAddress(req)
-			lib.SetRedisDistrict(id, province)
-		}
+		go func() {
+			if _, exist := lib.GetRedisDistrict(id); false == exist {
+				province, _ := GetIpAddress(req)
+				lib.SetRedisDistrict(id, province)
+			}
+		}()
 	}
 
 	onlineProc(id, gender)
@@ -1376,9 +1371,9 @@ func liveUserNotifyMsgRoutine() {
 				recommendCount := recommend_GetUnreadNum(id)
 				visitCount := visit_GetUnreadNum(id)
 
-				unreadmsg := unreadMessage{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
+				unreadmsg := PushMsgUnread{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
 				jsonRlt, _ := json.Marshal(unreadmsg)
-				notifymsg := notifyMessageInfo{Type: push.PUSH_NOTIFYMSG_UNREAD, Value: string(jsonRlt)}
+				notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_UNREAD, Value: string(jsonRlt)}
 				jsonRlt, _ = json.Marshal(notifymsg)
 
 				clientid := GetClientIdByUserId(id)

@@ -182,12 +182,12 @@
 
 ```sql
 ALTER TABLE `bh_db`.`girls` 
-ADD COLUMN `bestpart` VARCHAR(100) NOT NULL AFTER `allow_kidstatus`,
-ADD COLUMN `view_of_sex` VARCHAR(45) NOT NULL AFTER `bestpart`;
+ADD COLUMN `bestpart` VARCHAR(100) NOT NULL DEFAULT '' AFTER `allow_kidstatus`,
+ADD COLUMN `view_of_sex` VARCHAR(45) NOT NULL DEFAULT '' AFTER `bestpart`;
 
 ALTER TABLE `bh_db`.`guys` 
-ADD COLUMN `bestpart` VARCHAR(100) NOT NULL AFTER `allow_kidstatus`,
-ADD COLUMN `view_of_sex` VARCHAR(45) NOT NULL AFTER `bestpart`;
+ADD COLUMN `bestpart` VARCHAR(100) NOT NULL DEFAULT '' AFTER `allow_kidstatus`,
+ADD COLUMN `view_of_sex` VARCHAR(45) NOT NULL DEFAULT '' AFTER `bestpart`;
 ```
 
 > 2.心动表：
@@ -216,13 +216,13 @@ CREATE TABLE `bh_db`.`gift` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `type` INT NOT NULL,
   `name` VARCHAR(45) NOT NULL,
-  `description` VARCHAR(100) NOT NULL,
+  `description` VARCHAR(100) NOT NULL DEFAULT '',
   `validnum` INT NOT NULL,
   `imageurl` VARCHAR(256) NOT NULL,
   `effect` INT NOT NULL,
   `price` INT NOT NULL,
   `origin_price` INT NOT NULL,
-  `discount_desciption` VARCHAR(100) NOT NULL,
+  `discount_desciption` VARCHAR(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC));
 ```
@@ -248,7 +248,7 @@ CREATE TABLE `bh_db`.`giftconsume` (
   `giftid` INT NOT NULL,
   `giftnum` INT NOT NULL,
   `time` BIGINT(20) NOT NULL,
-  `message` VARCHAR(100) NOT NULL,
+  `message` VARCHAR(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC));
 ```

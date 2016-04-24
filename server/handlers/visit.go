@@ -27,51 +27,6 @@ func init() {
 
 /*
  |
- |    Function: visitLoginProc
- |      Author: sunchao
- |        Date: 15/10/11
- | Description: 处理用户登录
- |
-*/
-func visitLoginProc(id, gender int, lastlogintime, curlogintime int64) {
-	if 0 == lastlogintime || 12*3600 > (curlogintime-lastlogintime) {
-		return
-	}
-
-	// 每天第一次登陆, 访问时间为本次登陆时间之前10小时,且小于上次登录时间
-	if curlogintime-36000 > lastlogintime {
-		lastlogintime = curlogintime - 36000
-	}
-
-	/* 1. 无照片添加1-3位(随机)看过我
-	 * 2. 有照片添加3-5位(随机)看过我
-	 */
-	var visitnum int
-
-	if true == checkIfUserHavePicture(id, gender) {
-		visitnum = 3 + lib.Intn(3)
-	} else {
-		visitnum = 1 + lib.Intn(3)
-	}
-
-	var fromid int
-	for i := 0; i < visitnum; i = i + 1 {
-		if 0 == gender {
-			fromid = getRandomUserId(id, 1)
-		} else {
-			fromid = getRandomHeartbeatId(id, 0)
-		}
-
-		visitAddVisitor(id, fromid, lastlogintime, curlogintime)
-	}
-
-	push.DoPush()
-
-	return
-}
-
-/*
- |
  |    Function: getVisitAll
  |      Author: sunchao
  |        Date: 15/10/6

@@ -19,6 +19,9 @@ import (
 	"herefriend/lib/push"
 )
 
+/*
+ * 聊天消息类型,存放到数据库中
+ */
 const (
 	RECOMMEND_MSGTYPE_GREET = 1
 	RECOMMEND_MSGTYPE_TALK  = 2
@@ -38,6 +41,12 @@ var gRecommendNumber int
 var gCountApiRecommend int
 var gMsgTemplates []string
 var gRobotUrl string
+
+/*
+ * 定期推送消息
+ */
+var gEvaluationMsgContent = "好评送免费VIP 3个月哦，赶紧去评价一下吧。"
+var gEnableEvaluation = true
 
 func init() {
 	gRecommendReg, _ = regexp.Compile("(?:#)([^#]+)(?:#)")
@@ -815,4 +824,49 @@ func recommend_GetUnreadNum(id int) int {
 
 func GetApiRecommendCount() int {
 	return gCountApiRecommend
+}
+
+/*
+ |    Function: PeriodOnlineCommentSet
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 定期推送消息设置
+ |      Return:
+ |
+*/
+func PeriodOnlineCommentSet(enable bool, msg string) {
+	gEnableEvaluation = enable
+	gEvaluationMsgContent = msg
+}
+
+/*
+ |    Function: PeriodOnlineCommentPush
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 定期推送消息处理
+ |      Return:
+ |
+*/
+func PeriodOnlineCommentPush(id, gender int) {
+	if false == gEnableEvaluation {
+		return
+	}
+
+	var lastlogintime int64
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_LastLoginTime, gender)
+	lib.SQLQueryRow(sentence, id).Scan(&lastlogintime)
+
+	curlogintime := lib.CurrentTimeUTCInt64()
+	if 0 == lastlogintime || 43200 > (curlogintime-lastlogintime) {
+	}
+
+	evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: gEvaluationMsgContent}
+	jsonRlt, _ := json.Marshal(evaluationMsg)
+	notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_EVALUATION, Value: string(jsonRlt)}
+	jsonRlt, _ = json.Marshal(notifymsg)
+
+	push.Add(0, GetClientIdByUserId(id), push.PUSHMSG_TYPE_NOTIFYMSG, push.PUSH_NOTIFYMSG_EVALUATION, "", string(jsonRlt))
+	fmt.Printf("Notify evaluation to %d: %s", id, string(jsonRlt))
+
+	return
 }

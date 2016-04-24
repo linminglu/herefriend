@@ -10,7 +10,12 @@ import (
 	"herefriend/server/handlers"
 )
 
-const gImageView = "?imageView2/5/w/50/h/50"
+const (
+	CMS_PUSHMSG_TYPE_NORMALMSG  = 1
+	CMS_PUSHMSG_TYPE_EVALUATION = 2
+)
+
+const CMS_LittleImgView = "?imageView2/5/w/50/h/50"
 
 /*
  |    Function: CommentInfo
@@ -78,7 +83,7 @@ func Recommendhistory(req *http.Request) string {
 			info.From = "[" + userinfo.Province + "]" + strconv.Itoa(fromid)
 		}
 
-		info.FromPic = userinfo.IconUrl + gImageView
+		info.FromPic = userinfo.IconUrl + CMS_LittleImgView
 
 		code, userinfo = handlers.GetUserInfoById(toid)
 		if 200 == code && "" != userinfo.Name {
@@ -86,7 +91,7 @@ func Recommendhistory(req *http.Request) string {
 		} else {
 			info.To = "[" + userinfo.Province + "]" + strconv.Itoa(toid)
 		}
-		info.ToPic = userinfo.IconUrl + gImageView
+		info.ToPic = userinfo.IconUrl + CMS_LittleImgView
 
 		info.TimeUTC = lib.Int64_To_UTCTime(timevalue)
 		infos = append(infos, info)
@@ -326,22 +331,22 @@ func GetChartsList(w http.ResponseWriter, r *http.Request) (int, string) {
 			c.ToId = r.UserId
 			c.From = "[" + userinfo.Province + "]" + userinfo.Name
 			if "" != userinfo.IconUrl {
-				c.FromPic = userinfo.IconUrl + gImageView
+				c.FromPic = userinfo.IconUrl + CMS_LittleImgView
 			}
 			c.To = "[" + r.UserInfo.Province + "]" + r.UserInfo.Name
 			if "" != r.UserInfo.IconUrl {
-				c.ToPic = r.UserInfo.IconUrl + gImageView
+				c.ToPic = r.UserInfo.IconUrl + CMS_LittleImgView
 			}
 		} else {
 			c.FromId = r.UserId
 			c.ToId = id
 			c.To = "[" + userinfo.Province + "]" + userinfo.Name
 			if "" != userinfo.IconUrl {
-				c.ToPic = userinfo.IconUrl + gImageView
+				c.ToPic = userinfo.IconUrl + CMS_LittleImgView
 			}
 			c.From = "[" + r.UserInfo.Province + "]" + r.UserInfo.Name
 			if "" != r.UserInfo.IconUrl {
-				c.FromPic = r.UserInfo.IconUrl + gImageView
+				c.FromPic = r.UserInfo.IconUrl + CMS_LittleImgView
 			}
 		}
 
@@ -397,14 +402,14 @@ func GetTalkHistory(r *http.Request) (int, string) {
 
 	_, userinfo := handlers.GetUserInfoById(id)
 	if "" != userinfo.IconUrl {
-		history.UserPic = userinfo.IconUrl + gImageView
+		history.UserPic = userinfo.IconUrl + CMS_LittleImgView
 	}
 
 	history.UserName = userinfo.Name
 
 	_, userinfo = handlers.GetUserInfoById(talkid)
 	if "" != userinfo.IconUrl {
-		history.TalkerPic = userinfo.IconUrl + gImageView
+		history.TalkerPic = userinfo.IconUrl + CMS_LittleImgView
 	}
 
 	history.TalkerName = userinfo.Name
@@ -461,4 +466,48 @@ func DoTalk(w http.ResponseWriter, r *http.Request) (int, string) {
 
 	jsonRlt, _ := json.Marshal(info)
 	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: MessagePushSet
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 消息推送
+ |      Return:
+ |
+*/
+func MessagePushSet(w http.ResponseWriter, r *http.Request) {
+	v := r.URL.Query()
+	typestr := v.Get("type")
+	msg := v.Get("msg")
+
+	if "" == typestr || "" == msg {
+		w.WriteHeader(404)
+		return
+	}
+
+	t, _ := strconv.Atoi(typestr)
+	if CMS_PUSHMSG_TYPE_EVALUATION == t {
+		// 配置评价消息推送
+		enableStr := v.Get("enable")
+		enable := func() bool {
+			if "1" == enableStr {
+				return true
+			} else {
+				return false
+			}
+		}()
+
+		handlers.PeriodOnlineCommentSet(enable, msg)
+	} else {
+		// 推送普通消息
+		genderstr := v.Get("gender")
+		if "" == genderstr {
+			w.WriteHeader(404)
+			return
+		}
+	}
+
+	w.WriteHeader(200)
+	return
 }

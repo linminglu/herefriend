@@ -14,16 +14,24 @@ const (
 	PUSHMSG_CHAN_SIZE = 1
 )
 
+/*
+ * 推送消息类型, getuiserver将采取不同的推送方式
+ */
 const (
-	PUSHMSG_TYPE_GREET     = 0
-	PUSHMSG_TYPE_RECOMMEND = 1
-	PUSHMSG_TYPE_VISIT     = 2
-	PUSHMSG_TYPE_NOTIFYMSG = 3
+	PUSHMSG_TYPE_GREET     = 0 //普通推送
+	PUSHMSG_TYPE_RECOMMEND = 1 //普通推送
+	PUSHMSG_TYPE_VISIT     = 2 //普通推送
+	PUSHMSG_TYPE_NOTIFYMSG = 3 //透明推送,无弹出框
 )
 
+/*
+ * 透明推送的子消息类型
+ */
 const (
-	PUSH_NOTIFYMSG_INVALID = 0
-	PUSH_NOTIFYMSG_UNREAD  = 1
+	PUSH_NOTIFYMSG_INVALID    = 0
+	PUSH_NOTIFYMSG_UNREAD     = 1
+	PUSH_NOTIFYMSG_EVALUATION = 2
+	PUSH_NOTIFYMSG_REFRESHVIP = 3
 )
 
 type pushMsgInfo struct {

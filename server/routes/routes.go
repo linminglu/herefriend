@@ -84,10 +84,5 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/cms/GetChartsList", cms.GetChartsList)
 	m.Get("/cms/GetTalkHistory", cms.GetTalkHistory)
 	m.Get("/cms/DoTalk", cms.DoTalk)
-
-	/*
-	 | m.Get("/cms/LoveShowList", handlers.ListLoveShow)
-	 | m.Get("/cms/LoveShowReplace", handlers.ReplaceLoveShow)
-	 | m.Get("/cms/LoveShowHide", handlers.HideLoveShow)
-	*/
+	m.Get("/cms/MessagePushSet", cms.MessagePushSet)
 }

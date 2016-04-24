@@ -670,25 +670,27 @@
 - 透传消息部分为如下结构体：
 
     ```go
-    type unreadMessage struct {
+    type PushMsgUnread struct {
     	UnreadRecommend int //未读的聊天消息
     	UnreadVisit     int //未读的访问消息
     	Badge           int //badge: the icon number of app
     }
     
-    type evaluationMessage struct {
+    type PushMsgEvaluation struct {
+    	Enable      bool   //是否要弹出评价对话框
     	ShowMessage string //弹出对话框显示的信息
     }
     
-    type notifyMessageInfo struct {
+    type PushMessageInfo struct {
     	/*
     	 * 根据类型不同，消息实体的结构体不同，如下为具体对应关系:
+    	 * 目前只有接收到Type=1的时候，APP应该修改Badge图标显示值
     	 * ------------------------------------------------------
     	 * | Type值 |         Value对应的数据结构               |
     	 * ------------------------------------------------------
-    	 * |    1   |          unreadMessage                    |
+    	 * |    1   |          PushMsgUnread                    |
     	 * ------------------------------------------------------
-    	 * |    2   |          evaluationMessage                |
+    	 * |    2   |          PushMsgEvaluation                |
     	 * ------------------------------------------------------
     	 */
     	Type  int    //消息类型
