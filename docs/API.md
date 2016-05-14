@@ -1026,11 +1026,11 @@
      * 礼物列表详情
      */
     type giftListVerbose struct {
-    	UserId  int       //赠送礼物或者收到礼物的用户ID
-    	GiftId  int       //礼物ID
-    	GiftNum int       //礼物数量
-    	Message string    //礼物留言
-    	TimeUTC time.Time //送礼物的时间
+    	Person  personInfo //赠送礼物或者收到礼物的用户信息
+    	GiftId  int        //礼物ID
+    	GiftNum int        //礼物数量
+    	Message string     //礼物留言
+    	TimeUTC time.Time  //送礼物的时间
     }
     ```
 

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"herefriend/crawler/filter"
+	"herefriend/crawler/pagezhenqing"
 )
 
 func main() {
-	filter.Start()
+	pagezhenqing.Start()
 }

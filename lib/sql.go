@@ -46,7 +46,9 @@ const (
 	SQLMAP_Select_VIPRows
 	SQLMAP_Select_VipLevelByID
 	SQLMAP_Select_VGirlProcess
+	SQLMAP_Select_ZQProcess
 	SQLMAP_Select_CheckVGirlId
+	SQLMAP_Select_CheckZQUserId
 	SQLMAP_Select_RandomUncrawlGirlsId
 	SQLMAP_Select_AllMsgTemplate
 	SQLMAP_Select_UserBlacklist
@@ -67,6 +69,7 @@ const (
 	SQLMAP_Insert_Recomment
 	SQLMAP_Insert_Visit
 	SQLMAP_Insert_VGirlId
+	SQLMAP_Insert_ZQId
 	SQLMAP_Insert_Report
 	SQLMAP_Insert_Blacklist
 	SQLMAP_Insert_UserBlacklist
@@ -86,6 +89,7 @@ const (
 	SQLMAP_Update_VIPById
 	SQLMAP_Update_VGirlProcess
 	SQLMAP_Update_VGirlId
+	SQLMAP_Update_ZQProcess
 	SQLMAP_Update_SetPictureFlag
 	SQLMAP_Update_SetPictureTag
 	SQLMAP_Update_ConsumeGift
@@ -156,7 +160,9 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_VIPRows:               {"s", "select id, viplevel, vipdays, vipexpiretime from %s where usertype=1 and viplevel!=0"},
 	SQLMAP_Select_VipLevelByID:          {"s", "select viplevel, vipdays from %s where id=?"},
 	SQLMAP_Select_VGirlProcess:          {"", "select areaindex, page from vgirlprocess where base=0"},
+	SQLMAP_Select_ZQProcess:             {"", "select areaindex, page from zhenqingprocess where base=0"},
 	SQLMAP_Select_CheckVGirlId:          {"", "select id from vgirlsid where id=?"},
+	SQLMAP_Select_CheckZQUserId:         {"", "select id from zhenqingids where id=?"},
 	SQLMAP_Select_RandomUncrawlGirlsId:  {"", "select id from girlsid where age>=18 and age<=28 limit ?,1"},
 	SQLMAP_Select_AllMsgTemplate:        {"", "select msg from msgtemplate where type=? and gender=?"},
 	SQLMAP_Select_UserBlacklist:         {"", "select blackid from userblacklist where fromid=?"},
@@ -178,6 +184,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Insert_Recomment:     {"", "insert into recommend (fromid, toid, time, type, msg, readed) value (?,?,?,?,?,0)"},
 	SQLMAP_Insert_Visit:         {"", "insert into visit (fromid, toid, time, readed) value (?,?,?,0)"},
 	SQLMAP_Insert_VGirlId:       {"", "insert into vgirlsid (id, fensi, flag) value (?,?,?)"},
+	SQLMAP_Insert_ZQId:          {"", "insert into zhenqingids (id) value (?)"},
 	SQLMAP_Insert_Report:        {"", "insert into report (fromid, reportedid, reason) values (?,?,?)"},
 	SQLMAP_Insert_Blacklist:     {"s", "insert into blacklist (select * from %s where id=?)"},
 	SQLMAP_Insert_UserBlacklist: {"", "insert into userblacklist (fromid, blackid) value (?,?)"},
@@ -202,6 +209,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Update_VIPById:                {"s", "update %s set viplevel=?, vipdays=?, vipexpiretime=? where id=?"},
 	SQLMAP_Update_VGirlProcess:           {"", "update vgirlprocess set areaindex=?, page=? where base=0"},
 	SQLMAP_Update_VGirlId:                {"", "update vgirlsid set flag=1 where id=?"},
+	SQLMAP_Update_ZQProcess:              {"", "update zhenqingprocess set areaindex=?, page=? where base=0"},
 	SQLMAP_Update_SetPictureFlag:         {"s", "update %s_picture set flag=1 where id=? and filename=? and tag=?"},
 	SQLMAP_Update_SetPictureTag:          {"s", "update %s_picture set tag=? where id=? and filename=?"},
 	SQLMAP_Update_ConsumeGift:            {"", "update gift set validnum=? where id=?"},

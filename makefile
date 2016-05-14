@@ -32,6 +32,7 @@ CRAW_GOFILES := \
 		$(wildcard ./crawler/request/*.go) \
 		$(wildcard ./crawler/page3g/*.go) \
 		$(wildcard ./crawler/pageweibo/*.go) \
+		$(wildcard ./crawler/pagezhenqing/*.go) \
 		$(wildcard ./crawler/filter/*.go) \
 		$(wildcard ./crawler/*.go)
 

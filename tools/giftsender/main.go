@@ -132,10 +132,11 @@ func sendGiftByGender(gender int) {
 			resp.Body.Close()
 		}
 
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 10)
 	}
 }
 
 func main() {
-	sendGiftByGender(0)
+	go sendGiftByGender(0)
+	sendGiftByGender(1)
 }

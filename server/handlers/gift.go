@@ -249,10 +249,12 @@ func RecvListVerbose(r *http.Request) (int, string) {
 	giftlist := make([]giftListVerbose, 0)
 	var timetmp int64
 	var info giftListVerbose
+	var userid int
 
 	for rows.Next() {
-		err = rows.Scan(&info.UserId, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
+		err = rows.Scan(&userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
 		if nil == err {
+			_, info.Person = GetUserInfoById(userid)
 			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
 			giftlist = append(giftlist, info)
 		}
@@ -288,10 +290,12 @@ func SendListVerbose(r *http.Request) (int, string) {
 	giftlist := make([]giftListVerbose, 0)
 	var timetmp int64
 	var info giftListVerbose
+	var userid int
 
 	for rows.Next() {
-		err = rows.Scan(&info.UserId, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
+		err = rows.Scan(&userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
 		if nil == err {
+			_, info.Person = GetUserInfoById(userid)
 			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
 			giftlist = append(giftlist, info)
 		}
