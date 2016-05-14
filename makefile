@@ -40,19 +40,19 @@ TRIM_GOFILES := \
 		$(wildcard ./config/*.go) \
 		$(wildcard ./crawler/image/*.go) \
 		$(wildcard ./lib/*.go) \
-		$(wildcard ./imageproc/*.go)
+		$(wildcard ./tools/imageproc/*.go)
 
 MODIFY_GOFILES := \
 		$(wildcard ./common/*.go) \
 		$(wildcard ./config/*.go) \
 		$(wildcard ./lib/*.go) \
-		$(wildcard ./modifier/*.go)
+		$(wildcard ./tools/modifier/*.go)
 
 SENDGIFT_GOFILES := \
 		$(wildcard ./common/*.go) \
 		$(wildcard ./config/*.go) \
 		$(wildcard ./lib/*.go) \
-		$(wildcard ./giftsender/*.go)
+		$(wildcard ./tools/giftsender/*.go)
 
 server: $(SERVER)
 trim: $(TRIM)
@@ -77,25 +77,25 @@ craw.x64: $(CRAW_GOFILES)
 	@echo "finish"
 
 $(TRIM): $(TRIM_GOFILES)
-	@$(GOBUILD) -o ./$@ herefriend/imageproc
+	@$(GOBUILD) -o ./$@ herefriend/tools/imageproc
 	@echo "finish"
 
 $(MODIFY): $(MODIFY_GOFILES)
-	@$(GOBUILD) -o ./$@ herefriend/modifier
+	@$(GOBUILD) -o ./$@ herefriend/tools/modifier
 	@echo "finish"
 
 $(SENDGIFT): $(SENDGIFT_GOFILES)
-	@$(GOBUILD) -o ./$@ herefriend/giftsender
+	@$(GOBUILD) -o ./$@ herefriend/tools/giftsender
 	@echo "finish"
 
 gift.x64: $(SENDGIFT_GOFILES)
-	@GOOS=linux $(GOBUILD) -o ./$(SENDGIFT) herefriend/giftsender
+	@GOOS=linux $(GOBUILD) -o ./$(SENDGIFT) herefriend/tools/giftsender
 	@echo "finish"
 	
 all: $(SERVER) $(CRAWLER)
 
 clean:
-	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY)./$(SENDGIFT)
+	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY) ./$(SENDGIFT)
 	@echo "finish"
 
 cp:
