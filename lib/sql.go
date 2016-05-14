@@ -19,6 +19,7 @@ const (
 	SQLMAP_Select_SearchPictures
 	SQLMAP_Select_SearchPicturesByFlag
 	SQLMAP_Select_UserCount
+	SQLMAP_Select_FakeCount
 	SQLMAP_Select_UserActive
 	SQLMAP_Select_HeartbeatCount
 	SQLMAP_Select_HeartbeatProvinceCount
@@ -125,6 +126,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_SearchPictures:         {"s", "select filename from %s_picture where id=? and tag=?"},
 	SQLMAP_Select_SearchPicturesByFlag:   {"s", "select id, filename, tag from %s_picture where flag=0 order by id desc limit ?,?"},
 	SQLMAP_Select_UserCount:              {"s", "select count(*) from %s"},
+	SQLMAP_Select_FakeCount:              {"s", "select count(*) from %s where usertype!=1"},
 	SQLMAP_Select_UserActive:             {"", "select regist,buy from useractive where id=1"},
 	SQLMAP_Select_HeartbeatCount:         {"d", "select count(*) from heartbeat where gender=%d"},
 	SQLMAP_Select_HeartbeatProvinceCount: {"d", "select count(*) from heartbeat where gender=%d and province=?"},

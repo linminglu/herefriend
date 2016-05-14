@@ -1,13 +1,14 @@
+# the command macro
+GOBUILD := go build -ldflags '-s'
+SCP := scp -P 10022
+ALIYUN := sunchao@112.126.66.162:/root/workspace/hf
+
 # the elf program names
 SERVER := herefriend
 CRAW := spider
 TRIM := trimimage
 MODIFY := modify
-
-# the command macro
-GOBUILD := go build -ldflags '-s'
-SCP := scp -P 10022
-ALIYUN := sunchao@112.126.66.162:/root/workspace/hf
+SENDGIFT := sendgift
 
 SERVER_GOFILES := \
 		$(wildcard ./common/*.go) \
@@ -47,10 +48,17 @@ MODIFY_GOFILES := \
 		$(wildcard ./lib/*.go) \
 		$(wildcard ./modifier/*.go)
 
+SENDGIFT_GOFILES := \
+		$(wildcard ./common/*.go) \
+		$(wildcard ./config/*.go) \
+		$(wildcard ./lib/*.go) \
+		$(wildcard ./giftsender/*.go)
+
 server: $(SERVER)
 trim: $(TRIM)
 craw: $(CRAW)
 modify: $(MODIFY)
+gift: $(SENDGIFT)
 
 $(SERVER): $(SERVER_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/server
@@ -75,11 +83,19 @@ $(TRIM): $(TRIM_GOFILES)
 $(MODIFY): $(MODIFY_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/modifier
 	@echo "finish"
+
+$(SENDGIFT): $(SENDGIFT_GOFILES)
+	@$(GOBUILD) -o ./$@ herefriend/giftsender
+	@echo "finish"
+
+gift.x64: $(SENDGIFT_GOFILES)
+	@GOOS=linux $(GOBUILD) -o ./$(SENDGIFT) herefriend/giftsender
+	@echo "finish"
 	
 all: $(SERVER) $(CRAWLER)
 
 clean:
-	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY)
+	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY)./$(SENDGIFT)
 	@echo "finish"
 
 cp:
@@ -104,4 +120,10 @@ cpmodify:
 	@tar czf $(MODIFY).gz $(MODIFY)
 	@$(SCP) $(MODIFY).gz $(ALIYUN)
 	@rm -f $(MODIFY).gz $(MODIFY)
+	@echo "finish"
+
+cpgift:
+	@tar czf $(SENDGIFT).gz $(SENDGIFT)
+	@$(SCP) $(SENDGIFT).gz $(ALIYUN)
+	@rm -f $(SENDGIFT).gz $(SENDGIFT)
 	@echo "finish"

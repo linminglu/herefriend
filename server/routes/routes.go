@@ -64,12 +64,12 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	 * CMS
 	 */
 	m.Get("/login", cms.CmsLogin)
+	m.Get("/cms/log", cms.Log)
 	m.Post("/dashboard", cms.CmsDashBoard)
 	m.Get("/cms/sysinfo", cms.SystemInfo)
 	m.Get("/cms/cpuinfo", cms.CpuInfo)
 	m.Get("/cms/sysuserinfo", cms.SystemUserInfo)
 	m.Get("/cms/commentinfo", cms.CommentInfo)
-	m.Get("/cms/log", cms.Log)
 	m.Get("/cms/recommendhistory", cms.Recommendhistory)
 	m.Get("/cms/msgtemplate", cms.MsgTemplate)
 	m.Get("/cms/msgtemplateadd", cms.MsgTemplateAdd)
@@ -89,4 +89,5 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/cms/GetTalkHistory", cms.GetTalkHistory)
 	m.Get("/cms/DoTalk", cms.DoTalk)
 	m.Get("/cms/MessagePushSet", cms.MessagePushSet)
+	m.Get("/cms/PresentGift", cms.PresentGift)
 }

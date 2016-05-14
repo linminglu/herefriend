@@ -47,7 +47,7 @@ func init() {
 
 	gLiveUsersInfo = &liveUsersInfo{users: make(map[int]*liveUser), lock: sync.RWMutex{}}
 	go liveUserGoRoute()
-	go liveUserNotifyMsgRoutine()
+	//go liveUserNotifyMsgRoutine()
 
 	gVipUsersInfo = &vipUsersInfo{users: make(map[int]*vipUser), lock: sync.RWMutex{}}
 	go vipUserGoRoute()

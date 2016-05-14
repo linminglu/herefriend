@@ -329,10 +329,14 @@ func (v recvValueSorter) Swap(i, j int) {
  |
 */
 func CharmTopList(r *http.Request) (int, string) {
-	exist, _, gender := getIdGenderByRequest(r)
+	exist, _, _ := getIdGenderByRequest(r)
 	if true != exist {
 		return 404, ""
 	}
+
+	v := r.URL.Query()
+	genderstr := v.Get("gender")
+	gender, _ := strconv.Atoi(genderstr)
 
 	giftprice := make(map[int]int)
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftInfo)
@@ -355,7 +359,7 @@ func CharmTopList(r *http.Request) (int, string) {
 	recvlist := make([]giftRecvListInfo, 0)
 
 	sentence = lib.SQLSentence(lib.SQLMAP_Select_GiftRecvListByGender)
-	rows, err = lib.SQLQuery(sentence, gender)
+	rows, err = lib.SQLQuery(sentence, 1-gender)
 	if nil != err {
 		return 404, ""
 	} else {
@@ -388,7 +392,7 @@ func CharmTopList(r *http.Request) (int, string) {
 
 		for _, v := range valuelist {
 			var charminfo userCharmInfo
-			_, charminfo.Person = GetUserInfo(v.id, 1-gender)
+			_, charminfo.Person = GetUserInfo(v.id, gender)
 			charminfo.GiftValue = v.value
 
 			charmlist = append(charmlist, charminfo)
