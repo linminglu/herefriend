@@ -102,7 +102,6 @@ func (this *Request) Download(cookies []*http.Cookie) error {
 		bytebuf = bytes.Replace(bytebuf, []byte("\r"), nil, -1)
 		bytebuf = bytes.Replace(bytebuf, []byte("\t"), nil, -1)
 
-		fmt.Println("【Download】finished")
 		this.body = bytebuf
 		return nil
 	}

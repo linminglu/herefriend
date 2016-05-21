@@ -48,7 +48,7 @@ func DownloadImageAndPutToQiniu(url string, cut bool, id int, filename string) e
 
 		bounds := m.Bounds()
 		rgbImg := m.(*image.YCbCr)
-		subImg := rgbImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 24)))
+		subImg := rgbImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 55)))
 
 		var buf []byte
 		buffer := bytes.NewBuffer(buf)

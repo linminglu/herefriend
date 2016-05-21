@@ -1,10 +1,6 @@
 package lib
 
-import (
-	"strings"
-
-	. "herefriend/common"
-)
+import . "herefriend/common"
 
 type DistrictJson struct {
 	Province string
@@ -21,7 +17,7 @@ func init() {
 	gDistMap = make(map[string]string)
 
 	var ok bool
-	for _, dist := range G_DistrictB {
+	for _, dist := range CommonDistrcitInfos {
 		_, ok = gProvMap[dist.Provcode]
 		if true != ok {
 			gProvMap[dist.Provcode] = dist.Province
@@ -34,16 +30,16 @@ func init() {
 	}
 
 	var districtJson DistrictJson
-	for i := range G_DistrictB {
+	for i := range CommonDistrcitInfos {
 		if "" == districtJson.Province {
-			districtJson.Province = G_DistrictB[i].Province
-			districtJson.District = append(districtJson.District, G_DistrictB[i].District)
-		} else if G_DistrictB[i].Province == districtJson.Province {
-			districtJson.District = append(districtJson.District, G_DistrictB[i].District)
+			districtJson.Province = CommonDistrcitInfos[i].Province
+			districtJson.District = append(districtJson.District, CommonDistrcitInfos[i].District)
+		} else if CommonDistrcitInfos[i].Province == districtJson.Province {
+			districtJson.District = append(districtJson.District, CommonDistrcitInfos[i].District)
 		} else {
 			gDistrictJson = append(gDistrictJson, districtJson)
-			districtJson.Province = G_DistrictB[i].Province
-			districtJson.District = []string{G_DistrictB[i].District}
+			districtJson.Province = CommonDistrcitInfos[i].Province
+			districtJson.District = []string{CommonDistrcitInfos[i].District}
 		}
 	}
 
@@ -60,42 +56,6 @@ func getDistrictByCode(code string) string {
 	s, _ := gDistMap[code]
 
 	return s
-}
-
-func GetDistrictString(addStr string) (string, string) {
-	var provcode string
-	var distcode string
-
-	if "" != addStr {
-		for _, s := range G_DistrictA {
-			if strings.Contains(addStr, s.Province) {
-				provcode = s.Provcode
-				break
-			}
-		}
-
-		if "" != provcode {
-			for _, s := range G_DistrictA {
-				if (provcode == s.Provcode) && (strings.Contains(addStr, s.District)) {
-					distcode = s.Distcode
-					break
-				}
-			}
-		}
-	}
-
-	var province string
-	var district string
-
-	if "" != provcode {
-		province = getProvinceByCode(provcode)
-	}
-
-	if "" != distcode {
-		district = getDistrictByCode(distcode)
-	}
-
-	return province, district
 }
 
 func GetDistrictJsonArray() *[]DistrictJson {

@@ -16,61 +16,6 @@ func init() {
 	gRegexp, _ = regexp.Compile("(?:</code>&nbsp;来自：)([^<]+)(?:</p>)")
 }
 
-func getDistrictString(addStr string) (string, string) {
-	var provcode string
-	var distcode string
-
-	if "" != addStr {
-		for _, s := range common.G_DistrictA {
-			if strings.Contains(addStr, s.Province) {
-				provcode = s.Provcode
-				break
-			}
-		}
-
-		if "" != provcode {
-			for _, s := range common.G_DistrictA {
-				if (provcode == s.Provcode) && (strings.Contains(addStr, s.District)) {
-					distcode = s.Distcode
-					break
-				}
-			}
-		}
-	}
-
-	var province string
-	var district string
-
-	if "" != provcode {
-		for _, s := range common.G_DistrictB {
-			if provcode == s.Provcode {
-				province = s.Province
-				break
-			}
-		}
-	}
-
-	if "" != distcode {
-		for _, s := range common.G_DistrictB {
-			if distcode == s.Distcode {
-				district = s.District
-				break
-			}
-		}
-	}
-
-	if "" == province {
-		tmp := strings.Split(addStr, " ")
-
-		province = tmp[0]
-		if len(tmp) > 1 {
-			district = tmp[1]
-		}
-	}
-
-	return province, district
-}
-
 /*
  *
  *    Function: GetIpAddress
@@ -107,7 +52,7 @@ func GetIpAddress(r *http.Request) (string, string) {
 		return "广东省", "东莞市"
 	}
 
-	return getDistrictString(addStr)
+	return common.GetDistrictByString(addStr)
 }
 
 /*

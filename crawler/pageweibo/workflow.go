@@ -141,7 +141,7 @@ func crawlVGirlInfo(idstr string) {
 
 	pageuser.SetHeadImg(ppic.headimg)
 	pageuser.SetImages(ppic.imgs)
-	pageuser.Save(false)
+	pageuser.Save()
 
 	sentence = lib.SQLSentence(lib.SQLMAP_Insert_VGirlId)
 	_, err := lib.SQLExec(sentence, idstr, pfensi.fensi, pageuser.GetUsrId())

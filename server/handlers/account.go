@@ -1222,7 +1222,7 @@ func Register(req *http.Request) (int, string) {
 		go func() {
 			log.Tracef("注册: %s%s Age=%d Gender=%d", province, district, age, gender)
 
-			msg := "欢迎你来到寂寞同城搭讪"
+			msg := "欢迎你来到寂寞同城交友!"
 			timevalue := lib.CurrentTimeUTCInt64()
 			RecommendInsertMessageToDB(1, lastId, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
 			lib.SetRedisDistrict(lastId, province)

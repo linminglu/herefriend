@@ -27,7 +27,7 @@ type PersonInfo struct {
 	Height          int                `json:",omitempty"` //身高
 	Weight          int                `json:",omitempty"` //体重
 	Age             int                `json:",omitempty"` //年龄
-	Gender          int                `json:",omitempty"` //性别: 0(女) 1(男)
+	Gender          int                //性别: 0(女) 1(男)
 	OnlineStatus    int                `json:",omitempty"` //在线状态
 	VipLevel        int                `json:",omitempty"` //Vip级别
 	VipExpireTime   time.Time          `json:",omitempty"` //会员到期时间

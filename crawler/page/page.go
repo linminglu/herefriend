@@ -37,7 +37,11 @@ func init() {
 }
 
 func NewPage(request *request.Request) *Page {
-	return &Page{usrid: request.GetUid(), request: request}
+	if nil == request {
+		return &Page{crawled: true}
+	} else {
+		return &Page{usrid: request.GetUid(), request: request}
+	}
 }
 
 func (this *Page) IsCrawled() bool {
@@ -46,6 +50,10 @@ func (this *Page) IsCrawled() bool {
 
 func (this *Page) GetGender() int {
 	return this.gender
+}
+
+func (this *Page) GetProvince() string {
+	return this.info.Province
 }
 
 func (this *Page) GetUsrId() int {
@@ -66,6 +74,12 @@ func (this *Page) SetImages(urls []string) {
 
 func (this *Page) GetPersonInfo() *common.PersonInfo {
 	return &this.info
+}
+
+func (this *Page) SetPersonInfo(info common.PersonInfo) {
+	this.info = info
+	this.gender = info.Gender
+	this.age = info.Age
 }
 
 func eascapString(s string) string {
@@ -193,7 +207,7 @@ func (this *Page) Crawl(needpic bool) *Page {
 				this.info.Housing = sel.Eq(1).Text()
 				this.info.Allow_housing = sel.Eq(3).Text()
 			case "所在地区：":
-				this.info.Province, this.info.District = lib.GetDistrictString(sel.Eq(1).Text())
+				this.info.Province, this.info.District = common.GetDistrictByString(sel.Eq(1).Text())
 				this.info.Allow_residence = sel.Eq(3).Text()
 			case "有无子女：":
 				this.info.Allow_kidstatus = sel.Eq(3).Text()
@@ -385,7 +399,7 @@ func insertPictureById(id, gender int, filename string, bHead bool) {
 /*
  * the function to output the crawl results to database
  */
-func (this *Page) Save(needcut bool) {
+func (this *Page) Save() {
 	if true != this.crawled {
 		return
 	}
@@ -400,13 +414,13 @@ func (this *Page) Save(needcut bool) {
 		this.info.Selfjudge = string([]rune(this.info.Selfjudge)[:510])
 	}
 
-	this.usrid = insertNewId(this.gender, common.USERTYPE_WEIBO, &this.info)
+	this.usrid = insertNewId(this.gender, common.USERTYPE_RB, &this.info)
 	this.info.Id = this.usrid
 
 	/* head image */
 	if "" != this.headimg {
 		imagename := lib.RandStringBytesMaskImprSrc(32) + ".jpg"
-		err := image.DownloadImageAndPutToQiniu(this.headimg, false, this.usrid, imagename)
+		err := image.DownloadImageAndPutToQiniu(this.headimg, true, this.usrid, imagename)
 		if nil == err {
 			insertPictureById(this.usrid, this.gender, imagename, true)
 			this.info.IconUrl = imagename
@@ -415,16 +429,12 @@ func (this *Page) Save(needcut bool) {
 
 	/* images */
 	if 0 != len(this.imgs) {
-		var strslice []string
-		var imgname string
-
 		for _, s := range this.imgs {
-			strslice = strings.Split(s, "/")
-			imgname = strslice[len(strslice)-1]
-			err := image.DownloadImageAndPutToQiniu(s, false, this.usrid, imgname)
+			imagename := lib.RandStringBytesMaskImprSrc(32) + ".jpg"
+			err := image.DownloadImageAndPutToQiniu(s, false, this.usrid, imagename)
 			if nil == err {
-				insertPictureById(this.usrid, this.gender, imgname, false)
-				this.info.Pics = append(this.info.Pics, imgname)
+				insertPictureById(this.usrid, this.gender, imagename, false)
+				this.info.Pics = append(this.info.Pics, imagename)
 			}
 		}
 	}

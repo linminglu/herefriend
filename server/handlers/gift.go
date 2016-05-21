@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
 
 	log "github.com/cihub/seelog"
@@ -55,18 +54,19 @@ func BuyBeans(r *http.Request) (int, string) {
 	}
 
 	var value int
+	var consume int
 	selectSentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
-	err := lib.SQLQueryRow(selectSentence, id).Scan(&value)
+	err := lib.SQLQueryRow(selectSentence, id).Scan(&value, &consume)
 	if nil != err {
 		if sql.ErrNoRows == err {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
-			lib.SQLExec(insertSentence, id, beans)
+			lib.SQLExec(insertSentence, id, gender, beans, 0)
 		} else {
 			return 404, ""
 		}
 	} else {
 		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
-		lib.SQLExec(updateSentence, beans+value, id)
+		lib.SQLExec(updateSentence, beans+value, consume, id)
 	}
 
 	code, info := GetUserInfo(id, gender)
@@ -135,26 +135,19 @@ func PresentGift(r *http.Request) (int, string) {
 	toid, _ := strconv.Atoi(toidstr)
 	giftid, _ := strconv.Atoi(giftidstr)
 	giftnum, _ := strconv.Atoi(numstr)
-
-	if 0 == giftnum {
+	exist, togender, usertype := GetGenderUsertypeById(toid)
+	if false == exist || 0 == giftnum {
 		return 403, ""
 	}
 
-	// present the gifts
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_PresentGift)
-	_, err := lib.SQLExec(sentence, id, gender, toid, giftid, giftnum, lib.CurrentTimeUTCInt64(), msg)
-	if nil != err {
-		return 404, ""
-	}
-
-	// consume the gifts
+	// check the gifts
 	var tmpid int
 	var giftname string
 	var price int
 	var validnum int
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_GiftById)
-	err = lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftById)
+	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
 		return 404, ""
 	}
@@ -165,31 +158,60 @@ func PresentGift(r *http.Request) (int, string) {
 		validnum = 0
 	}
 
+	giftvalue := price * giftnum
+
 	// check if the beans is enough
 	var beansValue int
+	var consumevalue int
+
 	selectSentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
-	err = lib.SQLQueryRow(selectSentence, id).Scan(&beansValue)
-	if nil != err || beansValue < price*giftnum {
+	err = lib.SQLQueryRow(selectSentence, id).Scan(&beansValue, &consumevalue)
+	if nil != err || beansValue < giftvalue {
 		return 403, "没有足够的金币购买此数量的礼物"
 	}
 
-	updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
-	lib.SQLExec(updateSentence, beansValue-price*giftnum, id)
+	// present the gifts
+	sentence = lib.SQLSentence(lib.SQLMAP_Insert_PresentGift)
+	_, err = lib.SQLExec(sentence, id, gender, toid, giftid, giftnum, lib.CurrentTimeUTCInt64(), msg)
+	if nil != err {
+		return 404, ""
+	}
 
+	// consume the gold beans
+	updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
+	lib.SQLExec(updateSentence, beansValue-giftvalue, consumevalue+giftvalue, id)
+
+	// consume the gift
 	sentence = lib.SQLSentence(lib.SQLMAP_Update_ConsumeGift)
 	_, err = lib.SQLExec(sentence, validnum, giftid)
 	if nil != err {
 		return 404, ""
 	}
 
+	// updathe the receive value
+	var value int
+	selectSentence = lib.SQLSentence(lib.SQLMAP_Select_ReceiveValueById)
+	err = lib.SQLQueryRow(selectSentence, toid).Scan(&value)
+	if nil != err {
+		if sql.ErrNoRows == err {
+			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_ReceiveValueById)
+			fmt.Println(insertSentence)
+			lib.SQLExec(insertSentence, toid, togender, giftvalue)
+		} else {
+			return 404, ""
+		}
+	} else {
+		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)
+		lib.SQLExec(updateSentence, value+giftvalue, toid)
+	}
+
 	go func() {
-		exist, _, usertype := GetGenderUsertypeById(toid)
-		if false == exist || common.USERTYPE_RB == usertype {
+		if common.USERTYPE_RB == usertype {
 			return
 		}
 
-		_, userinfo := GetUserInfo(id, gender)
-		newgiftmsg := fmt.Sprintf("你收到[ %s ]赠送的礼物: %d 个 [ %s ]。你的魅力值又增加了。", userinfo.Name, giftnum, giftname)
+		_, userinfo := GetUserInfo(id, togender)
+		newgiftmsg := fmt.Sprintf("你收到[ %s ]赠送的礼物: %d 个 [ %s ]。你的魅力值又增加了 %d。", userinfo.Name, giftnum, giftname, giftvalue*10)
 		clientid := GetClientIdByUserId(toid)
 
 		// 普通通知消息
@@ -305,25 +327,6 @@ func SendListVerbose(r *http.Request) (int, string) {
 	return 200, string(jsonRlt)
 }
 
-type recvValueItem struct {
-	id    int
-	value int
-}
-
-type recvValueSorter []recvValueItem
-
-func (v recvValueSorter) Len() int {
-	return len(v)
-}
-
-func (v recvValueSorter) Less(i, j int) bool {
-	return v[i].value > v[j].value
-}
-
-func (v recvValueSorter) Swap(i, j int) {
-	v[i], v[j] = v[j], v[i]
-}
-
 /*
  |    Function: CharmTopList
  |      Author: Mr.Sancho
@@ -341,65 +344,31 @@ func CharmTopList(r *http.Request) (int, string) {
 	v := r.URL.Query()
 	genderstr := v.Get("gender")
 	gender, _ := strconv.Atoi(genderstr)
+	page, count := lib.Get_pageid_count_fromreq(r)
 
-	giftprice := make(map[int]int)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftInfo)
-	rows, err := lib.SQLQuery(sentence)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_Charmlist)
+	rows, err := lib.SQLQuery(sentence, gender, (page-1)*count, count)
 	if nil != err {
+		log.Error(err)
 		return 404, ""
-	} else {
-		var info giftInfo
-		for rows.Next() {
-			err = rows.Scan(&info.Id, &info.Type, &info.Name, &info.Description, &info.ValidNum, &info.ImageUrl, &info.Effect,
-				&info.Price, &info.OriginPrice, &info.DiscountDescription)
-			if nil == err {
-				giftprice[info.Id] = info.Price
-			}
-		}
-
-		rows.Close()
 	}
-
-	recvlist := make([]giftRecvListInfo, 0)
-
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_GiftRecvListByGender)
-	rows, err = lib.SQLQuery(sentence, 1-gender)
-	if nil != err {
-		return 404, ""
-	} else {
-		var info giftRecvListInfo
-
-		for rows.Next() {
-			err = rows.Scan(&info.toid, &info.giftid, &info.giftnum)
-			if nil == err {
-				recvlist = append(recvlist, info)
-			}
-		}
-
-		rows.Close()
-	}
+	defer rows.Close()
 
 	charmlist := make([]userCharmInfo, 0)
+	var tempid int
+	var code int
+	var info userCharmInfo
 
-	if 0 != len(recvlist) {
-		recvvalue := make(map[int]int)
-
-		for _, info := range recvlist {
-			recvvalue[info.toid] = recvvalue[info.toid] + giftprice[info.giftid]*info.giftnum
-		}
-
-		valuelist := make(recvValueSorter, 0, len(recvvalue))
-		for id, value := range recvvalue {
-			valuelist = append(valuelist, recvValueItem{id: id, value: value})
-		}
-		sort.Sort(valuelist)
-
-		for _, v := range valuelist {
-			var charminfo userCharmInfo
-			_, charminfo.Person = GetUserInfo(v.id, gender)
-			charminfo.GiftValue = v.value
-
-			charmlist = append(charmlist, charminfo)
+	for rows.Next() {
+		err = rows.Scan(&tempid, &info.GiftValue)
+		if nil == err {
+			code, info.Person = GetUserInfo(tempid, gender)
+			if 200 == code {
+				info.GiftValue = info.GiftValue * 10
+				charmlist = append(charmlist, info)
+			} else {
+				log.Errorf("Charm top list get person info failed, id=%d gender=%d", tempid, gender)
+			}
 		}
 	}
 

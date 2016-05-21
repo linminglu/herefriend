@@ -63,6 +63,8 @@ const (
 	SQLMAP_Select_GiftSendVerbose
 	SQLMAP_Select_GiftRecvListByGender
 	SQLMAP_Select_GoldBeansById
+	SQLMAP_Select_ReceiveValueById
+	SQLMAP_Select_Charmlist
 	SQLMAP_Insert_Info
 	SQLMAP_Insert_Picture
 	SQLMAP_Insert_Heartbeat
@@ -75,6 +77,7 @@ const (
 	SQLMAP_Insert_UserBlacklist
 	SQLMAP_Insert_PresentGift
 	SQLMAP_Insert_GoldBeansById
+	SQLMAP_Insert_ReceiveValueById
 	SQLMAP_Update_Info
 	SQLMAP_Update_InfoPictureFlag
 	SQLMAP_Update_RandomInfo
@@ -94,6 +97,7 @@ const (
 	SQLMAP_Update_SetPictureTag
 	SQLMAP_Update_ConsumeGift
 	SQLMAP_Update_GoldBeansById
+	SQLMAP_Update_ReceiveValueById
 	SQLMAP_Update_EvaluationTime
 	SQLMAP_Delete_UserId
 	SQLMAP_Delete_Picture
@@ -160,7 +164,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_VIPRows:               {"s", "select id, viplevel, vipdays, vipexpiretime from %s where usertype=1 and viplevel!=0"},
 	SQLMAP_Select_VipLevelByID:          {"s", "select viplevel, vipdays from %s where id=?"},
 	SQLMAP_Select_VGirlProcess:          {"", "select areaindex, page from vgirlprocess where base=0"},
-	SQLMAP_Select_ZQProcess:             {"", "select areaindex, page from zhenqingprocess where base=0"},
+	SQLMAP_Select_ZQProcess:             {"", "select areaindex, page from zhenqingprocess where base=?"},
 	SQLMAP_Select_CheckVGirlId:          {"", "select id from vgirlsid where id=?"},
 	SQLMAP_Select_CheckZQUserId:         {"", "select id from zhenqingids where id=?"},
 	SQLMAP_Select_RandomUncrawlGirlsId:  {"", "select id from girlsid where age>=18 and age<=28 limit ?,1"},
@@ -176,20 +180,23 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_GiftRecvVerbose:       {"", "select fromid, giftid, giftnum, time, message from giftconsume where toid=? order by time desc limit ?,?"},
 	SQLMAP_Select_GiftSendVerbose:       {"", "select toid, giftid, giftnum, time, message from giftconsume where fromid=? order by time desc limit ?,?"},
 	SQLMAP_Select_GiftRecvListByGender:  {"", "select toid, giftid, giftnum from giftconsume where fromgender=? order by toid"},
-	SQLMAP_Select_GoldBeansById:         {"", "select beans from wealth where id=?"},
+	SQLMAP_Select_GoldBeansById:         {"", "select beans,consumed from wealth where id=?"},
+	SQLMAP_Select_ReceiveValueById:      {"", "select receive from wealth where id=?"},
+	SQLMAP_Select_Charmlist:             {"", "select id, receive from wealth where gender=? order by receive desc limit ?,?"},
 	SQLMAP_Insert_Info: {"s", "insert into %s (id, password, name, gender, logintime, age, usertype, clientid, height, weight, " +
 		"province, district, citylove, naken) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"},
-	SQLMAP_Insert_Picture:       {"s", "insert into %s_picture (id, filename, tag, flag) value (?,?,?,1)"},
-	SQLMAP_Insert_Heartbeat:     {"", "insert into heartbeat (id, gender, province) values (?,?,?)"},
-	SQLMAP_Insert_Recomment:     {"", "insert into recommend (fromid, toid, time, type, msg, readed) value (?,?,?,?,?,0)"},
-	SQLMAP_Insert_Visit:         {"", "insert into visit (fromid, toid, time, readed) value (?,?,?,0)"},
-	SQLMAP_Insert_VGirlId:       {"", "insert into vgirlsid (id, fensi, flag) value (?,?,?)"},
-	SQLMAP_Insert_ZQId:          {"", "insert into zhenqingids (id) value (?)"},
-	SQLMAP_Insert_Report:        {"", "insert into report (fromid, reportedid, reason) values (?,?,?)"},
-	SQLMAP_Insert_Blacklist:     {"s", "insert into blacklist (select * from %s where id=?)"},
-	SQLMAP_Insert_UserBlacklist: {"", "insert into userblacklist (fromid, blackid) value (?,?)"},
-	SQLMAP_Insert_PresentGift:   {"", "insert into giftconsume (fromid, fromgender, toid, giftid, giftnum, time, message) values (?,?,?,?,?,?,?)"},
-	SQLMAP_Insert_GoldBeansById: {"", "insert into wealth (id, beans) values (?,?)"},
+	SQLMAP_Insert_Picture:          {"s", "insert into %s_picture (id, filename, tag, flag) value (?,?,?,1)"},
+	SQLMAP_Insert_Heartbeat:        {"", "insert into heartbeat (id, gender, province) values (?,?,?)"},
+	SQLMAP_Insert_Recomment:        {"", "insert into recommend (fromid, toid, time, type, msg, readed) value (?,?,?,?,?,0)"},
+	SQLMAP_Insert_Visit:            {"", "insert into visit (fromid, toid, time, readed) value (?,?,?,0)"},
+	SQLMAP_Insert_VGirlId:          {"", "insert into vgirlsid (id, fensi, flag) value (?,?,?)"},
+	SQLMAP_Insert_ZQId:             {"", "insert into zhenqingids (id) value (?)"},
+	SQLMAP_Insert_Report:           {"", "insert into report (fromid, reportedid, reason) values (?,?,?)"},
+	SQLMAP_Insert_Blacklist:        {"s", "insert into blacklist (select * from %s where id=?)"},
+	SQLMAP_Insert_UserBlacklist:    {"", "insert into userblacklist (fromid, blackid) value (?,?)"},
+	SQLMAP_Insert_PresentGift:      {"", "insert into giftconsume (fromid, fromgender, toid, giftid, giftnum, time, message) values (?,?,?,?,?,?,?)"},
+	SQLMAP_Insert_GoldBeansById:    {"", "insert into wealth (id, gender, beans, consumed, receive) values (?,?,?,?,0)"},
+	SQLMAP_Insert_ReceiveValueById: {"", "insert into wealth (id, gender, beans, receive) values (?,?,0,?)"},
 	SQLMAP_Update_Info: {"s", "update %s set lovetype=?, bodytype=?, marriage=?, province=?, district=?, native=?, education=?, " +
 		"occupation=?, housing=?, carstatus=?, introduction=?, school=?, speciality=?, animal=?, astrology=?, lang=?, " +
 		"bloodtype=?, selfjudge=?, companytype=?, companyindustry=?, nationnality=?, religion=?, charactor=?, hobbies=?, " +
@@ -209,11 +216,12 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Update_VIPById:                {"s", "update %s set viplevel=?, vipdays=?, vipexpiretime=? where id=?"},
 	SQLMAP_Update_VGirlProcess:           {"", "update vgirlprocess set areaindex=?, page=? where base=0"},
 	SQLMAP_Update_VGirlId:                {"", "update vgirlsid set flag=1 where id=?"},
-	SQLMAP_Update_ZQProcess:              {"", "update zhenqingprocess set areaindex=?, page=? where base=0"},
+	SQLMAP_Update_ZQProcess:              {"", "update zhenqingprocess set areaindex=?, page=? where base=?"},
 	SQLMAP_Update_SetPictureFlag:         {"s", "update %s_picture set flag=1 where id=? and filename=? and tag=?"},
 	SQLMAP_Update_SetPictureTag:          {"s", "update %s_picture set tag=? where id=? and filename=?"},
 	SQLMAP_Update_ConsumeGift:            {"", "update gift set validnum=? where id=?"},
-	SQLMAP_Update_GoldBeansById:          {"", "update wealth set beans=? where id=?"},
+	SQLMAP_Update_GoldBeansById:          {"", "update wealth set beans=?,consumed=? where id=?"},
+	SQLMAP_Update_ReceiveValueById:       {"", "update wealth set receive=? where id=?"},
 	SQLMAP_Update_EvaluationTime:         {"s", "update %s set evaluationtime=? where id=?"},
 	SQLMAP_Delete_UserId:                 {"s", "delete from %s where id=?"},
 	SQLMAP_Delete_Picture:                {"s", "delete from %s_picture where id=? and filename=?"},

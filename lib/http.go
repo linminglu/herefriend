@@ -52,7 +52,7 @@ func Get(url string, cookies []*http.Cookie) (*http.Response, error) {
 	}
 
 	client := &http.Client{
-		Transport: &http.Transport{Dial: HttpTimeoutDial},
+		Transport: &http.Transport{Dial: HttpTimeoutDial, DisableKeepAlives: true},
 	}
 
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
@@ -78,7 +78,7 @@ func Post(url string, cookies []*http.Cookie) (*http.Response, error) {
 	}
 
 	client := &http.Client{
-		Transport: &http.Transport{Dial: HttpTimeoutDial},
+		Transport: &http.Transport{Dial: HttpTimeoutDial, DisableKeepAlives: true},
 	}
 
 	httpreq.Header.Add("User-Agent", common.ClientAgent)

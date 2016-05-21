@@ -1,5 +1,7 @@
 package common
 
+import "strings"
+
 type DistrictInfo struct {
 	Province string
 	Provcode string
@@ -7,7 +9,7 @@ type DistrictInfo struct {
 	Distcode string
 }
 
-var G_DistrictA = [...]DistrictInfo{
+var gDistrictBrief = [...]DistrictInfo{
 	{"北京", "8611", "东城", "861101"},
 	{"北京", "8611", "西城", "861102"},
 	{"北京", "8611", "崇文", "861103"},
@@ -448,7 +450,7 @@ var G_DistrictA = [...]DistrictInfo{
 	{"台湾", "8671", "桃园", "867107"},
 	{"台湾", "8671", "云林", "867108"}}
 
-var G_DistrictB = []DistrictInfo{
+var CommonDistrcitInfos = []DistrictInfo{
 	{"北京市", "8611", "东城区", "861101"},
 	{"北京市", "8611", "西城区", "861102"},
 	{"北京市", "8611", "崇文区", "861103"},
@@ -888,3 +890,66 @@ var G_DistrictB = []DistrictInfo{
 	{"台湾省", "8671", "台北市", "867106"},
 	{"台湾省", "8671", "桃园县", "867107"},
 	{"台湾省", "8671", "云林县", "867108"}}
+
+/*
+ |    Function: GetDistrictByString
+ |      Author: Mr.Sancho
+ |        Date: 2016-05-22
+ | Description: get province and district by address string
+ |      Return:
+ |
+*/
+func GetDistrictByString(addStr string) (string, string) {
+	var provcode string
+	var distcode string
+
+	if "" != addStr {
+		for _, s := range gDistrictBrief {
+			if strings.Contains(addStr, s.Province) {
+				provcode = s.Provcode
+				break
+			}
+		}
+
+		if "" != provcode {
+			for _, s := range gDistrictBrief {
+				if (provcode == s.Provcode) && (strings.Contains(addStr, s.District)) {
+					distcode = s.Distcode
+					break
+				}
+			}
+		}
+	}
+
+	var province string
+	var district string
+
+	if "" != provcode {
+		for _, s := range CommonDistrcitInfos {
+			if provcode == s.Provcode {
+				province = s.Province
+				break
+			}
+		}
+	}
+
+	if "" != distcode {
+		for _, s := range CommonDistrcitInfos {
+			if distcode == s.Distcode {
+				district = s.District
+				break
+			}
+		}
+	}
+
+	if "" == province {
+		tmp := strings.Split(addStr, " ")
+
+		province = tmp[0]
+		if len(tmp) > 1 {
+			district = tmp[1]
+		}
+	}
+
+	return province, district
+}
