@@ -493,7 +493,7 @@ func checkIfUserHaveViplevel(id, gender int) bool {
  * Description: get pictures by the id number
  *
  */
-func getUserPictrues(id, gender int, info *personInfo) {
+func getUserPictrues(id, gender int, info *common.PersonInfo) {
 	var filename string
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchPictures, gender)
@@ -533,8 +533,8 @@ func getUserPictrues(id, gender int, info *personInfo) {
  | Description:
  |
 */
-func GetUserInfoById(id int) (int, personInfo) {
-	var info personInfo
+func GetUserInfoById(id int) (int, common.PersonInfo) {
+	var info common.PersonInfo
 
 	exist, gender := getGenderById(id)
 	if false == exist {
@@ -560,9 +560,15 @@ func GetUserInfoById(id int) (int, personInfo) {
 func GetUserGoldBeans(id int) int {
 	var beans int
 
+	beans, exist := lib.GetRedisGoldBeans(id)
+	if true == exist {
+		return beans
+	}
+
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
 	lib.SQLQueryRow(sentence, id).Scan(&beans)
 
+	lib.SetRedisGoldBeans(id, beans)
 	return beans
 }
 
@@ -575,6 +581,11 @@ func GetUserGoldBeans(id int) int {
  |
 */
 func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
+	redislist, exist := lib.GetRedisGiftRecvList(id)
+	if true == exist {
+		return *redislist
+	}
+
 	infolist := make([]common.GiftSendRecvInfo, 0)
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvSum)
 	rows, err := lib.SQLQuery(sentence, id)
@@ -591,6 +602,7 @@ func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
 		}
 	}
 
+	lib.SetRedisGiftRecvList(id, &infolist)
 	return infolist
 }
 
@@ -603,6 +615,11 @@ func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
  |
 */
 func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
+	redislist, exist := lib.GetRedisGiftSendList(id)
+	if true == exist {
+		return *redislist
+	}
+
 	infolist := make([]common.GiftSendRecvInfo, 0)
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftSendSum)
 	rows, err := lib.SQLQuery(sentence, id)
@@ -619,6 +636,7 @@ func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
 		}
 	}
 
+	lib.SetRedisGiftSendList(id, &infolist)
 	return infolist
 }
 
@@ -630,19 +648,13 @@ func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
  * Description: get the user information by id and gender
  *
  */
-func GetUserInfo(id int, gender int) (int, personInfo) {
-	var info personInfo
-
-	content, exist := lib.GetRedisUserInfo(id)
+func GetUserInfo(id int, gender int) (int, common.PersonInfo) {
+	redisinfo, exist := lib.GetRedisUserInfo(id)
 	if true == exist {
-		err := json.Unmarshal(content, &info)
-		if nil == err {
-			info.GoldBeans = GetUserGoldBeans(id)
-			info.RecvGiftList = GetUserRecvGiftList(id)
-			return 200, info
-		}
+		return 200, *redisinfo
 	}
 
+	var info common.PersonInfo
 	var timeValue int64
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_PersonInfo, gender)
 	err := lib.SQLQueryRow(sentence, id).Scan(&info.Id, &info.Name, &info.Age, &info.Gender, &info.OnlineStatus, &info.VipLevel, &timeValue, &info.Height, &info.Weight,
@@ -663,8 +675,7 @@ func GetUserInfo(id int, gender int) (int, personInfo) {
 
 	info.GoldBeans = GetUserGoldBeans(id)
 	info.RecvGiftList = GetUserRecvGiftList(id)
-	jsonRlt, _ := json.Marshal(info)
-	lib.SetRedisUserInfo(id, jsonRlt)
+	lib.SetRedisUserInfo(id, &info)
 
 	return 200, info
 }
@@ -1109,11 +1120,11 @@ func Search(req *http.Request) (int, string) {
 	}
 	defer rows.Close()
 
-	var info personInfo
+	var info common.PersonInfo
 	var idtmp int
 	var code int
 
-	infos := make([]personInfo, 0)
+	infos := make([]common.PersonInfo, 0)
 	gender = 1 - gender
 	for rows.Next() {
 		err = rows.Scan(&idtmp)
@@ -1297,7 +1308,6 @@ func Login(req *http.Request) (int, string) {
 
 	lib.DelRedisUserInfo(id)
 	code, info := GetUserInfo(id, gender)
-	info.GoldBeans = GetUserGoldBeans(id)
 	info.SendGiftList = GetUserSendGiftList(id)
 	jsonRlt, _ := json.Marshal(info)
 

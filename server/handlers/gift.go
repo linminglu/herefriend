@@ -69,6 +69,8 @@ func BuyBeans(r *http.Request) (int, string) {
 		lib.SQLExec(updateSentence, beans+value, consume, id)
 	}
 
+	lib.DelRedisGoldBeans(id)
+	lib.DelRedisUserInfo(id)
 	code, info := GetUserInfo(id, gender)
 	info.SendGiftList = GetUserSendGiftList(id)
 	jsonRlt, _ := json.Marshal(info)
@@ -205,6 +207,11 @@ func PresentGift(r *http.Request) (int, string) {
 		lib.SQLExec(updateSentence, value+giftvalue, toid)
 	}
 
+	lib.DelRedisGiftSendList(id)
+	lib.DelRedisGiftRecvList(toid)
+	lib.DelRedisUserInfo(id)
+	lib.DelRedisUserInfo(toid)
+
 	go func() {
 		if common.USERTYPE_RB == usertype {
 			return
@@ -236,7 +243,6 @@ func PresentGift(r *http.Request) (int, string) {
 
 	// refresh personal info
 	var presentInfo presentGiftInfo
-
 	_, presentInfo.WhoRecvGift = GetUserInfo(toid, 1-gender)
 	_, presentInfo.UserInfo = GetUserInfo(id, gender)
 	presentInfo.UserInfo.SendGiftList = GetUserSendGiftList(id)

@@ -7,6 +7,7 @@ import (
 
 	log "github.com/cihub/seelog"
 
+	"herefriend/common"
 	"herefriend/lib"
 )
 
@@ -42,7 +43,7 @@ func getHeartbeatBaseCountByProvinceGender(province string, gender int) int {
  |
 */
 func doReqHeartbeat(id, gender, count int) (int, string) {
-	var info personInfo
+	var info common.PersonInfo
 
 	_, info = GetUserInfo(id, gender)
 	gender = 1 - gender
@@ -63,7 +64,7 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 	var code int
 
 	//init size with 0, if there is no data, http response body will be []
-	infos := make([]personInfo, 0)
+	infos := make([]common.PersonInfo, 0)
 	for rows.Next() {
 		err = rows.Scan(&idtmp)
 		if nil != err {

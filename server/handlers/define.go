@@ -7,10 +7,6 @@ import (
 	"herefriend/common"
 )
 
-type personInfo struct {
-	common.PersonInfo
-}
-
 type reviewInfo struct {
 	FoceShowReviewAlert bool
 	ShowReviewAlert     bool
@@ -20,11 +16,11 @@ type reviewInfo struct {
 }
 
 type registerInfo struct {
-	Id              int        //用户ID
-	PassWord        string     //用户密码
-	ShowGift        bool       //是否显示礼物
-	ClientVersion   int        //客户端版本
-	Member          personInfo //用户详细信息
+	Id              int               //用户ID
+	PassWord        string            //用户密码
+	ShowGift        bool              //是否显示礼物
+	ClientVersion   int               //客户端版本
+	Member          common.PersonInfo //用户详细信息
 	ReviewAlertInfo reviewInfo
 }
 
@@ -220,13 +216,13 @@ const (
 )
 
 type messageInfo struct {
-	MsgId     int         //消息Id
-	MsgText   string      `json:"MsgText,omitempty"` //消息内容, 无内容时此字段会自动隐藏
-	UserId    int         //用户Id
-	UserInfo  *personInfo `json:"UserInfo,omitempty"` //用户信息
-	Direction int         //消息方向, 0: UserId发送给我的消息, 1: 我发送给UserId的消息
-	Readed    bool        //客户端是否显示为已读
-	TimeUTC   time.Time   //标准时间,用来参考转换为本地时间
+	MsgId     int                //消息Id
+	MsgText   string             `json:"MsgText,omitempty"` //消息内容, 无内容时此字段会自动隐藏
+	UserId    int                //用户Id
+	UserInfo  *common.PersonInfo `json:"UserInfo,omitempty"` //用户信息
+	Direction int                //消息方向, 0: UserId发送给我的消息, 1: 我发送给UserId的消息
+	Readed    bool               //客户端是否显示为已读
+	TimeUTC   time.Time          //标准时间,用来参考转换为本地时间
 }
 
 type allMessageInfo struct {
@@ -338,19 +334,19 @@ type giftInfo struct {
 }
 
 type presentGiftInfo struct {
-	UserInfo    personInfo //个人信息
-	WhoRecvGift personInfo //收到礼物的人的信息
+	UserInfo    common.PersonInfo //个人信息
+	WhoRecvGift common.PersonInfo //收到礼物的人的信息
 }
 
 /*
  * 礼物列表详情
  */
 type giftListVerbose struct {
-	Person  personInfo //赠送礼物或者收到礼物的用户信息
-	GiftId  int        //礼物ID
-	GiftNum int        //礼物数量
-	Message string     //礼物留言
-	TimeUTC time.Time  //送礼物的时间
+	Person  common.PersonInfo //赠送礼物或者收到礼物的用户信息
+	GiftId  int               //礼物ID
+	GiftNum int               //礼物数量
+	Message string            //礼物留言
+	TimeUTC time.Time         //送礼物的时间
 }
 
 type giftRecvListInfo struct {
@@ -360,7 +356,7 @@ type giftRecvListInfo struct {
 }
 
 type userCharmInfo struct {
-	Person      personInfo //用户信息
-	GiftValue   int        //收到礼物的总价值
-	AdmireCount int        //被心仪的数量
+	Person      common.PersonInfo //用户信息
+	GiftValue   int               //收到礼物的总价值
+	AdmireCount int               //被心仪的数量
 }
