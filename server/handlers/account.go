@@ -47,7 +47,6 @@ func init() {
 
 	gLiveUsersInfo = &liveUsersInfo{users: make(map[int]*liveUser), lock: sync.RWMutex{}}
 	go liveUserGoRoute()
-	//go liveUserNotifyMsgRoutine()
 
 	gVipUsersInfo = &vipUsersInfo{users: make(map[int]*vipUser), lock: sync.RWMutex{}}
 	go vipUserGoRoute()
@@ -594,16 +593,54 @@ func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
 	}
 
 	defer rows.Close()
-	var info common.GiftSendRecvInfo
+
+	var giftid, giftnum int
+	giftnuminfo := make(map[int]int)
 	for rows.Next() {
-		err = rows.Scan(&info.GiftId, &info.Number)
+		err = rows.Scan(&giftid, &giftnum)
 		if nil == err {
-			infolist = append(infolist, info)
+			giftnuminfo[giftid] = giftnuminfo[giftid] + giftnum
 		}
+	}
+
+	for k, v := range giftnuminfo {
+		infolist = append(infolist, common.GiftSendRecvInfo{GiftId: k, Number: v})
 	}
 
 	lib.SetRedisGiftRecvList(id, &infolist)
 	return infolist
+}
+
+func PrepareUserRecvGiftList(id int) {
+	_, exist := lib.GetRedisGiftRecvList(id)
+	if true == exist {
+		return
+	}
+
+	infolist := make([]common.GiftSendRecvInfo, 0)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvSum)
+	rows, err := lib.SQLQuery(sentence, id)
+	if nil != err {
+		return
+	}
+
+	defer rows.Close()
+
+	var giftid, giftnum int
+	giftnuminfo := make(map[int]int)
+	for rows.Next() {
+		err = rows.Scan(&giftid, &giftnum)
+		if nil == err {
+			giftnuminfo[giftid] = giftnuminfo[giftid] + giftnum
+		}
+	}
+
+	for k, v := range giftnuminfo {
+		infolist = append(infolist, common.GiftSendRecvInfo{GiftId: k, Number: v})
+	}
+
+	lib.SetRedisGiftRecvList(id, &infolist)
+	return
 }
 
 /*
@@ -628,12 +665,18 @@ func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
 	}
 
 	defer rows.Close()
-	var info common.GiftSendRecvInfo
+
+	var giftid, giftnum int
+	giftnuminfo := make(map[int]int)
 	for rows.Next() {
-		err = rows.Scan(&info.GiftId, &info.Number)
+		err = rows.Scan(&giftid, &giftnum)
 		if nil == err {
-			infolist = append(infolist, info)
+			giftnuminfo[giftid] = giftnuminfo[giftid] + giftnum
 		}
+	}
+
+	for k, v := range giftnuminfo {
+		infolist = append(infolist, common.GiftSendRecvInfo{GiftId: k, Number: v})
 	}
 
 	lib.SetRedisGiftSendList(id, &infolist)
@@ -1100,7 +1143,7 @@ func Search(req *http.Request) (int, string) {
 	go log.Tracef("搜索: %v", queries)
 
 	page, count := lib.Get_pageid_count_fromreq(req)
-	if 1 == gender && true == useheartbeat && page <= 2 {
+	if true == useheartbeat && page <= 2 {
 		return doReqHeartbeat(id, gender, count)
 	}
 
@@ -1450,46 +1493,6 @@ func liveUserGoRoute() {
 			}
 		}
 		gLiveUsersInfo.lock.Unlock()
-	}
-}
-
-/*
- |    Function: liveUserNotifyMsgRoutine
- |      Author: Mr.Sancho
- |        Date: 2016-01-13
- |   Arguments:
- |      Return:
- | Description: notify live user the messages unreaded
- |
-*/
-func liveUserNotifyMsgRoutine() {
-	needpush := false
-
-	for {
-		time.Sleep(lib.SLEEP_DURATION_NOTIFYMSG)
-		needpush = false
-
-		gLiveUsersInfo.lock.Lock()
-		for id, user := range gLiveUsersInfo.users {
-			if LIVEUSER_STATUS_ONLINE == user.status {
-				recommendCount := recommend_GetUnreadNum(id, 0)
-				visitCount := visit_GetUnreadNum(id, 0)
-
-				unreadmsg := PushMsgUnread{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
-				jsonRlt, _ := json.Marshal(unreadmsg)
-				notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_UNREAD, Value: string(jsonRlt)}
-				jsonRlt, _ = json.Marshal(notifymsg)
-
-				clientid := GetClientIdByUserId(id)
-				push.Add(recommendCount+visitCount, clientid, push.PUSHMSG_TYPE_NOTIFYMSG, push.PUSH_NOTIFYMSG_UNREAD, "", string(jsonRlt))
-				needpush = true
-			}
-		}
-		gLiveUsersInfo.lock.Unlock()
-
-		if true == needpush {
-			push.DoPush()
-		}
 	}
 }
 

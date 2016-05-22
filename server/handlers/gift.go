@@ -14,6 +14,28 @@ import (
 	"herefriend/lib/push"
 )
 
+func init() {
+	go prepare()
+}
+
+func prepare() {
+	var id int
+
+	sentence := "select distinct toid from giftconsume"
+	rows, err := lib.SQLQuery(sentence)
+	if nil != err {
+		return
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&id)
+		if nil == err && 0 != id {
+			PrepareUserRecvGiftList(id)
+		}
+	}
+}
+
 /*
  |    Function: GoldPrice
  |      Author: Mr.Sancho
