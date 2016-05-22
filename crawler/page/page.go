@@ -431,7 +431,7 @@ func (this *Page) Save() {
 	if 0 != len(this.imgs) {
 		for _, s := range this.imgs {
 			imagename := lib.RandStringBytesMaskImprSrc(32) + ".jpg"
-			err := image.DownloadImageAndPutToQiniu(s, false, this.usrid, imagename)
+			err := image.DownloadImageAndPutToQiniu(s, true, this.usrid, imagename)
 			if nil == err {
 				insertPictureById(this.usrid, this.gender, imagename, false)
 				this.info.Pics = append(this.info.Pics, imagename)
