@@ -2,6 +2,7 @@ package image
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -9,8 +10,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gographics/imagick/imagick"
 	"herefriend/lib"
+
+	"github.com/gographics/imagick/imagick"
 )
 
 var g_mw *imagick.MagickWand
@@ -36,6 +38,11 @@ func DownloadImageAndPutToQiniu(url string, cut bool, id int, filename string) e
 		return err
 	}
 	defer resp.Body.Close()
+
+	if 200 != resp.StatusCode {
+		fmt.Printf("【Download】failed, statuscode=%d\n", resp.StatusCode)
+		return errors.New("")
+	}
 
 	var data io.Reader
 	if true == cut {

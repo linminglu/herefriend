@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	gCurrentGender         = 1
+	gCurrentGender         = 0
 	g_CRAW_WORKCHAN_BUFFER = 1
 )
 
