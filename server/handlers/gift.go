@@ -260,14 +260,21 @@ func PresentGift(r *http.Request) (int, string) {
  |
 */
 func RecvListVerbose(r *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(r)
+	exist, _, _ := getIdGenderByRequest(r)
 	if true != exist {
 		return 404, ""
 	}
 
+	v := r.URL.Query()
+	queryidstr := v.Get("queryid")
+	if "" == queryidstr {
+		return 404, ""
+	}
+
+	queryid, _ := strconv.Atoi(queryidstr)
 	page, count := lib.Get_pageid_count_fromreq(r)
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvVerbose)
-	rows, err := lib.SQLQuery(sentence, id, (page-1)*count, count)
+	rows, err := lib.SQLQuery(sentence, queryid, (page-1)*count, count)
 	if nil != err {
 		return 404, ""
 	}
@@ -301,14 +308,21 @@ func RecvListVerbose(r *http.Request) (int, string) {
  |
 */
 func SendListVerbose(r *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(r)
+	exist, _, _ := getIdGenderByRequest(r)
 	if true != exist {
 		return 404, ""
 	}
 
+	v := r.URL.Query()
+	queryidstr := v.Get("queryid")
+	if "" == queryidstr {
+		return 404, ""
+	}
+
+	queryid, _ := strconv.Atoi(queryidstr)
 	page, count := lib.Get_pageid_count_fromreq(r)
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftSendVerbose)
-	rows, err := lib.SQLQuery(sentence, id, (page-1)*count, count)
+	rows, err := lib.SQLQuery(sentence, queryid, (page-1)*count, count)
 	if nil != err {
 		return 404, ""
 	}
