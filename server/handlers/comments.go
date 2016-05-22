@@ -396,11 +396,11 @@ func recommendRobotRoutine() {
 			// 付费用户每次100%几率，未付费用户（有照片：70%，无照片：40%)
 			if false == checkIfUserHaveViplevel(id, user.gender) {
 				if true == checkIfUserHavePicture(id, user.gender) {
-					if lib.RandomHitPercent(30) {
+					if lib.RandomHitPercent(10) {
 						continue
 					}
 				} else {
-					if lib.RandomHitPercent(60) {
+					if lib.RandomHitPercent(40) {
 						continue
 					}
 				}
