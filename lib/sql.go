@@ -132,7 +132,7 @@ var gSqlMap = map[int]sqlmapnode{
 		"companytype, companyindustry, nationnality, religion, charactor, hobbies, citylove, naken, allow_age, allow_residence, " +
 		"allow_height, allow_marriage, allow_education, allow_housing, allow_income, allow_kidstatus from %s where id=?"},
 	SQLMAP_Select_SearchPictures:         {"s", "select filename from %s_picture where id=? and tag=?"},
-	SQLMAP_Select_SearchPicturesByFlag:   {"s", "select id, filename, tag from %s_picture where flag=0 order by id desc limit ?,?"},
+	SQLMAP_Select_SearchPicturesByFlag:   {"s", "select id, filename, tag from %s_picture where flag=0 and id>=? order by id desc limit ?,?"},
 	SQLMAP_Select_UserCount:              {"s", "select count(*) from %s"},
 	SQLMAP_Select_FakeCount:              {"s", "select count(*) from %s where usertype!=1"},
 	SQLMAP_Select_UserActive:             {"", "select regist,buy from useractive where id=1"},

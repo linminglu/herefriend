@@ -47,6 +47,8 @@ func DownloadImageAndPutToQiniu(url string, cut bool, id int, filename string) e
 	var data io.Reader
 	if true == cut {
 		var m image.Image
+		var subImg image.Image
+
 		m, _, err = image.Decode(resp.Body)
 		if err != nil {
 			fmt.Println(err)
@@ -54,8 +56,14 @@ func DownloadImageAndPutToQiniu(url string, cut bool, id int, filename string) e
 		}
 
 		bounds := m.Bounds()
-		rgbImg := m.(*image.YCbCr)
-		subImg := rgbImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 55)))
+		switch m.(type) {
+		case *image.Gray:
+			grayImg := m.(*image.Gray)
+			subImg = grayImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 65)))
+		case *image.YCbCr:
+			rgbImg := m.(*image.YCbCr)
+			subImg = rgbImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 65)))
+		}
 
 		var buf []byte
 		buffer := bytes.NewBuffer(buf)
