@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	log "github.com/cihub/seelog"
+
 	"herefriend/common"
 	"herefriend/lib"
 	"herefriend/server/handlers"
@@ -440,6 +442,8 @@ func SearchUserInfos(req *http.Request) (int, string) {
 				searchInfo.Users = append(searchInfo.Users, info)
 			}
 		}
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", countsentence, err)
 	}
 
 	jsonRlt, _ := json.Marshal(searchInfo)
@@ -543,6 +547,8 @@ func RegistUserInfo(req *http.Request) (int, string) {
 				searchInfo.Users = append(searchInfo.Users, info)
 			}
 		}
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", countsentence, err)
 	}
 
 	jsonRlt, _ := json.Marshal(searchInfo)

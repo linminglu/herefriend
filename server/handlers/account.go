@@ -214,8 +214,12 @@ func getRandomHeartbeatId(id, gender int) int {
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_HeartbeatRandomProvId, gender)
 
 		baselimit = getHeartbeatBaseCountByProvinceGender(province, gender)
-		lib.SQLQueryRow(sentence, province, lib.Intn(baselimit)).Scan(&tmpid)
-		return tmpid
+		err := lib.SQLQueryRow(sentence, province, lib.Intn(baselimit)).Scan(&tmpid)
+		if nil != err {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		} else if 0 != tmpid {
+			return tmpid
+		}
 	}
 
 	return getRandomUserId(id, gender)
@@ -254,6 +258,8 @@ func getRandomUserId(id, gender int) int {
 						if nil == err && 0 != count {
 							lib.SetRedisProvAgeCount(province, gender, tmpage, count)
 							rangecount = rangecount + count
+						} else {
+							log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 						}
 					}
 				}
@@ -264,6 +270,8 @@ func getRandomUserId(id, gender int) int {
 					err := lib.SQLQueryRow(sentence, province, min, max, baselimit).Scan(&tmpid)
 					if nil == err && 1 < tmpid {
 						return tmpid
+					} else {
+						log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 					}
 				}
 			}
@@ -279,6 +287,8 @@ func getRandomUserId(id, gender int) int {
 			if nil == err && 0 != count {
 				lib.SetRedisProvCount(province, gender, count)
 				getcount = true
+			} else {
+				log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 			}
 		} else {
 			getcount = true
@@ -290,6 +300,8 @@ func getRandomUserId(id, gender int) int {
 			err := lib.SQLQueryRow(sentence, province, baselimit).Scan(&tmpid)
 			if nil == err && 1 < tmpid {
 				return tmpid
+			} else {
+				log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 			}
 		}
 	}
@@ -328,12 +340,16 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 		err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 		if nil == err && id == idtmp {
 			return true, 0, usertype
+		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_UserType, 1)
 		err = lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 		if nil == err {
 			return true, 1, usertype
+		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 	}
 
@@ -357,6 +373,8 @@ func getUsertypeByIdGender(id, gender int) (bool, int) {
 	err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 	if nil == err && id == idtmp {
 		return true, usertype
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	return false, 0
@@ -383,6 +401,8 @@ func getGenderById(id int) (bool, int) {
 	if nil == err {
 		lib.SetRedisUserGender(id, 0)
 		return true, 0
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidId, 1)
@@ -390,6 +410,8 @@ func getGenderById(id int) (bool, int) {
 	if nil == err {
 		lib.SetRedisUserGender(id, 1)
 		return true, 1
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	return false, 1
@@ -411,12 +433,16 @@ func getGenderByIdPw(id int, pw string) (bool, int) {
 		err := lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 0
+		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidPasswd, 1)
 		err = lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 1
+		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 	}
 
@@ -457,6 +483,8 @@ func checkIfUserHavePicture(id, gender int) bool {
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
 		return true
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	/* 获取相册图片 */
@@ -479,6 +507,8 @@ func checkIfUserHaveViplevel(id, gender int) bool {
 	err := lib.SQLQueryRow(sentence, id).Scan(&viplevel, &vipdays)
 	if nil == err && 0 != viplevel {
 		return true
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	return false
@@ -501,6 +531,8 @@ func getUserPictrues(id, gender int, info *common.PersonInfo) {
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
 		info.IconUrl = lib.GetQiniuUserImageURL(id, filename)
+	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	info.Pics = make([]string, 0)
@@ -713,6 +745,7 @@ func GetUserInfo(id int, gender int) (int, common.PersonInfo) {
 
 		getUserPictrues(id, gender, &info)
 	} else {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		return 404, info
 	}
 

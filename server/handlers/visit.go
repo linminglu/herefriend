@@ -111,8 +111,9 @@ func visitRobotRoutine() {
 		gLiveUsersInfo.lock.RLock()
 		for id, user := range gLiveUsersInfo.users {
 			count = 0
-			err := lib.SQLQueryRow(gVisitUnreadSentence, id).Scan(&count)
+			err := lib.SQLQueryRow(gVisitUnreadSentence, id, 0).Scan(&count)
 			if nil != err || VISIT_MAX_UNREADNUMBER <= count {
+				log.Errorf("SQLQueryRow Error: %s %v\n", gVisitUnreadSentence, err)
 				continue
 			}
 

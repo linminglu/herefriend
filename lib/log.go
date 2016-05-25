@@ -7,7 +7,7 @@ import (
 const gLogConfig = `
 <seelog>
 	<outputs formatid="common">
-		<rollingfile type="size" filename="./log/roll.log" maxsize="1000000" maxrolls="5000000" />
+		<rollingfile type="size" filename="./log/roll.log" maxsize="1000000" maxrolls="5000" />
 	</outputs>
 	<formats>
 		<format id="common" format="%Date/%Time [%LEV] %Msg%n"/>

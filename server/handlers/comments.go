@@ -388,32 +388,27 @@ func recommendRobotRoutine() {
 		gLiveUsersInfo.lock.RLock()
 		for id, user := range gLiveUsersInfo.users {
 			count = 0
-			err := lib.SQLQueryRow(gRecommendInUnreadCount, id).Scan(&count)
+			err := lib.SQLQueryRow(gRecommendInUnreadCount, id, 0).Scan(&count)
 			if nil != err || RECOMMEND_MAX_UNREADNUMBER <= count {
+				log.Errorf("SQLQueryRow Error: %s %v\n", gRecommendInUnreadCount, err)
 				continue
 			}
 
 			// 付费用户每次100%几率，未付费用户（有照片：70%，无照片：40%)
 			if false == checkIfUserHaveViplevel(id, user.gender) {
 				if true == checkIfUserHavePicture(id, user.gender) {
-					if lib.RandomHitPercent(10) {
+					if lib.RandomHitPercent(35) {
 						continue
 					}
 				} else {
-					if lib.RandomHitPercent(40) {
+					if lib.RandomHitPercent(50) {
 						continue
 					}
 				}
 			}
 
 			/* get the random id */
-			var fromid int
-			if 0 == user.gender {
-				fromid = getRandomUserId(id, 1-user.gender)
-			} else {
-				fromid = getRandomHeartbeatId(id, 1-user.gender)
-			}
-
+			fromid := getRandomHeartbeatId(id, 1-user.gender)
 			if 0 == fromid {
 				continue
 			}
@@ -449,6 +444,7 @@ func checkAlreadySendSameCommentToday(fromid, toid, msgtype int) bool {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckCommentDailyLock)
 	err := lib.SQLQueryRow(sentence, fromid, toid, msgtype).Scan(&timevalue)
 	if nil != err || 0 == timevalue {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		return false
 	}
 

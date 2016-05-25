@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	log "github.com/cihub/seelog"
 	_ "github.com/go-sql-driver/mysql"
+
 	"herefriend/config"
 )
 
@@ -295,7 +297,12 @@ func SQLSentence(key int, args ...interface{}) string {
 }
 
 func SQLExec(query string, args ...interface{}) (sql.Result, error) {
-	return gDBHandle.Exec(query, args...)
+	result, err := gDBHandle.Exec(query, args...)
+	if nil != err {
+		log.Errorf("SQLExec Error: %s %v\n", query, err)
+	}
+
+	return result, err
 }
 
 func SQLQueryRow(query string, args ...interface{}) *sql.Row {
@@ -303,5 +310,10 @@ func SQLQueryRow(query string, args ...interface{}) *sql.Row {
 }
 
 func SQLQuery(query string, args ...interface{}) (*sql.Rows, error) {
-	return gDBHandle.Query(query, args...)
+	rows, err := gDBHandle.Query(query, args...)
+	if nil != err {
+		log.Errorf("SQLQuery Error: %s %v\n", query, err)
+	}
+
+	return rows, err
 }

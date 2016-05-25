@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	log "github.com/cihub/seelog"
+
 	"herefriend/lib"
 )
 
@@ -109,13 +111,13 @@ func sendGiftByGender(gender int) {
 		// get random id
 		err := lib.SQLQueryRow(sentence, lib.Intn(baselimit)).Scan(&id)
 		if nil != err || 1 >= id {
-			fmt.Println(err)
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 			continue
 		}
 
 		err = lib.SQLQueryRow(othersentence, lib.Intn(otherlimit)).Scan(&toid)
 		if nil != err || 1 >= toid {
-			fmt.Println(err)
+			log.Errorf("SQLQueryRow Error: %s %v\n", othersentence, err)
 			continue
 		}
 

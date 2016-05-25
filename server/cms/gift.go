@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	log "github.com/cihub/seelog"
+
 	"herefriend/lib"
 )
 
@@ -42,6 +44,7 @@ func PresentGift(r *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftById)
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		return 404, ""
 	}
 
@@ -65,6 +68,7 @@ func PresentGift(r *http.Request) (int, string) {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
 			lib.SQLExec(insertSentence, id, gender, 0, giftvalue)
 		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
 			return 404, ""
 		}
 	} else {
@@ -80,6 +84,7 @@ func PresentGift(r *http.Request) (int, string) {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_ReceiveValueById)
 			lib.SQLExec(insertSentence, toid, 1-gender, giftvalue)
 		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
 			return 404, ""
 		}
 	} else {
@@ -117,6 +122,7 @@ func RefreshGiftConsume(r *http.Request) {
 
 		err = lib.SQLQueryRow(giftsentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 		if nil != err || giftid != tmpid {
+			log.Errorf("SQLQueryRow Error: %s %v\n", giftsentence, err)
 			return
 		}
 
@@ -128,6 +134,8 @@ func RefreshGiftConsume(r *http.Request) {
 			if sql.ErrNoRows == err {
 				insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
 				lib.SQLExec(insertSentence, id, gender, 0, giftvalue)
+			} else {
+				log.Errorf("SQLQueryRow Error: %s %v\n", consumeSentence, err)
 			}
 		} else {
 			updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
@@ -140,6 +148,8 @@ func RefreshGiftConsume(r *http.Request) {
 			if sql.ErrNoRows == err {
 				insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_ReceiveValueById)
 				lib.SQLExec(insertSentence, toid, 1-gender, giftvalue)
+			} else {
+				log.Errorf("SQLQueryRow Error: %s %v\n", receiveSentence, err)
 			}
 		} else {
 			updateSentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)

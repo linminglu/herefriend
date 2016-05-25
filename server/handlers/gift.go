@@ -84,6 +84,7 @@ func BuyBeans(r *http.Request) (int, string) {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
 			lib.SQLExec(insertSentence, id, gender, beans, 0)
 		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
 			return 404, ""
 		}
 	} else {
@@ -173,6 +174,7 @@ func PresentGift(r *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftById)
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		return 404, ""
 	}
 
@@ -191,6 +193,7 @@ func PresentGift(r *http.Request) (int, string) {
 	selectSentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
 	err = lib.SQLQueryRow(selectSentence, id).Scan(&beansValue, &consumevalue)
 	if nil != err || beansValue < giftvalue {
+		log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
 		return 403, "没有足够的金币购买此数量的礼物"
 	}
 
@@ -222,6 +225,7 @@ func PresentGift(r *http.Request) (int, string) {
 			fmt.Println(insertSentence)
 			lib.SQLExec(insertSentence, toid, togender, giftvalue)
 		} else {
+			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
 			return 404, ""
 		}
 	} else {
