@@ -239,6 +239,7 @@ func PresentGift(r *http.Request) (int, string) {
 
 	lib.DelRedisGiftSendList(id)
 	lib.DelRedisGiftRecvList(toid)
+	lib.DelRedisGoldBeans(id)
 	lib.DelRedisUserInfo(id)
 	lib.DelRedisUserInfo(toid)
 
