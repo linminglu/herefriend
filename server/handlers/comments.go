@@ -390,7 +390,9 @@ func recommendRobotRoutine() {
 			count = 0
 			err := lib.SQLQueryRow(gRecommendInUnreadCount, id, 0).Scan(&count)
 			if nil != err || RECOMMEND_MAX_UNREADNUMBER <= count {
-				log.Errorf("SQLQueryRow Error: %s %v\n", gRecommendInUnreadCount, err)
+				if nil != err {
+					log.Errorf("SQLQueryRow Error: %s %v\n", gRecommendInUnreadCount, err)
+				}
 				continue
 			}
 
@@ -444,7 +446,9 @@ func checkAlreadySendSameCommentToday(fromid, toid, msgtype int) bool {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckCommentDailyLock)
 	err := lib.SQLQueryRow(sentence, fromid, toid, msgtype).Scan(&timevalue)
 	if nil != err || 0 == timevalue {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		if nil != err {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		}
 		return false
 	}
 

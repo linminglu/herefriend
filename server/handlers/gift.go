@@ -174,7 +174,9 @@ func PresentGift(r *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftById)
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		if nil != err {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		}
 		return 404, ""
 	}
 
@@ -193,7 +195,9 @@ func PresentGift(r *http.Request) (int, string) {
 	selectSentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
 	err = lib.SQLQueryRow(selectSentence, id).Scan(&beansValue, &consumevalue)
 	if nil != err || beansValue < giftvalue {
-		log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+		if nil != err {
+			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+		}
 		return 403, "没有足够的金币购买此数量的礼物"
 	}
 

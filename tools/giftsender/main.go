@@ -145,7 +145,9 @@ func getRandomUserIdByGender(gender int) (error, int) {
 	var id int
 	err := lib.SQLQueryRow(sentence, lib.Intn(baselimit)).Scan(&id)
 	if nil != err || 1 >= id {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		if nil != err {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		}
 		return err, 0
 	}
 

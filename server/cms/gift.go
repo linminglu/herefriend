@@ -44,7 +44,9 @@ func PresentGift(r *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftById)
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		if nil != err {
+			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		}
 		return 404, ""
 	}
 

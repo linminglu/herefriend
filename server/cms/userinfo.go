@@ -442,7 +442,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
 				searchInfo.Users = append(searchInfo.Users, info)
 			}
 		}
-	} else {
+	} else if nil != err {
 		log.Errorf("SQLQueryRow Error: %s %v\n", countsentence, err)
 	}
 
@@ -547,7 +547,7 @@ func RegistUserInfo(req *http.Request) (int, string) {
 				searchInfo.Users = append(searchInfo.Users, info)
 			}
 		}
-	} else {
+	} else if nil != err {
 		log.Errorf("SQLQueryRow Error: %s %v\n", countsentence, err)
 	}
 

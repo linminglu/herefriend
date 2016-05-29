@@ -258,7 +258,7 @@ func getRandomUserId(id, gender int) int {
 						if nil == err && 0 != count {
 							lib.SetRedisProvAgeCount(province, gender, tmpage, count)
 							rangecount = rangecount + count
-						} else {
+						} else if nil != err {
 							log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 						}
 					}
@@ -270,7 +270,7 @@ func getRandomUserId(id, gender int) int {
 					err := lib.SQLQueryRow(sentence, province, min, max, baselimit).Scan(&tmpid)
 					if nil == err && 1 < tmpid {
 						return tmpid
-					} else {
+					} else if nil != err {
 						log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 					}
 				}
@@ -287,7 +287,7 @@ func getRandomUserId(id, gender int) int {
 			if nil == err && 0 != count {
 				lib.SetRedisProvCount(province, gender, count)
 				getcount = true
-			} else {
+			} else if nil != err {
 				log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 			}
 		} else {
@@ -300,7 +300,7 @@ func getRandomUserId(id, gender int) int {
 			err := lib.SQLQueryRow(sentence, province, baselimit).Scan(&tmpid)
 			if nil == err && 1 < tmpid {
 				return tmpid
-			} else {
+			} else if nil != err {
 				log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 			}
 		}
@@ -340,7 +340,7 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 		err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 		if nil == err && id == idtmp {
 			return true, 0, usertype
-		} else {
+		} else if nil != err {
 			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 
@@ -373,7 +373,7 @@ func getUsertypeByIdGender(id, gender int) (bool, int) {
 	err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 	if nil == err && id == idtmp {
 		return true, usertype
-	} else {
+	} else if nil != err {
 		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
@@ -483,7 +483,7 @@ func checkIfUserHavePicture(id, gender int) bool {
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
 		return true
-	} else {
+	} else if nil != err {
 		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
@@ -507,7 +507,7 @@ func checkIfUserHaveViplevel(id, gender int) bool {
 	err := lib.SQLQueryRow(sentence, id).Scan(&viplevel, &vipdays)
 	if nil == err && 0 != viplevel {
 		return true
-	} else {
+	} else if nil != err {
 		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
@@ -531,7 +531,7 @@ func getUserPictrues(id, gender int, info *common.PersonInfo) {
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
 		info.IconUrl = lib.GetQiniuUserImageURL(id, filename)
-	} else {
+	} else if nil != err {
 		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
@@ -590,6 +590,7 @@ func GetUserInfoById(id int) (int, common.PersonInfo) {
 */
 func GetUserGoldBeans(id int) int {
 	var beans int
+	var consumed int
 
 	beans, exist := lib.GetRedisGoldBeans(id)
 	if true == exist {
@@ -597,7 +598,7 @@ func GetUserGoldBeans(id int) int {
 	}
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
-	lib.SQLQueryRow(sentence, id).Scan(&beans)
+	lib.SQLQueryRow(sentence, id).Scan(&beans, &consumed)
 
 	lib.SetRedisGoldBeans(id, beans)
 	return beans
