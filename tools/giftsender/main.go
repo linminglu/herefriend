@@ -26,22 +26,23 @@ var gFakeGirls int
 var gFakeGuys int
 var gGiftList []giftInfo
 
+//随机礼物Id用
 var gGiftRandomLimit int
 var gGiftRandomBuf []giftInfo
+
+//随机礼物数量用
 var gGiftNumLimit int
 var gGiftNumBuf []int
 var gGiftNumSource = []giftNum{
-	{1, 1, 5000},
-	{2, 10, 1000},
-	{11, 20, 50},
-	{21, 60, 1},
-	{61, 90, 1},
-	{91, 100, 1},
+	{1, 1, 50000},
+	{2, 10, 10000},
+	{11, 20, 500},
+	{21, 100, 1},
 }
 
 func init() {
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_FakeCount, 0)).Scan(&gFakeGirls)
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_FakeCount, 1)).Scan(&gFakeGuys)
+	lib.SQLQueryRow("select count(*) from heartbeat where gender=0 and id in (select id from girls where usertype!=1)").Scan(&gFakeGirls)
+	lib.SQLQueryRow("select count(*) from heartbeat where gender=1 and id in (select id from guys where usertype!=1)").Scan(&gFakeGuys)
 
 	resp, err := lib.Get("http://localhost:8080/Gift/GiftList", nil)
 	if nil != err {
@@ -76,6 +77,16 @@ func init() {
 	sum = max + min
 	for i, info := range gGiftList {
 		dot = sum - gGiftList[i].Price
+
+		//按照礼物价值修改概率
+		if gGiftList[i].Price < 100 {
+			dot = dot * 100
+		} else if gGiftList[i].Price < 1000 {
+			dot = dot * 2
+		} else if dot > 10 {
+			dot = dot / 10
+		}
+
 		for i := 0; i < dot; i = i + 1 {
 			gGiftRandomBuf = append(gGiftRandomBuf, info)
 		}
@@ -105,8 +116,17 @@ func sendGiftByGender(gender int) {
 		}
 	}()
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_RandomId, gender)
-	othersentence := lib.SQLSentence(lib.SQLMAP_Select_RandomId, 1-gender)
+	sentence, othersentence := func() (a, b string) {
+		if 0 == gender {
+			a = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
+			b = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
+		} else {
+			a = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
+			b = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
+		}
+		return
+	}()
+
 	for {
 		// get random id
 		err := lib.SQLQueryRow(sentence, lib.Intn(baselimit)).Scan(&id)
@@ -134,7 +154,12 @@ func sendGiftByGender(gender int) {
 			resp.Body.Close()
 		}
 
-		time.Sleep(time.Millisecond * 10)
+		lib.DelRedisGiftSendList(id)
+		lib.DelRedisGiftRecvList(toid)
+		lib.DelRedisUserInfo(id)
+		lib.DelRedisUserInfo(toid)
+
+		time.Sleep(time.Second)
 	}
 }
 

@@ -21,7 +21,6 @@ const (
 	SQLMAP_Select_SearchPictures
 	SQLMAP_Select_SearchPicturesByFlag
 	SQLMAP_Select_UserCount
-	SQLMAP_Select_FakeCount
 	SQLMAP_Select_UserActive
 	SQLMAP_Select_HeartbeatCount
 	SQLMAP_Select_HeartbeatProvinceCount
@@ -137,7 +136,6 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_SearchPictures:         {"s", "select filename from %s_picture where id=? and tag=?"},
 	SQLMAP_Select_SearchPicturesByFlag:   {"s", "select id, filename, tag from %s_picture where flag=0 and id>=? order by id desc limit ?,?"},
 	SQLMAP_Select_UserCount:              {"s", "select count(*) from %s"},
-	SQLMAP_Select_FakeCount:              {"s", "select count(*) from %s where usertype!=1"},
 	SQLMAP_Select_UserActive:             {"", "select regist,buy from useractive where id=1"},
 	SQLMAP_Select_HeartbeatCount:         {"d", "select count(*) from heartbeat where gender=%d"},
 	SQLMAP_Select_HeartbeatProvinceCount: {"d", "select count(*) from heartbeat where gender=%d and province=?"},
@@ -185,8 +183,8 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_GiftRecvListByGender:  {"", "select toid, giftid, giftnum from giftconsume where fromgender=? order by toid"},
 	SQLMAP_Select_GoldBeansById:         {"", "select beans,consumed from wealth where id=?"},
 	SQLMAP_Select_ReceiveValueById:      {"", "select receive from wealth where id=?"},
-	SQLMAP_Select_CharmToplist:          {"", "select id, receive from wealth where gender=? order by receive desc limit ?,?"},
-	SQLMAP_Select_WealthToplist:         {"", "select id, consumed from wealth order by consumed desc limit ?,?"},
+	SQLMAP_Select_CharmToplist:          {"", "select id, receive from wealth where receive!=0 and gender=? order by receive desc limit ?,?"},
+	SQLMAP_Select_WealthToplist:         {"", "select id, consumed from wealth where consumed!=0 order by consumed desc limit ?,?"},
 	SQLMAP_Insert_Info: {"s", "insert into %s (id, password, name, gender, logintime, age, usertype, clientid, height, weight, " +
 		"province, district, citylove, naken) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"},
 	SQLMAP_Insert_Picture:          {"s", "insert into %s_picture (id, filename, tag, flag) value (?,?,?,1)"},

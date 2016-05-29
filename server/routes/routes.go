@@ -91,5 +91,4 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/cms/DoTalk", cms.DoTalk)
 	m.Get("/cms/MessagePushSet", cms.MessagePushSet)
 	m.Get("/cms/PresentGift", cms.PresentGift)
-	m.Get("/cms/RefreshGiftConsume", cms.RefreshGiftConsume)
 }
