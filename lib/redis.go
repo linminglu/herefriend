@@ -189,7 +189,7 @@ func GetRedisGiftRecvList(id int) (*[]common.GiftSendRecvInfo, bool) {
 }
 
 func DelRedisGiftRecvList(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_SENDLIST, id)
+	key := fmt.Sprintf(REDIS_PREFIX_GIFT_RECVLIST, id)
 	delRedisValue(key)
 }
 
@@ -213,7 +213,7 @@ func GetRedisGiftSendList(id int) (*[]common.GiftSendRecvInfo, bool) {
 }
 
 func DelRedisGiftSendList(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_RECVLIST, id)
+	key := fmt.Sprintf(REDIS_PREFIX_GIFT_SENDLIST, id)
 	delRedisValue(key)
 }
 

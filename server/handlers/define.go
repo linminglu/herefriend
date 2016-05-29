@@ -158,32 +158,32 @@ var gGoldBeansPrices = []goldBeansPrice{
 		Price:     6,
 		Count:     60,
 		Song:      0,
-		ProductId: "6yuan"},
+		ProductId: "6yuan1"},
 	{
 		Price:     30,
 		Count:     300,
 		Song:      0,
-		ProductId: "30yuan"},
+		ProductId: "30yuan1"},
 	{
 		Price:     98,
 		Count:     980,
 		Song:      118,
-		ProductId: "98yuan"},
+		ProductId: "98yuan1"},
 	{
 		Price:     298,
 		Count:     2980,
 		Song:      388,
-		ProductId: "298yuan"},
+		ProductId: "298yuan1"},
 	{
 		Price:     588,
 		Count:     5880,
 		Song:      638,
-		ProductId: "588yuan"},
+		ProductId: "588yuan1"},
 	{
 		Price:     998,
 		Count:     9980,
 		Song:      1388,
-		ProductId: "998yuan"},
+		ProductId: "998yuan1"},
 }
 
 type liveUser struct {

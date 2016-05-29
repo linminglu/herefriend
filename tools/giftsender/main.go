@@ -70,6 +70,7 @@ func init() {
 		panic(err)
 	}
 	gGiftListNum = len(gGiftList)
+	fmt.Printf("list num = %d\n", gGiftListNum)
 
 	var max, min, sum int
 	var dot int
@@ -225,33 +226,39 @@ func DoSend(gender int) {
 		}
 
 		//随机收到礼物数量
-		giftnum := lib.Intn(10000) % gGiftListNum
+		giftnum := lib.Intn(gGiftListNum)
 		if 0 == giftnum {
 			giftnum = gGiftListNum
 		}
 
+		if 4 > giftnum {
+			giftnum = 4
+		}
+
+		fmt.Printf("user %d will receive %d gifts\n", toid, giftnum)
 		for n := 0; n < giftnum; n++ {
-			giftid := gGiftList[lib.Intn(gGiftListNum)].Id
+			giftid := gGiftList[n].Id
 
 			//随机送礼物的人数
 			sendernum := getRandomUserNumber()
+			fmt.Printf("user %d will receive gift %d from %d users\n", toid, giftid, sendernum)
 			for i := 0; i < sendernum; i++ {
 				err, id := getRandomUserIdByGender(gender)
 				if nil != err {
 					fmt.Println(err)
 					continue
 				}
+				sendermap[id] = true
+
 				num := getRandomGiftNumberByGiftId(giftid)
 				resetfulSendGift(id, gender, toid, giftid, num)
-
-				//每个人随机送其他人礼物
-				if _, ok := sendermap[id]; !ok {
-					sendermap[id] = true
-					randomSendGiftBySender(id, gender)
-				}
-
-				time.Sleep(time.Second * 3)
+				time.Sleep(time.Second * 1)
 			}
+		}
+
+		//每个人随机送其他人礼物
+		for k, _ := range sendermap {
+			randomSendGiftBySender(k, gender)
 		}
 	}
 }
