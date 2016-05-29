@@ -30,6 +30,8 @@ var gGiftList []giftInfo
 var gGiftRandomLimit int
 var gGiftRandomBuf []giftInfo
 
+//随机送礼物的人
+
 //随机礼物数量用
 var gGiftNumLimit int
 var gGiftNumBuf []int
@@ -104,6 +106,27 @@ func init() {
 	gGiftNumLimit = len(gGiftNumBuf)
 }
 
+func getRandomUserIdByGender(gender int) int {
+	baselimit := func() int {
+		if 0 == gender {
+			return gFakeGirls
+		} else {
+			return gFakeGuys
+		}
+	}()
+
+	sentence := func() (a, b string) {
+		if 0 == gender {
+			a = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
+			b = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
+		} else {
+			a = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
+			b = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
+		}
+		return
+	}()
+}
+
 func sendGiftByGender(gender int) {
 	var id int
 	var toid int
@@ -116,7 +139,7 @@ func sendGiftByGender(gender int) {
 		}
 	}()
 
-	sentence, othersentence := func() (a, b string) {
+	sentence, tosentence := func() (a, b string) {
 		if 0 == gender {
 			a = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
 			b = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
@@ -135,9 +158,9 @@ func sendGiftByGender(gender int) {
 			continue
 		}
 
-		err = lib.SQLQueryRow(othersentence, lib.Intn(otherlimit)).Scan(&toid)
+		err = lib.SQLQueryRow(tosentence, lib.Intn(otherlimit)).Scan(&toid)
 		if nil != err || 1 >= toid {
-			log.Errorf("SQLQueryRow Error: %s %v\n", othersentence, err)
+			log.Errorf("SQLQueryRow Error: %s %v\n", tosentence, err)
 			continue
 		}
 

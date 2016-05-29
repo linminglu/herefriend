@@ -959,8 +959,7 @@
     type goldBeansPrice struct {
     	Price     int    //价格
     	Count     int    //普通会员购买数量
-    	Count_zs  int    //level 2会员购买数量
-    	Count_zz  int    //level 3会员购买数量
+    	Song      int    //赠送
     	ProductId string //产品ID
     }
     ```
