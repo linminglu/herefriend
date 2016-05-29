@@ -16,7 +16,7 @@ type giftInfo struct {
 	Price int //价格(beans)
 }
 
-type giftNum struct {
+type numRangeInfo struct {
 	Start int
 	End   int
 	Num   int
@@ -25,21 +25,29 @@ type giftNum struct {
 var gFakeGirls int
 var gFakeGuys int
 var gGiftList []giftInfo
+var gGiftListNum int
 
 //随机礼物Id用
 var gGiftRandomLimit int
 var gGiftRandomBuf []giftInfo
 
-//随机送礼物的人
-
 //随机礼物数量用
 var gGiftNumLimit int
 var gGiftNumBuf []int
-var gGiftNumSource = []giftNum{
+var gGiftNumSource = []numRangeInfo{
 	{1, 1, 50000},
 	{2, 10, 10000},
 	{11, 20, 500},
 	{21, 100, 1},
+}
+
+//随机送礼物的人
+var gUserNumLimit int
+var gUserNumBuf []int
+var gUserNumSource = []numRangeInfo{
+	{1, 2, 5},
+	{3, 20, 500},
+	{21, 50, 10},
 }
 
 func init() {
@@ -61,6 +69,7 @@ func init() {
 	if nil != err {
 		panic(err)
 	}
+	gGiftListNum = len(gGiftList)
 
 	var max, min, sum int
 	var dot int
@@ -102,11 +111,20 @@ func init() {
 		}
 	}
 
+	for _, n := range gUserNumSource {
+		for i := n.Start; i <= n.End; i = i + 1 {
+			for j := 0; j < n.Num; j = j + 1 {
+				gUserNumBuf = append(gUserNumBuf, i)
+			}
+		}
+	}
+
 	gGiftRandomLimit = len(gGiftRandomBuf)
 	gGiftNumLimit = len(gGiftNumBuf)
+	gUserNumLimit = len(gUserNumBuf)
 }
 
-func getRandomUserIdByGender(gender int) int {
+func getRandomUserIdByGender(gender int) (error, int) {
 	baselimit := func() int {
 		if 0 == gender {
 			return gFakeGirls
@@ -115,78 +133,130 @@ func getRandomUserIdByGender(gender int) int {
 		}
 	}()
 
-	sentence := func() (a, b string) {
+	sentence := func() string {
 		if 0 == gender {
-			a = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
-			b = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
+			return "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
 		} else {
-			a = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
-			b = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
+			return "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
 		}
-		return
 	}()
+
+	var id int
+	err := lib.SQLQueryRow(sentence, lib.Intn(baselimit)).Scan(&id)
+	if nil != err || 1 >= id {
+		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		return err, 0
+	}
+
+	return nil, id
 }
 
-func sendGiftByGender(gender int) {
-	var id int
-	var toid int
+func getRandomGiftId() int {
+	index := lib.Intn(gGiftRandomLimit)
+	return gGiftRandomBuf[index].Id
+}
 
-	var baselimit, otherlimit = func() (int, int) {
-		if 0 == gender {
-			return gFakeGirls, gFakeGuys
-		} else {
-			return gFakeGuys, gFakeGirls
-		}
-	}()
+func getRandomGiftNumberByGiftId(id int) int {
+	if gGiftList[id].Price > 1000 {
+		return lib.Intn(5)
+	}
 
-	sentence, tosentence := func() (a, b string) {
-		if 0 == gender {
-			a = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
-			b = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
-		} else {
-			a = "select id from heartbeat where gender=1 and id in (select id from guys where usertype!=1) limit ?,1"
-			b = "select id from heartbeat where gender=0 and id in (select id from girls where usertype!=1) limit ?,1"
-		}
-		return
-	}()
+	var index int
+	var num int
 
+	//每次不能超过10000
 	for {
-		// get random id
-		err := lib.SQLQueryRow(sentence, lib.Intn(baselimit)).Scan(&id)
-		if nil != err || 1 >= id {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
-			continue
+		index = lib.Intn(gGiftNumLimit)
+		num = gGiftNumBuf[index]
+
+		if num*gGiftList[id].Price < 2000 {
+			break
 		}
+	}
 
-		err = lib.SQLQueryRow(tosentence, lib.Intn(otherlimit)).Scan(&toid)
-		if nil != err || 1 >= toid {
-			log.Errorf("SQLQueryRow Error: %s %v\n", tosentence, err)
-			continue
-		}
+	return num
+}
 
-		index := lib.Intn(gGiftRandomLimit)
-		giftid := gGiftRandomBuf[index].Id
+func getRandomUserNumber() int {
+	index := lib.Intn(gUserNumLimit)
+	return gUserNumBuf[index]
+}
 
-		numindex := lib.Intn(gGiftNumLimit)
-		num := gGiftNumBuf[numindex]
-		fmt.Printf("http://localhost:8080/cms/PresentGift?id=%d&gender=%d&toid=%d&giftid=%d&num=%d\r\n", id, gender, toid, giftid, num)
-		resp, err := lib.Get(fmt.Sprintf("http://localhost:8080/cms/PresentGift?id=%d&gender=%d&toid=%d&giftid=%d&num=%d", id, gender, toid, giftid, num), nil)
+func resetfulSendGift(id, gender, toid, giftid, num int) {
+	fmt.Printf("http://localhost:8080/cms/PresentGift?id=%d&gender=%d&toid=%d&giftid=%d&num=%d\r\n", id, gender, toid, giftid, num)
+	resp, err := lib.Get(fmt.Sprintf("http://localhost:8080/cms/PresentGift?id=%d&gender=%d&toid=%d&giftid=%d&num=%d", id, gender, toid, giftid, num), nil)
+	if nil != err {
+		fmt.Println(err)
+	} else {
+		resp.Body.Close()
+	}
+
+	lib.DelRedisGiftSendList(id)
+	lib.DelRedisGiftRecvList(toid)
+	lib.DelRedisUserInfo(id)
+	lib.DelRedisUserInfo(toid)
+}
+
+func randomSendGiftBySender(id, gender int) {
+	sendernum := getRandomUserNumber()
+	for i := 0; i < sendernum; i++ {
+		err, toid := getRandomUserIdByGender(1 - gender)
 		if nil != err {
 			fmt.Println(err)
-		} else {
-			resp.Body.Close()
+			continue
 		}
 
-		lib.DelRedisGiftSendList(id)
-		lib.DelRedisGiftRecvList(toid)
-		lib.DelRedisUserInfo(id)
-		lib.DelRedisUserInfo(toid)
+		giftid := getRandomGiftId()
+		num := getRandomGiftNumberByGiftId(giftid)
+		resetfulSendGift(id, gender, toid, giftid, num)
+		time.Sleep(time.Millisecond * 100)
+	}
+}
 
-		time.Sleep(time.Second)
+func DoSend(gender int) {
+	for {
+		sendermap := make(map[int]bool)
+
+		//随机一个receiver
+		err, toid := getRandomUserIdByGender(1 - gender)
+		if nil != err {
+			fmt.Println(err)
+			continue
+		}
+
+		//随机收到礼物数量
+		giftnum := lib.Intn(10000) % gGiftListNum
+		if 0 == giftnum {
+			giftnum = gGiftListNum
+		}
+
+		for n := 0; n < giftnum; n++ {
+			giftid := gGiftList[lib.Intn(gGiftListNum)].Id
+
+			//随机送礼物的人数
+			sendernum := getRandomUserNumber()
+			for i := 0; i < sendernum; i++ {
+				err, id := getRandomUserIdByGender(gender)
+				if nil != err {
+					fmt.Println(err)
+					continue
+				}
+				num := getRandomGiftNumberByGiftId(giftid)
+				resetfulSendGift(id, gender, toid, giftid, num)
+
+				//每个人随机送其他人礼物
+				if _, ok := sendermap[id]; !ok {
+					sendermap[id] = true
+					randomSendGiftBySender(id, gender)
+				}
+
+				time.Sleep(time.Second * 3)
+			}
+		}
 	}
 }
 
 func main() {
-	go sendGiftByGender(0)
-	sendGiftByGender(1)
+	go DoSend(0)
+	DoSend(1)
 }
