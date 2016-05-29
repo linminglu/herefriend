@@ -392,7 +392,7 @@ func CharmTopList(r *http.Request) (int, string) {
 	gender, _ := strconv.Atoi(genderstr)
 	page, count := lib.Get_pageid_count_fromreq(r)
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_Charmlist)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_CharmToplist)
 	rows, err := lib.SQLQuery(sentence, gender, (page-1)*count, count)
 	if nil != err {
 		log.Error(err)
@@ -413,11 +413,55 @@ func CharmTopList(r *http.Request) (int, string) {
 				info.GiftValue = info.GiftValue * 10
 				charmlist = append(charmlist, info)
 			} else {
-				log.Errorf("Charm top list get person info failed, id=%d gender=%d", tempid, gender)
+				log.Errorf("Charm top list get person info failed, id=%d gender=%d\n", tempid, gender)
 			}
 		}
 	}
 
 	jsonRlt, _ := json.Marshal(charmlist)
+	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: WealthTopList
+ |      Author: Mr.Sancho
+ |        Date: 2016-05-29
+ | Description:
+ |      Return:
+ |
+*/
+func WealthTopList(r *http.Request) (int, string) {
+	exist, _, _ := getIdGenderByRequest(r)
+	if true != exist {
+		return 404, ""
+	}
+
+	page, count := lib.Get_pageid_count_fromreq(r)
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_WealthToplist)
+	rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
+	if nil != err {
+		log.Error(err)
+		return 404, ""
+	}
+	defer rows.Close()
+
+	wealthlist := make([]userWealthInfo, 0)
+	var tempid int
+	var code int
+	var info userWealthInfo
+
+	for rows.Next() {
+		err = rows.Scan(&tempid, &info.ConsumedBeans)
+		if nil == err {
+			code, info.Person = GetUserInfoById(tempid)
+			if 200 == code {
+				wealthlist = append(wealthlist, info)
+			} else {
+				log.Errorf("Wealth top list get person info failed, id=%d\n", tempid)
+			}
+		}
+	}
+
+	jsonRlt, _ := json.Marshal(wealthlist)
 	return 200, string(jsonRlt)
 }

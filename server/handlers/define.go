@@ -360,3 +360,8 @@ type userCharmInfo struct {
 	GiftValue   int               //收到礼物的总价值
 	AdmireCount int               //被心仪的数量
 }
+
+type userWealthInfo struct {
+	Person        common.PersonInfo //用户信息
+	ConsumedBeans int               //花费金币的总数量
+}

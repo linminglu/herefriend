@@ -59,6 +59,7 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/Gift/RecvListVerbose", handlers.RecvListVerbose)
 	m.Get("/Gift/SendListVerbose", handlers.SendListVerbose)
 	m.Get("/User/CharmTopList", handlers.CharmTopList)
+	m.Get("/User/WealthTopList", handlers.WealthTopList)
 
 	/*
 	 * CMS

@@ -42,8 +42,8 @@ const (
 	SLEEP_DURATION_LIVESTATUS     = time.Minute
 	SLEEP_DURATION_NOTIFYMSG      = time.Second * 15
 	SLEEP_DURATION_PUSH_QUEUEMSG  = time.Second
-	SLEEP_BASELINE_ROBOTRECOMMEND = int64(time.Minute * 30)
-	SLEEP_BASELINE_ROBOTVISIT     = int64(time.Minute * 60)
+	SLEEP_BASELINE_ROBOTRECOMMEND = int64(time.Minute * 60)
+	SLEEP_BASELINE_ROBOTVISIT     = int64(time.Minute * 90)
 )
 
 const (
@@ -53,19 +53,19 @@ const (
 )
 
 var gHourDuration = [24]time.Duration{
-	time.Minute * 10, //0
-	time.Hour * 4,    //1
-	time.Hour * 3,    //2
-	time.Hour * 2,    //3
-	time.Hour,        //4
+	time.Minute * 40, //0
+	time.Hour * 5,    //1
+	time.Hour * 4,    //2
+	time.Hour * 3,    //3
+	time.Hour * 2,    //4
 	time.Hour,        //5
-	time.Minute * 35, //6
-	time.Minute * 2,  //7
-	time.Second * 35, //8
-	time.Second * 20, //9
-	time.Second * 30, //10
-	time.Second * 30, //11
-	time.Second * 20, //12
+	time.Minute * 45, //6
+	time.Minute * 20, //7
+	time.Second * 45, //8
+	time.Second * 50, //9
+	time.Second * 40, //10
+	time.Second * 40, //11
+	time.Second * 40, //12
 	time.Minute * 1,  //13
 	time.Minute * 1,  //14
 	time.Minute * 1,  //15
