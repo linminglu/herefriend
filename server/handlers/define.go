@@ -334,7 +334,8 @@ type presentGiftInfo struct {
 /*
  * 礼物列表详情
  */
-type giftListVerbose struct {
+type GiftListVerbose struct {
+	Id      int               //数据唯一性标识
 	Person  common.PersonInfo //赠送礼物或者收到礼物的用户信息
 	GiftId  int               //礼物ID
 	GiftNum int               //礼物数量

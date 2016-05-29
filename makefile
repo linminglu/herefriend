@@ -11,49 +11,49 @@ MODIFY := modify
 SENDGIFT := sendgift
 
 SERVER_GOFILES := \
-		$(wildcard ./common/*.go) \
-		$(wildcard ./config/*.go) \
-		$(wildcard ./lib/*.go) \
-		$(wildcard ./lib/push/*.go) \
-	   	$(wildcard ./server/handlers/*.go) \
-		$(wildcard ./server/routes/*.go) \
-		$(wildcard ./server/cms/*.go) \
-		$(wildcard ./server/*.go) 
+	$(wildcard ./common/*.go) \
+	$(wildcard ./config/*.go) \
+	$(wildcard ./lib/*.go) \
+	$(wildcard ./lib/push/*.go) \
+   	$(wildcard ./server/handlers/*.go) \
+	$(wildcard ./server/routes/*.go) \
+	$(wildcard ./server/cms/*.go) \
+	$(wildcard ./server/*.go) 
 
 CRAW_GOFILES := \
-		$(wildcard ./common/*.go) \
-		$(wildcard ./config/*.go) \
-		$(wildcard ./lib/*.go) \
-		$(wildcard ./lib/push/*.go) \
-		$(wildcard ./crawler/dbtables/*.go) \
-		$(wildcard ./crawler/idsearch/*.go) \
-		$(wildcard ./crawler/image/*.go) \
-		$(wildcard ./crawler/page/*.go) \
-		$(wildcard ./crawler/request/*.go) \
-		$(wildcard ./crawler/page3g/*.go) \
-		$(wildcard ./crawler/pageweibo/*.go) \
-		$(wildcard ./crawler/pagezhenqing/*.go) \
-		$(wildcard ./crawler/filter/*.go) \
-		$(wildcard ./crawler/*.go)
+	$(wildcard ./common/*.go) \
+	$(wildcard ./config/*.go) \
+	$(wildcard ./lib/*.go) \
+	$(wildcard ./lib/push/*.go) \
+	$(wildcard ./crawler/dbtables/*.go) \
+	$(wildcard ./crawler/idsearch/*.go) \
+	$(wildcard ./crawler/image/*.go) \
+	$(wildcard ./crawler/page/*.go) \
+	$(wildcard ./crawler/request/*.go) \
+	$(wildcard ./crawler/page3g/*.go) \
+	$(wildcard ./crawler/pageweibo/*.go) \
+	$(wildcard ./crawler/pagezhenqing/*.go) \
+	$(wildcard ./crawler/filter/*.go) \
+	$(wildcard ./crawler/*.go)
 
 TRIM_GOFILES := \
-		$(wildcard ./common/*.go) \
-		$(wildcard ./config/*.go) \
-		$(wildcard ./crawler/image/*.go) \
-		$(wildcard ./lib/*.go) \
-		$(wildcard ./tools/imageproc/*.go)
+	$(wildcard ./common/*.go) \
+	$(wildcard ./config/*.go) \
+	$(wildcard ./crawler/image/*.go) \
+	$(wildcard ./lib/*.go) \
+	$(wildcard ./tools/imageproc/*.go)
 
 MODIFY_GOFILES := \
-		$(wildcard ./common/*.go) \
-		$(wildcard ./config/*.go) \
-		$(wildcard ./lib/*.go) \
-		$(wildcard ./tools/modifier/*.go)
+	$(wildcard ./common/*.go) \
+	$(wildcard ./config/*.go) \
+	$(wildcard ./lib/*.go) \
+	$(wildcard ./tools/modifier/*.go)
 
 SENDGIFT_GOFILES := \
-		$(wildcard ./common/*.go) \
-		$(wildcard ./config/*.go) \
-		$(wildcard ./lib/*.go) \
-		$(wildcard ./tools/giftsender/*.go)
+	$(wildcard ./common/*.go) \
+	$(wildcard ./config/*.go) \
+	$(wildcard ./lib/*.go) \
+	$(wildcard ./tools/giftsender/*.go)
 
 server: $(SERVER)
 trim: $(TRIM)
@@ -96,7 +96,7 @@ gift.x64: $(SENDGIFT_GOFILES)
 all: $(SERVER) $(CRAWLER)
 
 clean:
-	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY) ./$(SENDGIFT)
+	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY) ./$(SENDGIFT) ./log
 	@echo "finish"
 
 cp:

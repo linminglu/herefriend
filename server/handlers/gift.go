@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strconv"
 
-	log "github.com/cihub/seelog"
-
 	"herefriend/common"
 	"herefriend/lib"
 	"herefriend/lib/push"
@@ -84,7 +82,7 @@ func BuyBeans(r *http.Request) (int, string) {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
 			lib.SQLExec(insertSentence, id, gender, beans, 0)
 		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+			lib.SQLError(selectSentence, err, id)
 			return 404, ""
 		}
 	} else {
@@ -102,23 +100,23 @@ func BuyBeans(r *http.Request) (int, string) {
 }
 
 /*
- |    Function: GiftList
+ |    Function: getGiftList
  |      Author: Mr.Sancho
- |        Date: 2016-04-24
- | Description: 获取礼物列表
+ |        Date: 2016-06-09
+ | Description:
  |      Return:
  |
 */
-func GiftList(r *http.Request) (int, string) {
+func getGiftList() (error, []giftInfo) {
+	infolist := make([]giftInfo, 0)
+
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftInfo)
 	rows, err := lib.SQLQuery(sentence)
 	if nil != err {
-		return 404, ""
+		return err, infolist
 	}
-
 	defer rows.Close()
 
-	infolist := make([]giftInfo, 0)
 	var info giftInfo
 	for rows.Next() {
 		err = rows.Scan(&info.Id, &info.Type, &info.Name, &info.Description, &info.ValidNum, &info.ImageUrl, &info.Effect,
@@ -129,7 +127,23 @@ func GiftList(r *http.Request) (int, string) {
 		}
 	}
 
-	go log.Tracef("获取礼物列表")
+	return nil, infolist
+}
+
+/*
+ |    Function: GiftList
+ |      Author: Mr.Sancho
+ |        Date: 2016-04-24
+ | Description: 获取礼物列表
+ |      Return:
+ |
+*/
+func GiftList(r *http.Request) (int, string) {
+	err, infolist := getGiftList()
+	if nil != err {
+		return 404, ""
+	}
+
 	jsonRlt, _ := json.Marshal(infolist)
 	return 200, string(jsonRlt)
 }
@@ -175,7 +189,7 @@ func PresentGift(r *http.Request) (int, string) {
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
 		if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+			lib.SQLError(sentence, err, giftid)
 		}
 		return 404, ""
 	}
@@ -196,7 +210,7 @@ func PresentGift(r *http.Request) (int, string) {
 	err = lib.SQLQueryRow(selectSentence, id).Scan(&beansValue, &consumevalue)
 	if nil != err || beansValue < giftvalue {
 		if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+			lib.SQLError(sentence, err, id)
 		}
 		return 403, "没有足够的金币购买此数量的礼物"
 	}
@@ -229,7 +243,7 @@ func PresentGift(r *http.Request) (int, string) {
 			fmt.Println(insertSentence)
 			lib.SQLExec(insertSentence, toid, togender, giftvalue)
 		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+			lib.SQLError(sentence, err, toid)
 			return 404, ""
 		}
 	} else {
@@ -283,6 +297,40 @@ func PresentGift(r *http.Request) (int, string) {
 }
 
 /*
+ |    Function: getRecvGiftListById
+ |      Author: Mr.Sancho
+ |        Date: 2016-06-09
+ | Description:
+ |      Return:
+ |
+*/
+func getRecvGiftListById(id int, page, count int) (error, []GiftListVerbose) {
+	giftlist := make([]GiftListVerbose, 0)
+
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvVerbose)
+	rows, err := lib.SQLQuery(sentence, id, (page-1)*count, count)
+	if nil != err {
+		return err, giftlist
+	}
+	defer rows.Close()
+
+	var timetmp int64
+	var info GiftListVerbose
+	var userid int
+
+	for rows.Next() {
+		err = rows.Scan(&userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
+		if nil == err {
+			_, info.Person = GetUserInfoById(userid)
+			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
+			giftlist = append(giftlist, info)
+		}
+	}
+
+	return nil, giftlist
+}
+
+/*
  |    Function: RecvListVerbose
  |      Author: Mr.Sancho
  |        Date: 2016-04-30
@@ -304,21 +352,38 @@ func RecvListVerbose(r *http.Request) (int, string) {
 
 	queryid, _ := strconv.Atoi(queryidstr)
 	page, count := lib.Get_pageid_count_fromreq(r)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvVerbose)
-	rows, err := lib.SQLQuery(sentence, queryid, (page-1)*count, count)
+	err, giftlist := getRecvGiftListById(queryid, page, count)
 	if nil != err {
 		return 404, ""
 	}
 
+	jsonRlt, _ := json.Marshal(giftlist)
+	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: getSendGiftListById
+ |      Author: Mr.Sancho
+ |        Date: 2016-06-09
+ | Description:
+ |      Return:
+ |
+*/
+func getSendGiftListById(id int, page, count int) (error, []GiftListVerbose) {
+	giftlist := make([]GiftListVerbose, 0)
+
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftSendVerbose)
+	rows, err := lib.SQLQuery(sentence, id, (page-1)*count, count)
+	if nil != err {
+		return err, giftlist
+	}
 	defer rows.Close()
 
-	giftlist := make([]giftListVerbose, 0)
 	var timetmp int64
-	var info giftListVerbose
+	var info GiftListVerbose
 	var userid int
-
 	for rows.Next() {
-		err = rows.Scan(&userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
+		err = rows.Scan(&info.Id, &userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
 		if nil == err {
 			_, info.Person = GetUserInfoById(userid)
 			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
@@ -326,8 +391,7 @@ func RecvListVerbose(r *http.Request) (int, string) {
 		}
 	}
 
-	jsonRlt, _ := json.Marshal(giftlist)
-	return 200, string(jsonRlt)
+	return nil, giftlist
 }
 
 /*
@@ -352,26 +416,10 @@ func SendListVerbose(r *http.Request) (int, string) {
 
 	queryid, _ := strconv.Atoi(queryidstr)
 	page, count := lib.Get_pageid_count_fromreq(r)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftSendVerbose)
-	rows, err := lib.SQLQuery(sentence, queryid, (page-1)*count, count)
+
+	err, giftlist := getSendGiftListById(queryid, page, count)
 	if nil != err {
 		return 404, ""
-	}
-
-	defer rows.Close()
-
-	giftlist := make([]giftListVerbose, 0)
-	var timetmp int64
-	var info giftListVerbose
-	var userid int
-
-	for rows.Next() {
-		err = rows.Scan(&userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
-		if nil == err {
-			_, info.Person = GetUserInfoById(userid)
-			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
-			giftlist = append(giftlist, info)
-		}
 	}
 
 	jsonRlt, _ := json.Marshal(giftlist)
@@ -400,25 +448,22 @@ func CharmTopList(r *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_CharmToplist)
 	rows, err := lib.SQLQuery(sentence, gender, (page-1)*count, count)
 	if nil != err {
-		log.Error(err)
 		return 404, ""
 	}
 	defer rows.Close()
 
 	charmlist := make([]userCharmInfo, 0)
-	var tempid int
-	var code int
-	var info userCharmInfo
-
 	for rows.Next() {
+		var tempid int
+		var code int
+		var info userCharmInfo
+
 		err = rows.Scan(&tempid, &info.GiftValue)
 		if nil == err {
 			code, info.Person = GetUserInfo(tempid, gender)
 			if 200 == code {
 				info.GiftValue = info.GiftValue * 10
 				charmlist = append(charmlist, info)
-			} else {
-				log.Errorf("Charm top list get person info failed, id=%d gender=%d\n", tempid, gender)
 			}
 		}
 	}
@@ -445,7 +490,6 @@ func WealthTopList(r *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_WealthToplist)
 	rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 	if nil != err {
-		log.Error(err)
 		return 404, ""
 	}
 	defer rows.Close()
@@ -460,13 +504,101 @@ func WealthTopList(r *http.Request) (int, string) {
 		if nil == err {
 			code, info.Person = GetUserInfoById(tempid)
 			if 200 == code {
+				info.ConsumedBeans = info.ConsumedBeans * 10
 				wealthlist = append(wealthlist, info)
-			} else {
-				log.Errorf("Wealth top list get person info failed, id=%d\n", tempid)
 			}
 		}
 	}
 
 	jsonRlt, _ := json.Marshal(wealthlist)
 	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: DeleteUserWealthAndGiftInfo
+ |      Author: Mr.Sancho
+ |        Date: 2016-06-09
+ | Description:
+ |      Return:
+ |
+*/
+func DeleteUserWealthAndGiftInfo(id int) {
+	_, giftinfos := getGiftList()
+
+	//删除收到的礼物信息
+	for {
+		selectsentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
+		updatesentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
+		deletesentence := lib.SQLSentence(lib.SQLMAP_Delete_GiftConsumeInfo)
+
+		_, recvlist := getRecvGiftListById(id, 1, 1000)
+		if 0 == len(recvlist) {
+			break
+		}
+
+		for _, info := range recvlist {
+			var beans, consumed int
+			var value int
+			var sender int
+
+			for _, gift := range giftinfos {
+				if gift.Id == info.GiftId {
+					value = gift.Price * info.GiftNum
+					sender = info.Person.Id
+					break
+				}
+			}
+
+			lib.SQLQueryRow(selectsentence, sender).Scan(&beans, consumed)
+			if consumed >= value {
+				consumed = consumed - value
+			}
+			lib.SQLExec(updatesentence, sender, beans, consumed)
+			lib.SQLExec(deletesentence, info.Id)
+
+			lib.DelRedisGiftSendList(sender)
+			lib.DelRedisUserInfo(sender)
+		}
+	}
+
+	//删除送出的礼物信息
+	for {
+		selectsentence := lib.SQLSentence(lib.SQLMAP_Select_ReceiveValueById)
+		updatesentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)
+		deletesentence := lib.SQLSentence(lib.SQLMAP_Delete_GiftConsumeInfo)
+
+		_, sendlist := getSendGiftListById(id, 1, 1000)
+		if 0 == len(sendlist) {
+			break
+		}
+
+		for _, info := range sendlist {
+			var value int
+			var receiver int
+			var receivevalue int
+
+			for _, gift := range giftinfos {
+				if gift.Id == info.GiftId {
+					value = gift.Price * info.GiftNum
+					receiver = info.Person.Id
+					break
+				}
+			}
+
+			lib.SQLQueryRow(selectsentence, receiver).Scan(&receivevalue)
+			if receivevalue >= value {
+				receivevalue = receivevalue - value
+			}
+			lib.SQLExec(updatesentence, receivevalue, receiver)
+			lib.SQLExec(deletesentence, info.Id)
+
+			lib.DelRedisGiftRecvList(receiver)
+			lib.DelRedisUserInfo(receiver)
+		}
+	}
+
+	delwealthSentence := lib.SQLSentence(lib.SQLMAP_Delete_Wealth)
+	lib.SQLExec(delwealthSentence, id)
+	lib.DelRedisGiftRecvList(id)
+	lib.DelRedisGiftSendList(id)
 }

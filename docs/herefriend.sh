@@ -20,7 +20,7 @@
 basedir=/root/workspace/hf
 herefriend=/root/workspace/hf/herefriend
 prog=herefriend
-pidfile=${PIDFILE-/root/workspace/hf/herefriend.pid}
+pidfile=${PIDFILE-/var/run/herefriend.pid}
 lockfile=${LOCKFILE-/var/lock/subsys/herefriend}
 RETVAL=0
 STOP_TIMEOUT=${STOP_TIMEOUT-10}

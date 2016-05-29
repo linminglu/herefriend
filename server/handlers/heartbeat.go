@@ -77,7 +77,6 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 		}
 	}
 
-	go log.Tracef("获取推荐列表: Id=%d gender=%d", id, gender)
 	jsonRlt, _ := json.Marshal(infos)
 	return 200, string(jsonRlt)
 }

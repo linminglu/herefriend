@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	log "github.com/cihub/seelog"
-
 	"herefriend/lib"
 )
 
@@ -45,7 +43,7 @@ func PresentGift(r *http.Request) (int, string) {
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
 		if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+			lib.SQLError(sentence, err, giftid)
 		}
 		return 404, ""
 	}
@@ -70,7 +68,7 @@ func PresentGift(r *http.Request) (int, string) {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
 			lib.SQLExec(insertSentence, id, gender, 0, giftvalue)
 		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+			lib.SQLError(selectSentence, err, id)
 			return 404, ""
 		}
 	} else {
@@ -86,7 +84,7 @@ func PresentGift(r *http.Request) (int, string) {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_ReceiveValueById)
 			lib.SQLExec(insertSentence, toid, 1-gender, giftvalue)
 		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", selectSentence, err)
+			lib.SQLError(selectSentence, err, toid)
 			return 404, ""
 		}
 	} else {

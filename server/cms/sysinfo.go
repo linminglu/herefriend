@@ -123,6 +123,11 @@ func CpuInfo(r *http.Request) string {
  |
 */
 func Log(w http.ResponseWriter) {
-	t, _ := template.ParseFiles("log/roll.log")
+	t, err := template.ParseFiles("/var/log/herefriend.log")
+	if nil != err {
+		w.WriteHeader(200)
+		return
+	}
+
 	t.Execute(w, nil)
 }

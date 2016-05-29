@@ -75,6 +75,7 @@ type cmsUserInfo struct {
 	Img      string
 	Province string
 	Selected bool
+	Usertype int
 	VipLevel int
 }
 

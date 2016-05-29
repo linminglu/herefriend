@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	log "github.com/cihub/seelog"
-
 	"herefriend/lib"
 )
 
@@ -143,10 +141,11 @@ func getRandomUserIdByGender(gender int) (error, int) {
 	}()
 
 	var id int
-	err := lib.SQLQueryRow(sentence, lib.Intn(baselimit)).Scan(&id)
+	randomvalue := lib.Intn(baselimit)
+	err := lib.SQLQueryRow(sentence, randomvalue).Scan(&id)
 	if nil != err || 1 >= id {
 		if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+			lib.SQLError(sentence, err, randomvalue)
 		}
 		return err, 0
 	}
@@ -154,13 +153,20 @@ func getRandomUserIdByGender(gender int) (error, int) {
 	return nil, id
 }
 
-func getRandomGiftId() int {
-	index := lib.Intn(gGiftRandomLimit)
-	return gGiftRandomBuf[index].Id
-}
-
 func getRandomGiftNumberByGiftId(id int) int {
-	if gGiftList[id].Price > 1000 {
+	var price int
+	for _, info := range gGiftList {
+		if info.Id == id {
+			price = info.Price
+			break
+		}
+	}
+
+	if 0 == price {
+		return 0
+	}
+
+	if price > 1000 {
 		return lib.Intn(5)
 	}
 
@@ -172,7 +178,7 @@ func getRandomGiftNumberByGiftId(id int) int {
 		index = lib.Intn(gGiftNumLimit)
 		num = gGiftNumBuf[index]
 
-		if num*gGiftList[id].Price < 2000 {
+		if num*price < 2000 {
 			break
 		}
 	}
@@ -209,9 +215,9 @@ func randomSendGiftBySender(id, gender int) {
 			continue
 		}
 
-		giftid := getRandomGiftId()
-		num := getRandomGiftNumberByGiftId(giftid)
-		resetfulSendGift(id, gender, toid, giftid, num)
+		index := lib.Intn(gGiftRandomLimit)
+		giftid := gGiftRandomBuf[index].Id
+		resetfulSendGift(id, gender, toid, giftid, getRandomGiftNumberByGiftId(giftid))
 		time.Sleep(time.Millisecond * 100)
 	}
 }
@@ -252,8 +258,7 @@ func DoSend(gender int) {
 				}
 				sendermap[id] = true
 
-				num := getRandomGiftNumberByGiftId(giftid)
-				resetfulSendGift(id, gender, toid, giftid, num)
+				resetfulSendGift(id, gender, toid, giftid, getRandomGiftNumberByGiftId(giftid))
 				time.Sleep(time.Second * 1)
 			}
 		}
@@ -266,6 +271,6 @@ func DoSend(gender int) {
 }
 
 func main() {
-	go DoSend(0)
+	//go DoSend(0)
 	DoSend(1)
 }

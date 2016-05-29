@@ -3,6 +3,7 @@ package lib
 import (
 	"database/sql"
 	"fmt"
+	"runtime/debug"
 
 	log "github.com/cihub/seelog"
 	_ "github.com/go-sql-driver/mysql"
@@ -101,6 +102,8 @@ const (
 	SQLMAP_Update_GoldBeansById
 	SQLMAP_Update_ReceiveValueById
 	SQLMAP_Update_EvaluationTime
+	SQLMAP_Delete_Wealth
+	SQLMAP_Delete_GiftConsumeInfo
 	SQLMAP_Delete_UserId
 	SQLMAP_Delete_Picture
 	SQLMAP_Delete_HeadPicture
@@ -179,7 +182,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_GiftRecvSum:           {"", "select giftid, giftnum from giftconsume where toid=?"},
 	SQLMAP_Select_GiftSendSum:           {"", "select giftid, giftnum from giftconsume where fromid=?"},
 	SQLMAP_Select_GiftRecvVerbose:       {"", "select fromid, giftid, giftnum, time, message from giftconsume where toid=? order by time desc limit ?,?"},
-	SQLMAP_Select_GiftSendVerbose:       {"", "select toid, giftid, giftnum, time, message from giftconsume where fromid=? order by time desc limit ?,?"},
+	SQLMAP_Select_GiftSendVerbose:       {"", "select id, toid, giftid, giftnum, time, message from giftconsume where fromid=? order by time desc limit ?,?"},
 	SQLMAP_Select_GiftRecvListByGender:  {"", "select toid, giftid, giftnum from giftconsume where fromgender=? order by toid"},
 	SQLMAP_Select_GoldBeansById:         {"", "select beans,consumed from wealth where id=?"},
 	SQLMAP_Select_ReceiveValueById:      {"", "select receive from wealth where id=?"},
@@ -225,6 +228,8 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Update_GoldBeansById:          {"", "update wealth set beans=?,consumed=? where id=?"},
 	SQLMAP_Update_ReceiveValueById:       {"", "update wealth set receive=? where id=?"},
 	SQLMAP_Update_EvaluationTime:         {"s", "update %s set evaluationtime=? where id=?"},
+	SQLMAP_Delete_Wealth:                 {"", "delete from wealth where id=?"},
+	SQLMAP_Delete_GiftConsumeInfo:        {"", "delete from giftconsume where id=?"},
 	SQLMAP_Delete_UserId:                 {"s", "delete from %s where id=?"},
 	SQLMAP_Delete_Picture:                {"s", "delete from %s_picture where id=? and filename=?"},
 	SQLMAP_Delete_HeadPicture:            {"s", "delete from %s_picture where id=? and tag=1"},
@@ -299,7 +304,7 @@ func SQLSentence(key int, args ...interface{}) string {
 func SQLExec(query string, args ...interface{}) (sql.Result, error) {
 	result, err := gDBHandle.Exec(query, args...)
 	if nil != err {
-		log.Errorf("SQLExec Error: %s %v\n", query, err)
+		SQLError(query, err, args...)
 	}
 
 	return result, err
@@ -312,8 +317,18 @@ func SQLQueryRow(query string, args ...interface{}) *sql.Row {
 func SQLQuery(query string, args ...interface{}) (*sql.Rows, error) {
 	rows, err := gDBHandle.Query(query, args...)
 	if nil != err {
-		log.Errorf("SQLQuery Error: %s %v\n", query, err)
+		SQLError(query, err, args...)
 	}
 
 	return rows, err
+}
+
+func SQLError(query string, err error, args ...interface{}) {
+	if nil == args {
+		log.Errorf("SQL:[%s] error:[%v]", query, err)
+	} else {
+		log.Errorf("SQL:[%s] args:%v error:[%v]", query, args, err)
+	}
+
+	log.Error(string(debug.Stack()))
 }

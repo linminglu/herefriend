@@ -214,9 +214,10 @@ func getRandomHeartbeatId(id, gender int) int {
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_HeartbeatRandomProvId, gender)
 
 		baselimit = getHeartbeatBaseCountByProvinceGender(province, gender)
-		err := lib.SQLQueryRow(sentence, province, lib.Intn(baselimit)).Scan(&tmpid)
+		randomvalue := lib.Intn(baselimit)
+		err := lib.SQLQueryRow(sentence, province, randomvalue).Scan(&tmpid)
 		if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+			lib.SQLError(sentence, err, randomvalue)
 		} else if 0 != tmpid {
 			return tmpid
 		}
@@ -259,7 +260,7 @@ func getRandomUserId(id, gender int) int {
 							lib.SetRedisProvAgeCount(province, gender, tmpage, count)
 							rangecount = rangecount + count
 						} else if nil != err {
-							log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+							lib.SQLError(sentence, err, province, tmpage)
 						}
 					}
 				}
@@ -271,7 +272,7 @@ func getRandomUserId(id, gender int) int {
 					if nil == err && 1 < tmpid {
 						return tmpid
 					} else if nil != err {
-						log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+						lib.SQLError(sentence, err, province, min, max, baselimit)
 					}
 				}
 			}
@@ -288,7 +289,7 @@ func getRandomUserId(id, gender int) int {
 				lib.SetRedisProvCount(province, gender, count)
 				getcount = true
 			} else if nil != err {
-				log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+				lib.SQLError(sentence, err, province)
 			}
 		} else {
 			getcount = true
@@ -301,7 +302,7 @@ func getRandomUserId(id, gender int) int {
 			if nil == err && 1 < tmpid {
 				return tmpid
 			} else if nil != err {
-				log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+				lib.SQLError(sentence, err, province, baselimit)
 			}
 		}
 	}
@@ -341,7 +342,7 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 		if nil == err && id == idtmp {
 			return true, 0, usertype
 		} else if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+			lib.SQLError(sentence, err, id)
 		}
 
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_UserType, 1)
@@ -349,7 +350,7 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 		if nil == err {
 			return true, 1, usertype
 		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+			lib.SQLError(sentence, err, id)
 		}
 	}
 
@@ -357,7 +358,7 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 }
 
 /*
- |    Function: getUsertypeByIdGender
+ |    Function: GetUsertypeByIdGender
  |      Author: Mr.Sancho
  |        Date: 2016-01-09
  |   Arguments:
@@ -365,7 +366,7 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
  | Description: 根据id和性别获取用户类型
  |
 */
-func getUsertypeByIdGender(id, gender int) (bool, int) {
+func GetUsertypeByIdGender(id, gender int) (bool, int) {
 	var idtmp int
 	var usertype int
 
@@ -374,7 +375,7 @@ func getUsertypeByIdGender(id, gender int) (bool, int) {
 	if nil == err && id == idtmp {
 		return true, usertype
 	} else if nil != err {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		lib.SQLError(sentence, err, id)
 	}
 
 	return false, 0
@@ -401,8 +402,6 @@ func getGenderById(id int) (bool, int) {
 	if nil == err {
 		lib.SetRedisUserGender(id, 0)
 		return true, 0
-	} else {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidId, 1)
@@ -410,8 +409,6 @@ func getGenderById(id int) (bool, int) {
 	if nil == err {
 		lib.SetRedisUserGender(id, 1)
 		return true, 1
-	} else {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	return false, 1
@@ -433,16 +430,12 @@ func getGenderByIdPw(id int, pw string) (bool, int) {
 		err := lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 0
-		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidPasswd, 1)
 		err = lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 1
-		} else {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 		}
 	}
 
@@ -483,8 +476,6 @@ func checkIfUserHavePicture(id, gender int) bool {
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
 		return true
-	} else if nil != err {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	/* 获取相册图片 */
@@ -508,7 +499,7 @@ func checkIfUserHaveViplevel(id, gender int) bool {
 	if nil == err && 0 != viplevel {
 		return true
 	} else if nil != err {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		lib.SQLError(sentence, err, id)
 	}
 
 	return false
@@ -531,8 +522,6 @@ func getUserPictrues(id, gender int, info *common.PersonInfo) {
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
 		info.IconUrl = lib.GetQiniuUserImageURL(id, filename)
-	} else if nil != err {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
 	}
 
 	info.Pics = make([]string, 0)
@@ -746,7 +735,7 @@ func GetUserInfo(id int, gender int) (int, common.PersonInfo) {
 
 		getUserPictrues(id, gender, &info)
 	} else {
-		log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
+		lib.SQLError(sentence, err, id)
 		return 404, info
 	}
 
@@ -1174,8 +1163,6 @@ func Search(req *http.Request) (int, string) {
 		}
 	}
 
-	go log.Tracef("搜索: %v", queries)
-
 	page, count := lib.Get_pageid_count_fromreq(req)
 	if true == useheartbeat && page <= 2 {
 		return doReqHeartbeat(id, gender, count)
@@ -1308,8 +1295,6 @@ func Register(req *http.Request) (int, string) {
 
 		//发送欢迎信息
 		go func() {
-			log.Tracef("注册: %s%s Age=%d Gender=%d", province, district, age, gender)
-
 			msg := "欢迎你来到寂寞同城交友!"
 			timevalue := lib.CurrentTimeUTCInt64()
 			RecommendInsertMessageToDB(1, lastId, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
@@ -1358,7 +1343,7 @@ func Login(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	_, usertype := getUsertypeByIdGender(id, gender)
+	_, usertype := GetUsertypeByIdGender(id, gender)
 	if common.USERTYPE_USER != usertype {
 		return 403, ""
 	}

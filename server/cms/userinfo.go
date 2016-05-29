@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	log "github.com/cihub/seelog"
-
 	"herefriend/common"
 	"herefriend/lib"
 	"herefriend/server/handlers"
@@ -142,6 +140,7 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
 	info.Img = userinfo.IconUrl
 	info.Name = userinfo.Name
 	info.Province = userinfo.Province
+	_, info.Usertype = handlers.GetUsertypeByIdGender(id, gender)
 
 	checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
 	lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
@@ -175,7 +174,31 @@ func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(idStr)
 	gender, _ := strconv.Atoi(genderStr)
 
-	w.WriteHeader(handlers.UpdateProfile(req, id, gender))
+	deleteStr := v.Get("delete")
+	if "" != deleteStr {
+		sqlStr := func() string {
+			if 0 == gender {
+				return "update girls set usertype=? where id=?"
+			} else {
+				return "update guys set usertype=? where id=?"
+			}
+		}()
+
+		usertype := 1
+		if "1" == deleteStr {
+			usertype = 0
+		}
+
+		_, err := lib.SQLExec(sqlStr, usertype, id)
+		if nil != err {
+			w.WriteHeader(404)
+		} else {
+			w.WriteHeader(200)
+		}
+	} else {
+		w.WriteHeader(handlers.UpdateProfile(req, id, gender))
+	}
+
 	return
 }
 
@@ -357,6 +380,9 @@ func AddBlacklist(req *http.Request) (int, string) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Blacklist, gender)
 	lib.SQLExec(sentence, id)
 
+	/* delete from wealth and gift */
+	handlers.DeleteUserWealthAndGiftInfo(id)
+
 	delSql := lib.SQLSentence(lib.SQLMAP_Delete_UserId, gender)
 	lib.SQLExec(delSql, id)
 	lib.DelRedisUserInfo(id)
@@ -443,7 +469,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
 			}
 		}
 	} else if nil != err {
-		log.Errorf("SQLQueryRow Error: %s %v\n", countsentence, err)
+		lib.SQLError(countsentence, err, nil)
 	}
 
 	jsonRlt, _ := json.Marshal(searchInfo)
@@ -548,7 +574,7 @@ func RegistUserInfo(req *http.Request) (int, string) {
 			}
 		}
 	} else if nil != err {
-		log.Errorf("SQLQueryRow Error: %s %v\n", countsentence, err)
+		lib.SQLError(countsentence, err, nil)
 	}
 
 	jsonRlt, _ := json.Marshal(searchInfo)

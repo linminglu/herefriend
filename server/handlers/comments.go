@@ -391,7 +391,7 @@ func recommendRobotRoutine() {
 			err := lib.SQLQueryRow(gRecommendInUnreadCount, id, 0).Scan(&count)
 			if nil != err || RECOMMEND_MAX_UNREADNUMBER <= count {
 				if nil != err {
-					log.Errorf("SQLQueryRow Error: %s %v\n", gRecommendInUnreadCount, err)
+					lib.SQLError(gRecommendInUnreadCount, err, id, 0)
 				}
 				continue
 			}
@@ -446,9 +446,6 @@ func checkAlreadySendSameCommentToday(fromid, toid, msgtype int) bool {
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckCommentDailyLock)
 	err := lib.SQLQueryRow(sentence, fromid, toid, msgtype).Scan(&timevalue)
 	if nil != err || 0 == timevalue {
-		if nil != err {
-			log.Errorf("SQLQueryRow Error: %s %v\n", sentence, err)
-		}
 		return false
 	}
 
@@ -864,7 +861,7 @@ func GetRecommendAll(timeline int64, id, pageid, count int) ([]messageInfo, erro
  *
  */
 func GetAllMessage(req *http.Request) (int, string) {
-	exist, id, gender := getIdGenderByRequest(req)
+	exist, id, _ := getIdGenderByRequest(req)
 	if true != exist {
 		return 404, ""
 	}
@@ -890,7 +887,6 @@ func GetAllMessage(req *http.Request) (int, string) {
 		allmessage.VisitArray = visitAlls
 	}
 
-	go log.Tracef("获取所有聊天信息: Id=%d gender=%d", id, gender)
 	jsonRlt, _ := json.Marshal(allmessage)
 	return 200, string(jsonRlt)
 }

@@ -114,7 +114,7 @@ func visitRobotRoutine() {
 			err := lib.SQLQueryRow(gVisitUnreadSentence, id, 0).Scan(&count)
 			if nil != err || VISIT_MAX_UNREADNUMBER <= count {
 				if nil != err {
-					log.Errorf("SQLQueryRow Error: %s %v\n", gVisitUnreadSentence, err)
+					lib.SQLError(gVisitUnreadSentence, err, id, 0)
 				}
 				continue
 			}
