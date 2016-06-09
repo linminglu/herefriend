@@ -23,15 +23,15 @@ type GiftSendRecvInfo struct {
  * Infomation shows to the clients
  */
 type PersonInfo struct {
-	Id              int                `json:",omitempty"` //ID号
+	Id              int                //ID号
 	Height          int                `json:",omitempty"` //身高
 	Weight          int                `json:",omitempty"` //体重
 	Age             int                `json:",omitempty"` //年龄
 	Gender          int                //性别: 0(女) 1(男)
-	OnlineStatus    int                `json:",omitempty"` //在线状态
-	VipLevel        int                `json:",omitempty"` //Vip级别
+	OnlineStatus    int                //在线状态
+	VipLevel        int                //Vip级别
 	VipExpireTime   time.Time          `json:",omitempty"` //会员到期时间
-	Name            string             `json:",omitempty"` //姓名
+	Name            string             //姓名
 	Province        string             `json:",omitempty"` //所在省/直辖市/自治区
 	District        string             `json:",omitempty"` //所在区域
 	Native          string             `json:",omitempty"` //家乡
