@@ -93,10 +93,22 @@ function refreshProfileInfo(userid) {
 	$.getJSON("/User/GetPersonInfo?id=" + userid, function(item) {
 		if (null != item) {
 			$("#search_edit_userid").text(item["Id"])
-			$("#search_edit_username").editable("setValue", item["Name"])
 			$("#search_edit_age").editable("setValue", item["Age"])
-			$("#search_edit_introduction").editable("setValue", item["Introduction"])
-			$("#search_edit_viplevel").editable("setValue", item["VipLevel"])
+            if (null == item["Name"]) {
+			    $("#search_edit_username").editable("setValue", "")
+            } else {
+			    $("#search_edit_username").editable("setValue", item["Name"])
+            }
+            if (null == item["Introduction"]) {
+			    $("#search_edit_introduction").editable("setValue", "")
+            } else {
+			    $("#search_edit_introduction").editable("setValue", item["Introduction"])
+            }
+            if (null == item["VipLevel"]) {
+			    $("#search_edit_viplevel").editable("setValue", 0)
+            } else {
+			    $("#search_edit_viplevel").editable("setValue", item["VipLevel"])
+            }
 
 			g_profile_id = userid
 		}
@@ -345,9 +357,6 @@ function searchcallback(gender, page, field, key, bscroll, beffect) {
 
 function dosearch(gender) {
 	search_key = $("#search_input").val().trim()
-	if (0 == search_key.length) {
-		return
-	}
 
 	if (true == g_showprofile) {
 		animation()
@@ -743,5 +752,10 @@ $(document).ready(function() {
 			searchpagejump()
 		}
 	});
-});
 
+	$('#search_input').bind('keypress', function(event) {
+		if (event.keyCode == "13") {
+			dosearch(search_gender)
+		}
+	});
+});

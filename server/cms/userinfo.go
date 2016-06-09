@@ -414,7 +414,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
 	fieldStr := v.Get("field")
 	keyStr := v.Get("key")
 
-	if "" == genderStr || "" == fieldStr || "" == keyStr {
+	if "" == genderStr || "" == fieldStr {
 		return 404, ""
 	}
 
@@ -431,13 +431,21 @@ func SearchUserInfos(req *http.Request) (int, string) {
 	field := []string{"name", "introduction", "id"}[fieldid]
 
 	countsentence := lib.SQLSentence(lib.SQLMAP_Select_UserCount, gender)
-	countsentence += fmt.Sprintf(" where position('%s' in %s)", keyStr, field)
+	if "" == keyStr {
+		countsentence += fmt.Sprintf(" where %s=''", field)
+	} else {
+		countsentence += fmt.Sprintf(" where position('%s' in %s)", keyStr, field)
+	}
 
 	var searchInfo cmsSearchInfo
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
 		sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfo, gender)
-		sentence += fmt.Sprintf(" where position('%s' in %s) order by id desc limit ?,?", keyStr, field)
+		if "" == keyStr {
+			sentence += fmt.Sprintf(" where %s='' order by id desc limit ?,?", field)
+		} else {
+			sentence += fmt.Sprintf(" where position('%s' in %s) order by id desc limit ?,?", keyStr, field)
+		}
 
 		page, count := lib.Get_pageid_count_fromreq(req)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
