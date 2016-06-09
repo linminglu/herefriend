@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -348,6 +349,21 @@ func recommendPushRoutine() {
 					timevalue := lib.CurrentTimeUTCInt64()
 					msg := getResponseMsg(n)
 					if "" != msg {
+						// 多次发送消息，则自动设置为VIP
+						if true == checkAlreadySendSameCommentToday(n.toid, n.fromid, RECOMMEND_MSGTYPE_TALK) {
+							_, gender := getGenderById(n.toid)
+							if true != checkIfUserHaveViplevel(n.toid, gender) {
+								changevipsentence := func() string {
+									if 0 == gender {
+										return "update girls set viplevel=1 where id=?"
+									} else {
+										return "update guys set viplevel=1 where id=?"
+									}
+								}()
+								lib.SQLExec(changevipsentence, n.toid)
+							}
+						}
+
 						RecommendInsertMessageToDB(n.toid, n.fromid, n.msgtype, msg, timevalue)
 						RecommendPushMessage(n.toid, n.fromid, n.tousertype, n.fromusertype, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
 						needpush = true
@@ -418,6 +434,21 @@ func recommendRobotRoutine() {
 			ok, msg := getFormatMsg(fromid)
 			if !ok {
 				msg = gHelloArray[lib.Intn(len(gHelloArray))]
+			}
+
+			// 多次发送消息，则自动设置为VIP
+			if true == checkAlreadySendSameCommentToday(fromid, id, RECOMMEND_MSGTYPE_TALK) {
+				if true != checkIfUserHaveViplevel(fromid, 1-user.gender) {
+					changevipsentence := func() string {
+						if 0 == 1-user.gender {
+							return "update girls set viplevel=1 where id=?"
+						} else {
+							return "update guys set viplevel=1 where id=?"
+						}
+					}()
+
+					lib.SQLExec(changevipsentence, fromid)
+				}
 			}
 
 			timevalue := lib.CurrentTimeUTCInt64()
