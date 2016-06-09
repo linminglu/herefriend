@@ -364,11 +364,42 @@ func updateVipleveByGender(gender int) {
 	}
 }
 
+func modifygifttime() {
+	curtime := lib.CurrentTimeUTCInt64()
+	basetimelength := int64(3600 * 24 * 365)
+
+	curid := 0
+	sentence := "select id from giftconsume where id>? limit 10000"
+	updatesentence := "update giftconsume set time=? where id=?"
+	for {
+		rows, err := lib.SQLQuery(sentence, curid)
+		if nil != err {
+			continue
+		}
+
+		count := 0
+		for rows.Next() {
+			count = count + 1
+			rows.Scan(&curid)
+			randtime := curtime - lib.Int63n(basetimelength)
+			fmt.Printf("%s %d %d\r\n", updatesentence, randtime, curid)
+			lib.SQLExec(updatesentence, randtime, curid)
+		}
+
+		rows.Close()
+
+		if 0 == count {
+			break
+		}
+	}
+}
+
 func main() {
 	//updateHeartbeatByGender(0)
 	//updateHeartbeatByGender(1)
 	//updatePersonByGender(0)
 	//updatePersonByGender(1)
-	updateVipleveByGender(0)
-	updateVipleveByGender(1)
+	//updateVipleveByGender(0)
+	//updateVipleveByGender(1)
+	modifygifttime()
 }

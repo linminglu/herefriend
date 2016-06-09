@@ -85,6 +85,10 @@ $(MODIFY): $(MODIFY_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/tools/modifier
 	@echo "finish"
 
+modify.x64: $(MODIFY_GOFILES)
+	@GOOS=linux $(GOBUILD) -o ./$(MODIFY) herefriend/tools/modifier
+	@echo "finish"
+
 $(SENDGIFT): $(SENDGIFT_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/tools/giftsender
 	@echo "finish"

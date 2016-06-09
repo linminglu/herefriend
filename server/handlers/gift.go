@@ -319,7 +319,7 @@ func getRecvGiftListById(id int, page, count int) (error, []GiftListVerbose) {
 	var userid int
 
 	for rows.Next() {
-		err = rows.Scan(&userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
+		err = rows.Scan(&info.Id, &userid, &info.GiftId, &info.GiftNum, &timetmp, &info.Message)
 		if nil == err {
 			_, info.Person = GetUserInfoById(userid)
 			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)

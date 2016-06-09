@@ -217,7 +217,7 @@ func getRandomHeartbeatId(id, gender int) int {
 		randomvalue := lib.Intn(baselimit)
 		err := lib.SQLQueryRow(sentence, province, randomvalue).Scan(&tmpid)
 		if nil != err {
-			lib.SQLError(sentence, err, randomvalue)
+			lib.SQLError(sentence, err, province, randomvalue)
 		} else if 0 != tmpid {
 			return tmpid
 		}
@@ -341,16 +341,12 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 		err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 		if nil == err && id == idtmp {
 			return true, 0, usertype
-		} else if nil != err {
-			lib.SQLError(sentence, err, id)
 		}
 
 		sentence = lib.SQLSentence(lib.SQLMAP_Select_UserType, 1)
 		err = lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
-		if nil == err {
+		if nil == err && id == idtmp {
 			return true, 1, usertype
-		} else {
-			lib.SQLError(sentence, err, id)
 		}
 	}
 
