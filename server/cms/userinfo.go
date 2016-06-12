@@ -383,6 +383,12 @@ func AddBlacklist(req *http.Request) (int, string) {
 	/* delete from wealth and gift */
 	handlers.DeleteUserWealthAndGiftInfo(id)
 
+	/* delete from comments and visit */
+	sentence = lib.SQLSentence(lib.SQLMAP_Delete_RecommendByUserId)
+	lib.SQLExec(sentence, id)
+	sentence = lib.SQLSentence(lib.SQLMAP_Delete_VisitByUserId)
+	lib.SQLExec(sentence, id)
+
 	delSql := lib.SQLSentence(lib.SQLMAP_Delete_UserId, gender)
 	lib.SQLExec(delSql, id)
 	lib.DelRedisUserInfo(id)

@@ -16,6 +16,7 @@ import (
 	log "github.com/cihub/seelog"
 
 	"herefriend/common"
+	"herefriend/config"
 	"herefriend/lib"
 	"herefriend/lib/push"
 )
@@ -43,12 +44,6 @@ var gRecommendNumber int
 var gCountApiRecommend int
 var gMsgTemplates []string
 var gRobotUrl string
-
-/*
- * 定期推送消息
- */
-var gEvaluationMsgContent = "好评送免费VIP 3个月哦，赶紧去评价一下吧。"
-var gEnableEvaluation = true
 
 func init() {
 	gRecommendReg, _ = regexp.Compile("(?:#)([^#]+)(?:#)")
@@ -972,8 +967,8 @@ func GetApiRecommendCount() int {
  |
 */
 func PeriodOnlineCommentSet(enable bool, msg string) {
-	gEnableEvaluation = enable
-	gEvaluationMsgContent = msg
+	config.Conf_EnableEvaluation = enable
+	config.Conf_EvaluationMsgContent = msg
 }
 
 /*
@@ -987,7 +982,7 @@ func PeriodOnlineCommentSet(enable bool, msg string) {
 func PeriodOnlineCommentPush(id, gender int, lastEvaluationTime int64) {
 	curTime := lib.CurrentTimeUTCInt64()
 	if 0 == lastEvaluationTime || 43200 <= (curTime-lastEvaluationTime) {
-		evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: gEvaluationMsgContent}
+		evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: config.Conf_EvaluationMsgContent}
 		jsonRlt, _ := json.Marshal(evaluationMsg)
 		notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_EVALUATION, Value: string(jsonRlt)}
 		jsonRlt, _ = json.Marshal(notifymsg)

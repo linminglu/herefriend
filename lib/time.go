@@ -42,7 +42,7 @@ const (
 	SLEEP_DURATION_LIVESTATUS     = time.Minute
 	SLEEP_DURATION_NOTIFYMSG      = time.Second * 15
 	SLEEP_DURATION_PUSH_QUEUEMSG  = time.Second
-	SLEEP_BASELINE_ROBOTRECOMMEND = int64(time.Minute * 60)
+	SLEEP_BASELINE_ROBOTRECOMMEND = int64(time.Minute * 30)
 	SLEEP_BASELINE_ROBOTVISIT     = int64(time.Minute * 90)
 )
 

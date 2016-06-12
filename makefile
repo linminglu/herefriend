@@ -1,9 +1,14 @@
+#
+# Description:
+#
+# makefile for herefriend
+#
+
 # the command macro
 GOBUILD := go build -ldflags '-s'
 SCP := scp -P 10022
 ALIYUN := sunchao@112.126.66.162:/root/workspace/hf
 
-# the elf program names
 SERVER := herefriend
 CRAW := spider
 TRIM := trimimage
@@ -55,26 +60,24 @@ SENDGIFT_GOFILES := \
 	$(wildcard ./lib/*.go) \
 	$(wildcard ./tools/giftsender/*.go)
 
+#
+# the elf program names
+#
 server: $(SERVER)
 trim: $(TRIM)
 craw: $(CRAW)
 modify: $(MODIFY)
 gift: $(SENDGIFT)
 
+#
+# compile for current platform
+#
 $(SERVER): $(SERVER_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/server
 	@echo "finish"
 
-x64: $(SERVER_GOFILES)
-	@GOOS=linux $(GOBUILD) -o ./$(SERVER) herefriend/server
-	@echo "finish"
-
 $(CRAW): $(CRAW_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/crawler
-	@echo "finish"
-
-craw.x64: $(CRAW_GOFILES)
-	@GOOS=linux $(GOBUILD) -o ./$(CRAW) herefriend/crawler
 	@echo "finish"
 
 $(TRIM): $(TRIM_GOFILES)
@@ -85,24 +88,43 @@ $(MODIFY): $(MODIFY_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/tools/modifier
 	@echo "finish"
 
-modify.x64: $(MODIFY_GOFILES)
-	@GOOS=linux $(GOBUILD) -o ./$(MODIFY) herefriend/tools/modifier
-	@echo "finish"
-
 $(SENDGIFT): $(SENDGIFT_GOFILES)
 	@$(GOBUILD) -o ./$@ herefriend/tools/giftsender
+	@echo "finish"
+
+#
+# compile for x64 platform
+#
+x64: $(SERVER_GOFILES)
+	@GOOS=linux $(GOBUILD) -o ./$(SERVER) herefriend/server
+	@echo "finish"
+
+craw.x64: $(CRAW_GOFILES)
+	@GOOS=linux $(GOBUILD) -o ./$(CRAW) herefriend/crawler
+	@echo "finish"
+
+trim.x64: $(TRIM_GOFILES)
+	@GOOS=linux $(GOBUILD) -o ./$(TRIM) herefriend/tools/imageproc
+	@echo "finish"
+
+modify.x64: $(MODIFY_GOFILES)
+	@GOOS=linux $(GOBUILD) -o ./$(MODIFY) herefriend/tools/modifier
 	@echo "finish"
 
 gift.x64: $(SENDGIFT_GOFILES)
 	@GOOS=linux $(GOBUILD) -o ./$(SENDGIFT) herefriend/tools/giftsender
 	@echo "finish"
-	
-all: $(SERVER) $(CRAWLER)
 
+#
+# clean
+#
 clean:
 	@rm -rf ./$(SERVER) ./$(SERVER).pid ./$(CRAW) ./$(TRIM) ./$(MODIFY) ./$(SENDGIFT) ./log
 	@echo "finish"
 
+#
+# copy
+#
 cp:
 	@tar czf $(SERVER).gz $(SERVER)
 	@$(SCP) $(SERVER).gz $(ALIYUN)

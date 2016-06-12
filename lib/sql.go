@@ -110,6 +110,8 @@ const (
 	SQLMAP_Delete_Heartbeat
 	SQLMAP_Delete_Recommend
 	SQLMAP_Delete_Visit
+	SQLMAP_Delete_RecommendByUserId
+	SQLMAP_Delete_VisitByUserId
 	SQLMAP_Delete_UserBlacklist
 	SQLMAP_Delete_MultiClientID
 	SQLMAP_Delete_UnCrawledGirlsId
@@ -236,6 +238,8 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Delete_Heartbeat:              {"", "delete from heartbeat where id=?"},
 	SQLMAP_Delete_Recommend:              {"", "delete from recommend where id<=? and ((fromid=? and toid=?) or (fromid=? and toid=?))"},
 	SQLMAP_Delete_Visit:                  {"", "delete from visit where id=?"},
+	SQLMAP_Delete_RecommendByUserId:      {"", "delete from recommend where fromid=? or toid=?"},
+	SQLMAP_Delete_VisitByUserId:          {"", "delete from visit where fromid=? or toid=?"},
 	SQLMAP_Delete_UserBlacklist:          {"", "delete from userblacklist where fromid=? and blackid=?"},
 	SQLMAP_Delete_MultiClientID:          {"s", "update %s set clientid='' where clientid=?"},
 	SQLMAP_Delete_UnCrawledGirlsId:       {"", "delete from girlsid where id=?"},

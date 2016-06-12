@@ -602,3 +602,49 @@ func DeleteUserWealthAndGiftInfo(id int) {
 	lib.DelRedisGiftRecvList(id)
 	lib.DelRedisGiftSendList(id)
 }
+
+func DeleteGiftInfoByUserIdAndGiftId(id, giftid int) {
+	_, giftinfos := getGiftList()
+
+	//删除送出的指定礼物信息
+	for {
+		selectsentence := lib.SQLSentence(lib.SQLMAP_Select_ReceiveValueById)
+		updatesentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)
+		deletesentence := lib.SQLSentence(lib.SQLMAP_Delete_GiftConsumeInfo)
+
+		_, sendlist := getSendGiftListById(id, 1, 100000)
+		if 0 == len(sendlist) {
+			break
+		}
+
+		for _, info := range sendlist {
+			if giftid != info.GiftId {
+				continue
+			}
+
+			var value int
+			var receiver int
+			var receivevalue int
+
+			for _, gift := range giftinfos {
+				if gift.Id == giftid {
+					value = gift.Price * info.GiftNum
+					receiver = info.Person.Id
+					break
+				}
+			}
+
+			lib.SQLQueryRow(selectsentence, receiver).Scan(&receivevalue)
+			if receivevalue >= value {
+				receivevalue = receivevalue - value
+			}
+			lib.SQLExec(updatesentence, receivevalue, receiver)
+			lib.SQLExec(deletesentence, info.Id)
+
+			lib.DelRedisGiftRecvList(receiver)
+			lib.DelRedisUserInfo(receiver)
+		}
+	}
+
+	lib.DelRedisGiftSendList(id)
+}

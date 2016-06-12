@@ -11,3 +11,9 @@ var Conf_QiniuScope = []string{"herefriendpub", "heretest"}[DEBUGGING]
 var Conf_GeTuiAddr = []string{"localhost:9090", "192.168.185.141:9090"}[DEBUGGING]
 var Conf_AgeMin = 18
 var Conf_AgeMax = 85
+
+/*
+ * 定期推送消息
+ */
+var Conf_EvaluationMsgContent = "好评送免费VIP 3个月哦，赶紧去评价一下吧。"
+var Conf_EnableEvaluation = false

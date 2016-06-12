@@ -1386,7 +1386,7 @@ func WatchDog(req *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	if true == gEnableEvaluation {
+	if true == config.Conf_EnableEvaluation {
 		var lastEvaluationTime int64
 		sentence := lib.SQLSentence(lib.SQLMAP_Select_LastEvaluationTime, gender)
 		lib.SQLQueryRow(sentence, id).Scan(&lastEvaluationTime)

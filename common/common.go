@@ -5,9 +5,10 @@ import (
 )
 
 const (
-	USERTYPE_RB    = 0
-	USERTYPE_USER  = 1
-	USERTYPE_WEIBO = 2
+	USERTYPE_USER     = 1
+	USERTYPE_RB       = 0
+	USERTYPE_WEIBO    = 2
+	USERTYPE_ZHENQING = 3
 )
 
 const (

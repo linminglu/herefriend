@@ -59,10 +59,10 @@ func DownloadImageAndPutToQiniu(url string, cut bool, id int, filename string) e
 		switch m.(type) {
 		case *image.Gray:
 			grayImg := m.(*image.Gray)
-			subImg = grayImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 65)))
+			subImg = grayImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 60)))
 		case *image.YCbCr:
 			rgbImg := m.(*image.YCbCr)
-			subImg = rgbImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 65)))
+			subImg = rgbImg.SubImage(image.Rect(0, 0, bounds.Max.X, (bounds.Max.Y - 60)))
 		}
 
 		var buf []byte
