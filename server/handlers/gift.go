@@ -107,8 +107,8 @@ func BuyBeans(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func getGiftList() (error, []giftInfo) {
-	infolist := make([]giftInfo, 0)
+func GetGiftList() (error, []GiftInfo) {
+	infolist := make([]GiftInfo, 0)
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftInfo)
 	rows, err := lib.SQLQuery(sentence)
@@ -117,7 +117,7 @@ func getGiftList() (error, []giftInfo) {
 	}
 	defer rows.Close()
 
-	var info giftInfo
+	var info GiftInfo
 	for rows.Next() {
 		err = rows.Scan(&info.Id, &info.Type, &info.Name, &info.Description, &info.ValidNum, &info.ImageUrl, &info.Effect,
 			&info.Price, &info.OriginPrice, &info.DiscountDescription)
@@ -139,7 +139,7 @@ func getGiftList() (error, []giftInfo) {
  |
 */
 func GiftList(r *http.Request) (int, string) {
-	err, infolist := getGiftList()
+	err, infolist := GetGiftList()
 	if nil != err {
 		return 404, ""
 	}
@@ -523,7 +523,7 @@ func WealthTopList(r *http.Request) (int, string) {
  |
 */
 func DeleteUserWealthAndGiftInfo(id int) {
-	_, giftinfos := getGiftList()
+	_, giftinfos := GetGiftList()
 
 	//删除收到的礼物信息
 	for {
@@ -604,7 +604,7 @@ func DeleteUserWealthAndGiftInfo(id int) {
 }
 
 func DeleteGiftInfoByUserIdAndGiftId(id, giftid int) {
-	_, giftinfos := getGiftList()
+	_, giftinfos := GetGiftList()
 
 	//删除送出的指定礼物信息
 	for {

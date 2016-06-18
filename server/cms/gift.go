@@ -2,10 +2,12 @@ package cms
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"herefriend/lib"
+	"herefriend/server/handlers"
 )
 
 /*
@@ -92,4 +94,14 @@ func PresentGift(r *http.Request) (int, string) {
 		lib.SQLExec(updateSentence, value+giftvalue, toid)
 	}
 	return 200, ""
+}
+
+func GetGiftList(r *http.Request) (int, string) {
+	err, infolist := handlers.GetGiftList()
+	if nil != err {
+		return 404, ""
+	}
+
+	jsonRlt, _ := json.Marshal(infolist)
+	return 200, string(jsonRlt)
 }

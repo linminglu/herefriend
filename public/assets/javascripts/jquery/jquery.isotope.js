@@ -307,10 +307,7 @@
         sortBy: 'original-order',
         sortAscending: true,
         resizesContainer: true,
-        transformsEnabled: false,
-        // disable transforms in Opera
         itemPositionDataEnabled: false
-
     };
     $.Isotope.prototype = {
         // sets up widget

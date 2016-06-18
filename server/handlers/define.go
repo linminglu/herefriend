@@ -306,7 +306,7 @@ var gRobotResponseCheckList = [...]string{
 	"器官",
 }
 
-type giftInfo struct {
+type GiftInfo struct {
 	Id int //礼物固定id
 	/* 礼物类型：
 	 * 0 免费

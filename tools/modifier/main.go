@@ -430,6 +430,7 @@ func deleteHeadPic(gender int) {
 			count = count + 1
 			rows.Scan(&curid)
 
+			lib.SQLExec(updatesentence, curid)
 			fmt.Printf("http://localhost:8080/cms/GetSingleUserInfo?id=%d&gender=%d\n", curid, gender)
 			bytes, err := lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/GetSingleUserInfo?id=%d&gender=%d", curid, gender), nil)
 			if nil != err {
@@ -455,7 +456,6 @@ func deleteHeadPic(gender int) {
 			lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/DeleteHeadImage?id=%d&gender=%d", curid, gender), nil)
 			bytes, err = lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/GetSingleUserInfo?id=%d&gender=%d", curid, gender), nil)
 			if nil == err {
-				lib.SQLExec(updatesentence, curid)
 				err = json.Unmarshal(bytes, &info)
 				if nil == err {
 					if "" == info.Img {
