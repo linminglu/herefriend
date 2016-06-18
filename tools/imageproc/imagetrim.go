@@ -27,28 +27,25 @@ func trimImagesByGender(gender int, baseid int) {
 		for rows.Next() {
 			err = rows.Scan(&id, &filename, &tag)
 			if nil != err {
+				fmt.Println(err)
 				continue
 			}
 
 			count = count + 1
-
-			// 只处理相册
-			if 0 == tag {
-				err = image.DownloadImageAndPutToQiniu(lib.GetQiniuUserImageURL(id, filename), true, id, filename)
-				if nil == err {
-					_, err = lib.SQLExec(updatesentense, id, filename, tag)
-					if nil != err {
-						fmt.Println(err)
-					}
-				} else {
+			err = image.DownloadImageAndPutToQiniu(lib.GetQiniuUserImageURL(id, filename), true, id, filename)
+			if nil == err {
+				_, err = lib.SQLExec(updatesentense, id, filename, tag)
+				if nil != err {
 					fmt.Println(err)
-					_, err = lib.SQLExec(deletesentence, id, filename)
-					if nil != err {
-						fmt.Println(err)
-					} else {
-						lib.DeleteImageFromQiniu(id, filename)
-						fmt.Println(fmt.Sprintf("delete image %s of %d\n", filename, id))
-					}
+				}
+			} else {
+				fmt.Println(err)
+				_, err = lib.SQLExec(deletesentence, id, filename)
+				if nil != err {
+					fmt.Println(err)
+				} else {
+					lib.DeleteImageFromQiniu(id, filename)
+					fmt.Println(fmt.Sprintf("delete image %s of %d\n", filename, id))
 				}
 			}
 		}

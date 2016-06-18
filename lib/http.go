@@ -104,7 +104,7 @@ func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, erro
 	}
 
 	client := &http.Client{
-		Transport: &http.Transport{Dial: HttpTimeoutDial},
+		Transport: &http.Transport{Dial: HttpTimeoutDial, DisableKeepAlives: true},
 	}
 
 	httpreq.Header.Add("User-Agent", common.ClientAgent)

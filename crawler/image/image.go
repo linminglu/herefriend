@@ -126,3 +126,26 @@ func DownloadImageAndPutToQiniu(url string, cut bool, id int, filename string) e
 
 	return err
 }
+
+func GetImageWidthHight(url string) (error, int, int) {
+	resp, err := lib.Get(url, nil)
+	if nil != err {
+		return err, 0, 0
+	}
+	defer resp.Body.Close()
+
+	if 200 != resp.StatusCode {
+		fmt.Printf("【Download】failed, statuscode=%d\n", resp.StatusCode)
+		return errors.New(""), 0, 0
+	}
+
+	var m image.Image
+	m, _, err = image.Decode(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return err, 0, 0
+	}
+
+	bounds := m.Bounds()
+	return nil, bounds.Max.X, bounds.Max.Y
+}

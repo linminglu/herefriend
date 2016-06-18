@@ -86,6 +86,10 @@ func init() {
 
 	sum = max + min
 	for i, info := range gGiftList {
+		if i == len(gGiftList)-1 {
+			break
+		}
+
 		dot = sum - gGiftList[i].Price
 
 		//按照礼物价值修改概率
@@ -218,7 +222,7 @@ func randomSendGiftBySender(id, gender int) {
 		index := lib.Intn(gGiftRandomLimit)
 		giftid := gGiftRandomBuf[index].Id
 		resetfulSendGift(id, gender, toid, giftid, getRandomGiftNumberByGiftId(giftid))
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Minute * 20)
 	}
 }
 
@@ -259,7 +263,7 @@ func DoSend(gender int) {
 				sendermap[id] = true
 
 				resetfulSendGift(id, gender, toid, giftid, getRandomGiftNumberByGiftId(giftid))
-				time.Sleep(time.Second * 1)
+				time.Sleep(time.Minute * 30)
 			}
 		}
 
@@ -271,6 +275,6 @@ func DoSend(gender int) {
 }
 
 func main() {
-	//go DoSend(0)
+	go DoSend(0)
 	DoSend(1)
 }

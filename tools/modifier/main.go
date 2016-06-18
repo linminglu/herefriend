@@ -1,12 +1,25 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"time"
 
+	"herefriend/crawler/image"
 	"herefriend/lib"
 )
+
+type cmsUserInfo struct {
+	Id       int
+	Age      int
+	Name     string
+	Img      string
+	Province string
+	Selected bool
+	Usertype int
+	VipLevel int
+}
 
 var gDistrictMap map[string]([]string)
 var gRegexp *regexp.Regexp
@@ -394,12 +407,76 @@ func modifygifttime() {
 	}
 }
 
+func deleteHeadPic(gender int) {
+	var sentence string
+	var updatesentence string
+	if 0 == gender {
+		sentence = "select id from girls where usertype=3 and flag=0 and id>? limit 1000"
+		updatesentence = "update girls set flag=1 where id=?"
+	} else {
+		sentence = "select id from guys where usertype=3 and flag=0 and id>? limit 1000"
+		updatesentence = "update guys set flag=1 where id=?"
+	}
+
+	curid := 0
+	for {
+		rows, err := lib.SQLQuery(sentence, curid)
+		if nil != err {
+			continue
+		}
+
+		count := 0
+		for rows.Next() {
+			count = count + 1
+			rows.Scan(&curid)
+
+			fmt.Printf("http://localhost:8080/cms/GetSingleUserInfo?id=%d&gender=%d\n", curid, gender)
+			bytes, err := lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/GetSingleUserInfo?id=%d&gender=%d", curid, gender), nil)
+			if nil != err {
+				fmt.Println(err)
+				continue
+			}
+
+			var info cmsUserInfo
+			err = json.Unmarshal(bytes, &info)
+			if "" == info.Img {
+				lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/AddBlacklist?id=%d&gender=%d", curid, gender), nil)
+				continue
+			}
+
+			err, _, h := image.GetImageWidthHight(info.Img)
+			if nil != err {
+				fmt.Println(err)
+				continue
+			} else if h >= 80 {
+				continue
+			}
+
+			lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/DeleteHeadImage?id=%d&gender=%d", curid, gender), nil)
+			bytes, err = lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/GetSingleUserInfo?id=%d&gender=%d", curid, gender), nil)
+			if nil == err {
+				lib.SQLExec(updatesentence, curid)
+				err = json.Unmarshal(bytes, &info)
+				if nil == err {
+					if "" == info.Img {
+						lib.GetResultByMethod("", fmt.Sprintf("http://localhost:8080/cms/AddBlacklist?id=%d&gender=%d", curid, gender), nil)
+					}
+				} else {
+					fmt.Println(err)
+				}
+			} else {
+				fmt.Println(err)
+			}
+		}
+
+		rows.Close()
+		if 0 == count {
+			break
+		}
+	}
+}
+
 func main() {
-	//updateHeartbeatByGender(0)
-	//updateHeartbeatByGender(1)
-	//updatePersonByGender(0)
-	//updatePersonByGender(1)
-	//updateVipleveByGender(0)
-	//updateVipleveByGender(1)
-	modifygifttime()
+	deleteHeadPic(0)
+	deleteHeadPic(1)
 }

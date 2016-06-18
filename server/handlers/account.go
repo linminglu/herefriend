@@ -1291,7 +1291,7 @@ func Register(req *http.Request) (int, string) {
 
 		//发送欢迎信息
 		go func() {
-			msg := "欢迎你来到寂寞同城交友!"
+			msg := config.Conf_WelcomeMessage
 			timevalue := lib.CurrentTimeUTCInt64()
 			RecommendInsertMessageToDB(1, lastId, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
 			lib.SetRedisDistrict(lastId, province)

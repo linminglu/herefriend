@@ -16,4 +16,16 @@ var Conf_AgeMax = 85
  * 定期推送消息
  */
 var Conf_EvaluationMsgContent = "好评送免费VIP 3个月哦，赶紧去评价一下吧。"
-var Conf_EnableEvaluation = false
+var Conf_EnableEvaluation = true
+
+/*
+ * 欢迎信息
+ */
+var Conf_WelcomeMessage = `欢迎你加入寂寞交友！ 
+我是您的专职红娘，有什么需求，可以给我留言，我会尽快给您答复； 
+平台交友秘诀： 
+上传头像————获得更多异性青睐； 
+完善资料————答复提高交友成功率； 
+主动搭讪————机会把握在自己手中； 
+送礼物————最亮眼的勾搭(^o^)/ ； 
+喜欢TA，就勾搭一下吧！`

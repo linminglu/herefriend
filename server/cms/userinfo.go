@@ -385,9 +385,9 @@ func AddBlacklist(req *http.Request) (int, string) {
 
 	/* delete from comments and visit */
 	sentence = lib.SQLSentence(lib.SQLMAP_Delete_RecommendByUserId)
-	lib.SQLExec(sentence, id)
+	lib.SQLExec(sentence, id, id)
 	sentence = lib.SQLSentence(lib.SQLMAP_Delete_VisitByUserId)
-	lib.SQLExec(sentence, id)
+	lib.SQLExec(sentence, id, id)
 
 	delSql := lib.SQLSentence(lib.SQLMAP_Delete_UserId, gender)
 	lib.SQLExec(delSql, id)
