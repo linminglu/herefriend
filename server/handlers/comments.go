@@ -423,6 +423,11 @@ func recommendRobotRoutine() {
 			fromid := getRandomHeartbeatId(id, 1-user.gender)
 			if 0 == fromid {
 				continue
+			} else {
+				_, usertype := GetUsertypeByIdGender(id, 1-user.gender)
+				if common.USERTYPE_USER == usertype {
+					continue
+				}
 			}
 
 			ok, msg := getFormatMsg(fromid)

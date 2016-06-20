@@ -162,7 +162,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_VisitUnreadCount:      {"", "select count(*) from visit where toid=? and readed=0 and time>?"},
 	SQLMAP_Select_RandomId:              {"s", "select id from %s where usertype!=1 limit ?,1"},
 	SQLMAP_Select_RandomProvId:          {"s", "select id from %s where usertype!=1 and province=? limit ?,1"},
-	SQLMAP_Select_HeartbeatRandomProvId: {"d", "select id from heartbeat where gender=%d and province=? limit ?,1"},
+	SQLMAP_Select_HeartbeatRandomProvId: {"d", "select id from heartbeat where usertype!=1 and gender=%d and province=? limit ?,1"},
 	SQLMAP_Select_RandomProvAgeId:       {"s", "select id from %s where usertype!=1 and province=? and age>=? and age<=? limit ?,1"},
 	SQLMAP_Select_LastLoginTime:         {"s", "select logintime from %s where id=?"},
 	SQLMAP_Select_LastEvaluationTime:    {"s", "select evaluationtime from %s where id=?"},
