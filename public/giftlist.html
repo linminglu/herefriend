@@ -319,47 +319,41 @@
                                     <div class='modal hide fade' id='gift_verbose_dlg' role='dialog' tabindex='-1'>
                                         <div class='modal-header'>
                                             <button class='close' data-dismiss='modal' type='button'>&times;</button>
-                                            <h3 id="gift_verbose_name"></h3>
                                         </div>
                                         <div class='modal-body'>
                                             <form class='form' style='margin-bottom: 0;' />
-                                                <div class='control-group'>
-                                                    <label class='control-label'>Full name</label>
-                                                    <div class='controls'>
-                                                        <input class='span12' id='full-name' type='text' />
-                                                        <p class='help-block' />
-                                                    </div>
-                                                </div>
-                                                <div class='control-group'>
-                                                    <label class='control-label'>Street</label>
-                                                    <div class='controls'>
-                                                        <input class='span12' id='address-line2' placeholder='Street placeholder' type='text' />
-                                                        <small class='muted'>Description for street field</small>
-                                                    </div>
-                                                </div>
-                                                <div class='control-group'>
-                                                    <label class='control-label'>City</label>
-                                                    <div class='controls'>
-                                                        <input class='span12' id='city' placeholder='City placeholder' type='text' />
-                                                        <p class='help-block' />
-                                                    </div>
-                                                </div>
-                                                <div class='control-group'>
-                                                    <label class='control-label'>Company</label>
-                                                    <div class='controls'>
-                                                        <div class='input-append'>
-                                                            <input class='span6' id='appendedInputButtons' type='text' />
-                                                            <button class='btn' type='button'>
-                                                                <i class='icon-building'></i>
-                                                            </button>
+                                                <fieldset>
+                                                    <div class='span3'>
+                                                        <div class='lead'>
+                                                            <img id='gift_verbose_img'/>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                    <div class='span9'>
+                                                        <div class='span12'>
+                                                        </div>
+                                                        <div class='span12'>
+                                                            <label class='text-contrast control-label span3'>名称</label>
+                                                            <a class="editable editable-click" data-original-title="输入名称" data-pk="1" data-placeholder="新名称" data-type="text" href="#" id="gift_verbose_name"></a>
+                                                        </div>
+                                                        <div class='span12'>
+                                                            <label class='text-contrast control-label span3'>描述</label>
+                                                            <a class="editable editable-click" data-original-title="输入礼物描述" data-pk="1" data-placeholder="礼物介绍" data-type="textarea" href="#" id="gift_verbose_desc"></a>
+                                                        </div>
+                                                        <div class='span12'>
+                                                            <label class='text-contrast control-label span3'>价格</label>
+                                                            <label class="control-label" id="gift_verbose_price"></label>
+                                                        </div>
+                                                        <div class='span12'>
+                                                            <label class='text-contrast control-label span3'>已售</label>
+                                                            <label class="control-label" id="gift_verbose_sold"></label>
+                                                        </div>
+                                                        <div class='span12'>
+                                                            <label class='text-contrast control-label span3'>剩余</label>
+                                                            <label class="control-label" id="gift_verbose_left"></label>
+                                                        </div>
+                                                    </div>
+                                                </fieldset>
                                             </form>
-                                        </div>
-                                        <div class='modal-footer'>
-                                            <button class='btn' data-dismiss='modal'>Close</button>
-                                            <button class='btn btn-primary'>Save changes</button>
                                         </div>
                                     </div>
                                 </div>

@@ -9,7 +9,14 @@ function refreshGiftVerboseDlg(id) {
 			if ((null == data) || (0 == data.length)) {
 				return 0
 			}
+
+            $("#gift_verbose_img").attr("src", data["ImageUrl"])
             $("#gift_verbose_name").html(data["Name"])
+            $("#gift_verbose_type").html(data["Type"])
+            $("#gift_verbose_desc").html(data["Description"])
+            $("#gift_verbose_price").html(data["Price"])
+            $("#gift_verbose_sold").html(0)
+            $("#gift_verbose_left").html(data["ValidNum"])
 		},
 		error: function() {
 			alert("发生错误,请检查网络!")
