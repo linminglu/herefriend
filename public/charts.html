@@ -350,42 +350,35 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class='row-fluid'>
-                                <div class='span12 box bordered-box' style='margin-bottom:0;' id="box-talkwindow">
-                                    <div class='box-header contrast-background'>
-                                        <div class='title'>
-                                            <div class='icon-picture'>
-                                            </div>
-                                            聊天窗口
-                                            &nbsp;&nbsp;&nbsp;&nbsp;
-                                            <span id="title-talkleft" class="badge badge-warning"></span>
-                                            &nbsp;&nbsp;
-                                            <div class='icon-comments-alt text-warning'>
-                                            </div>
-                                            &nbsp;&nbsp;
-                                            <span id="title-talkright" class="badge badge-warning"></span>
-                                        </div>
-                                        <div class='actions'>
-                                            <a href="#" class="btn box-collapse btn-mini btn-link">
-                                                <i>
-                                                </i>
-                                            </a>
-                                        </div>
+                            <div class='modal hide fade' id='talk_window_dlg' role='dialog' tabindex='-1' style="width:1000px;height:515px">
+                                <div class='modal-header' style="text-align:center;">
+                                    <button class='close' data-dismiss='modal' type='button'>&times;</button>
+                                    <span id="title-talkleft" class="badge badge-info"></span>
+                                    &nbsp;&nbsp;
+                                    <div class='icon-comments-alt text-warning'>
                                     </div>
-                                    <div class='box-content'>
-                                        <div class='row-fluid'>
-                                            <div>
-                                                <ul class="span12 chat-thread" id="ul-talkwindow">
-                                                </ul>
-                                            </div>
-                                            <div class='span12' style="margin-left:0;">
-                                                <hr class="hr-normal">
-                                                <div class="control-group input-prepend input-append span12" style="margin-left:0;">
-                                                    <input class="span11" id="talk_input" placeholder="输入聊天消息..." type="text">
-                                                    <button class="btn btn-success" name="button" style="margin-bottom:5px" onclick="dotalk()">
-                                                        <i class="icon-mail-forward"></i>
-                                                        <span>发送</span>
-                                                    </button>
+                                    &nbsp;&nbsp;
+                                    <span id="title-talkright" class="badge badge-info"></span>
+                                </div>
+                                <div class='modal-body' style="max-height:440px">
+                                    <div class='row-fluid'>
+                                        <div class='span12 box bordered-box' style='margin-bottom:0;' id="box-talkwindow">
+                                            <div class='box-content'>
+                                                <div class='row-fluid'>
+                                                    <div>
+                                                        <ul class="span12 chat-thread" id="ul-talkwindow">
+                                                        </ul>
+                                                    </div>
+                                                    <div class='span12' style="margin-left:0;">
+                                                        <hr class="hr-normal">
+                                                        <div class="control-group input-prepend input-append span12" style="margin-left:0;">
+                                                            <input class="span10" id="talk_input" placeholder="输入聊天消息..." type="text">
+                                                            <button class="btn btn-success" name="button" style="margin-bottom:5px" onclick="dotalk()">
+                                                                <i class="icon-mail-forward"></i>
+                                                                <span>发送</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

@@ -58,6 +58,7 @@ const (
 	SQLMAP_Select_CountByProv
 	SQLMAP_Select_CountByProvAge
 	SQLMAP_Select_GiftInfo
+	SQLMAP_Select_GiftInfoById
 	SQLMAP_Select_GiftById
 	SQLMAP_Select_GiftRecvSum
 	SQLMAP_Select_GiftSendSum
@@ -162,7 +163,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_VisitUnreadCount:      {"", "select count(*) from visit where toid=? and readed=0 and time>?"},
 	SQLMAP_Select_RandomId:              {"s", "select id from %s where usertype!=1 limit ?,1"},
 	SQLMAP_Select_RandomProvId:          {"s", "select id from %s where usertype!=1 and province=? limit ?,1"},
-	SQLMAP_Select_HeartbeatRandomProvId: {"d", "select id from heartbeat where usertype!=1 and gender=%d and province=? limit ?,1"},
+	SQLMAP_Select_HeartbeatRandomProvId: {"d", "select id from heartbeat where gender=%d and province=? limit ?,1"},
 	SQLMAP_Select_RandomProvAgeId:       {"s", "select id from %s where usertype!=1 and province=? and age>=? and age<=? limit ?,1"},
 	SQLMAP_Select_LastLoginTime:         {"s", "select logintime from %s where id=?"},
 	SQLMAP_Select_LastEvaluationTime:    {"s", "select evaluationtime from %s where id=?"},
@@ -180,6 +181,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_CountByProv:           {"s", "select count(*) from %s where usertype!=1 and province=?"},
 	SQLMAP_Select_CountByProvAge:        {"s", "select count(*) from %s where usertype!=1 and province=? and age=?"},
 	SQLMAP_Select_GiftInfo:              {"", "select id,type,name,description,validnum,imageurl,effect,price,origin_price,discount_desciption from gift"},
+	SQLMAP_Select_GiftInfoById:          {"", "select id,type,name,description,validnum,imageurl,effect,price,origin_price,discount_desciption from gift where id=?"},
 	SQLMAP_Select_GiftById:              {"", "select id, name, price, validnum from gift where id=?"},
 	SQLMAP_Select_GiftRecvSum:           {"", "select giftid, giftnum from giftconsume where toid=?"},
 	SQLMAP_Select_GiftSendSum:           {"", "select giftid, giftnum from giftconsume where fromid=?"},

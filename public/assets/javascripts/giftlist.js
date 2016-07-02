@@ -1,15 +1,34 @@
+function refreshGiftVerboseDlg(id) {
+	$.ajax({
+		type: "GET",
+		url: "/cms/GetGiftVerbose?id=" + id,
+		dataType: "json",
+		async: false,
+		cache: false,
+		success: function(data) {
+			if ((null == data) || (0 == data.length)) {
+				return 0
+			}
+            $("#gift_verbose_name").html(data["Name"])
+		},
+		error: function() {
+			alert("发生错误,请检查网络!")
+		}
+	});
+}
+
 function getGiftItemHtml(item) {
     var str = '<li class="respl-item category-10">'
             + '<div class="unit">'
             + '     <p class="hoverline"></p>'
-            + '     <a class="images"><img src="' + item["ImageUrl"] +'"></a>'
+            + '     <a class="images lazy"><img src="' + item["ImageUrl"] +'"></a>'
             + '     <h3><a>' + item["Name"] + '</a></h3>'
             + '     <dl>'
             + '         <dd>价格：' + item["Price"] + '金币</dd>'
             + '         <dd>已售/剩余：' + 0 + '/' + item["ValidNum"] +'个</dd>'
             + '     </dl>'
             + '     <div class="view">'
-            + '        <a class="right">详情<span>&gt;</span></a>'
+            + '         <a class="btn btn-mini right" data-toggle="modal" onclick="refreshGiftVerboseDlg(' + item["Id"] + ')" href="#gift_verbose_dlg" role="button">详情<span>&gt;</span></a>'
             + '     </div>'
             + '</div>'
             + '</li>'

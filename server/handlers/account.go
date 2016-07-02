@@ -873,11 +873,13 @@ func PostImage(req *http.Request) (int, string) {
 	v := req.URL.Query()
 	pictypestr := v.Get("pictype")
 	if "" == pictypestr {
+		log.Error("Failed to get picture type")
 		return 404, ""
 	}
 
 	file, handle, err := req.FormFile("file")
 	if nil != err {
+		log.Error(err)
 		return 404, ""
 	}
 
@@ -892,6 +894,7 @@ func PostImage(req *http.Request) (int, string) {
 	imagename := lib.RandStringBytesMaskImprSrc(32) + "." + subfix
 	err = lib.PutImageToQiniu(id, imagename, file)
 	if nil != err {
+		log.Error(err)
 		return 404, ""
 	}
 

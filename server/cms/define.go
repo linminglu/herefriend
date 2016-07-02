@@ -1,8 +1,6 @@
 package cms
 
-import (
-	"time"
-)
+import "time"
 
 type cmsSystemSummary struct {
 	OSDescribe  string  // 操作系统信息

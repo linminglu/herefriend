@@ -147,32 +147,35 @@ function getTalkerInfo_ul(id, item) {
     }
 
 	var str = '<li><div id="talker_' + talkerid + '">'
-    str += '<div class="pull-left">'
-	str += '    <img class="lazy" style="width:50px;height:50px;border-radius:50px;cursor:pointer;"'
+            + '<div class="pull-left">'
+	        + '    <img class="lazy" style="width:50px;height:50px;border-radius:50px;cursor:pointer;"'
+
     if ("" != picture) {
         str += ' data-original="' + picture + '"'
     } else {
         str += ' src="assets/images/black.jpg"'
     }
-    str += '    onclick="getTalkWindow(' + id + ',' + talkerid + ')"/>'
-    str += '</div>'
-    str += '<div class="text-right pull-right">'
-    str += '    <p>' + item["MsgText"] + '</p>'
-    str += '</div>'
-    str += '<div class="clearfix"></div>'
-    str += '<div class="pull-left">'
-    str += '    <p>'
-    str += '        <span class="text-contrast">' + talkerinfo + '</span>'
-    str += '    </p>'
-    str += '</div>'
-    str += '<div class="text-right pull-right">'
-    str += '    <p>'
-    str += '        <i class="icon-time text-muted"></i>'
-    str += '        <span class="text-muted">' + t.formate("yyyy-MM-dd HH:mm:ss") + '</span>'
-    str += '    </p>'
-    str += '</div>'
-    str += '<div class="clearfix"></div>'
-	str += '</div></li>'
+
+    //str += ' <a class="btn btn-mini right" data-toggle="modal" onclick="refreshGiftVerboseDlg(' + item["Id"] + ')" href="#gift_verbose_dlg" role="button">详情<span>&gt;</span></a>'
+    str += ' data-toggle="modal" onclick="getTalkWindow(' + id + ',' + talkerid + ')" href="#talk_window_dlg"/>'
+         + '</div>'
+         + '<div class="text-right pull-right">'
+         + '    <p>' + item["MsgText"] + '</p>'
+         + '</div>'
+         + '<div class="clearfix"></div>'
+         + '<div class="pull-left">'
+         + '    <p>'
+         + '        <span class="text-contrast">' + talkerinfo + '</span>'
+         + '    </p>'
+         + '</div>'
+         + '<div class="text-right pull-right">'
+         + '    <p>'
+         + '        <i class="icon-time text-muted"></i>'
+         + '        <span class="text-muted">' + t.formate("yyyy-MM-dd HH:mm:ss") + '</span>'
+         + '    </p>'
+         + '</div>'
+         + '<div class="clearfix"></div>'
+	     + '</div></li>'
 
 	return str
 }

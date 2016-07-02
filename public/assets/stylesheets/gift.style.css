@@ -9,7 +9,7 @@ ol,ul{list-style:none outside none;}
 /* Global style */
 .clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden;}
 .clearfix{zoom:1;}
-a:link,a:visited{text-decoration:none;color:#838383;}
+a:link,a:visited{text-decoration:none;}
 .left{float:left;}
 .right{float:right;}
 

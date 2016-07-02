@@ -96,6 +96,14 @@ func PresentGift(r *http.Request) (int, string) {
 	return 200, ""
 }
 
+/*
+ |    Function: GetGiftList
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-02
+ | Description:
+ |      Return:
+ |
+*/
 func GetGiftList(r *http.Request) (int, string) {
 	err, infolist := handlers.GetGiftList()
 	if nil != err {
@@ -103,5 +111,35 @@ func GetGiftList(r *http.Request) (int, string) {
 	}
 
 	jsonRlt, _ := json.Marshal(infolist)
+	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: GetGiftVerbose
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-02
+ | Description:
+ |      Return:
+ |
+*/
+func GetGiftVerbose(r *http.Request) (int, string) {
+	v := r.URL.Query()
+	idstr := v.Get("id")
+	id, _ := strconv.Atoi(idstr)
+	if id <= 0 {
+		return 404, ""
+	}
+
+	var info handlers.GiftInfo
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftInfoById)
+	err := lib.SQLQueryRow(sentence, id).Scan(&info.Id, &info.Type, &info.Name, &info.Description, &info.ValidNum, &info.ImageUrl, &info.Effect,
+		&info.Price, &info.OriginPrice, &info.DiscountDescription)
+	if nil != err {
+		lib.SQLError(sentence, err, id)
+		return 404, ""
+	}
+
+	info.ImageUrl = lib.GetQiniuGiftImageURL(info.ImageUrl)
+	jsonRlt, _ := json.Marshal(info)
 	return 200, string(jsonRlt)
 }
