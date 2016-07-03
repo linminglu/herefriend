@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -9,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/cihub/seelog"
 	"golang.org/x/net/html/charset"
 
 	"herefriend/common"
@@ -58,7 +58,7 @@ func Get(url string, cookies []*http.Cookie) (*http.Response, error) {
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
 	resp, err := client.Do(httpreq)
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -84,7 +84,7 @@ func Post(url string, cookies []*http.Cookie) (*http.Response, error) {
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
 	resp, err := client.Do(httpreq)
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, erro
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
 	resp, err := client.Do(httpreq)
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -118,7 +118,7 @@ func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, erro
 
 	bytebuf, err := ConvertToUtf8(resp.Header.Get("Content-Type"), resp.Body)
 	if nil != err {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 

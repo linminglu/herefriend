@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"herefriend/common"
 	"herefriend/lib"
+	"herefriend/lib/push"
 	"herefriend/server/handlers"
 )
 
@@ -121,12 +123,22 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
 	idStr := v.Get("id")
 	genderStr := v.Get("gender")
 
-	if "" == idStr || "" == genderStr {
+	if "" == idStr {
 		return 404, ""
 	}
 
 	id, _ := strconv.Atoi(idStr)
-	gender, _ := strconv.Atoi(genderStr)
+
+	var gender int
+	if "" == genderStr {
+		var exists bool
+		exists, gender, _ = handlers.GetGenderUsertypeById(id)
+		if true != exists {
+			return 404, ""
+		}
+	} else {
+		gender, _ = strconv.Atoi(genderStr)
+	}
 
 	/*
 	 * Second get the persons' infos
@@ -141,12 +153,16 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
 	info.Name = userinfo.Name
 	info.Province = userinfo.Province
 	_, info.Usertype = handlers.GetUsertypeByIdGender(id, gender)
+	info.VipLevel = userinfo.VipLevel
 
 	checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
 	lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
 	if idChk == info.Id {
 		info.Selected = true
 	}
+
+	appversioinSentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_SetVipAppVersion, gender)
+	lib.SQLQueryRow(appversioinSentence, info.Id).Scan(&info.VipSetAppVersion)
 
 	jsonRlt, _ := json.Marshal(info)
 	return 200, string(jsonRlt)
@@ -166,13 +182,24 @@ func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
 	idStr := v.Get("id")
 	genderStr := v.Get("gender")
 
-	if "" == idStr || "" == genderStr {
+	if "" == idStr {
 		w.WriteHeader(404)
 		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
-	gender, _ := strconv.Atoi(genderStr)
+
+	var gender int
+	if "" == genderStr {
+		var exists bool
+		exists, gender, _ = handlers.GetGenderUsertypeById(id)
+		if true != exists {
+			w.WriteHeader(404)
+			return
+		}
+	} else {
+		gender, _ = strconv.Atoi(genderStr)
+	}
 
 	deleteStr := v.Get("delete")
 	if "" != deleteStr {
@@ -199,6 +226,86 @@ func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(handlers.UpdateProfile(req, id, gender))
 	}
 
+	return
+}
+
+/*
+ |    Function: AdminGiveVipLevel
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-03
+ | Description:
+ |      Return:
+ |
+*/
+func AdminGiveVipLevel(w http.ResponseWriter, req *http.Request) {
+	v := req.URL.Query()
+	idStr := v.Get("id")
+	genderStr := v.Get("gender")
+
+	if "" == idStr {
+		w.WriteHeader(404)
+		return
+	}
+
+	id, _ := strconv.Atoi(idStr)
+
+	var gender int
+	if "" == genderStr {
+		var exists bool
+		exists, gender, _ = handlers.GetGenderUsertypeById(id)
+		if true != exists {
+			w.WriteHeader(404)
+			return
+		}
+	} else {
+		gender, _ = strconv.Atoi(genderStr)
+	}
+
+	levelstr := v.Get("level")
+	level, _ := strconv.Atoi(levelstr)
+
+	/* check if ther user already buy VIP */
+	var oldlevel int
+	var olddays int
+	var expiretime int64
+	days := 2
+
+	sentence := lib.SQLSentence(lib.SQLMAP_Select_VipLevelByID, gender)
+	lib.SQLQueryRow(sentence, id).Scan(&oldlevel, &olddays, &expiretime)
+	if 0 != oldlevel {
+		if oldlevel > level {
+			level = oldlevel
+		}
+
+		days = days + olddays
+	}
+
+	if 0 == expiretime {
+		expiretime = lib.CurrentTimeUTCInt64()
+	}
+
+	//赠送两天vip, 秒为单位
+	expiretime += int64(2) * int64(time.Hour/time.Second) * 24
+	sentence = lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
+	_, err := lib.SQLExec(sentence, level, days, expiretime, id)
+	if nil != err {
+		w.WriteHeader(404)
+		return
+	}
+
+	//更新到线程
+	go handlers.UpdateVipUserInfo(id, gender, level, days, expiretime)
+
+	//发送信息, VIP已经开通
+	expireUTC := lib.Int64_To_UTCTime(expiretime)
+	msg := "您的评论已经审核通过, " + []string{"初始会员", "写信会员", "钻石会员", "至尊会员"}[level] + " 已经赠送给您啦！重新登录即可生效。 会员到期时间：" +
+		fmt.Sprintf("%d年%d月%d日", expireUTC.Year(), expireUTC.Month(), expireUTC.Day()) + "。"
+	timevalue := lib.CurrentTimeUTCInt64()
+	handlers.RecommendInsertMessageToDB(1, id, handlers.RECOMMEND_MSGTYPE_TALK, msg, timevalue)
+	handlers.RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+	push.DoPush()
+
+	lib.DelRedisUserInfo(id)
 	return
 }
 

@@ -38,7 +38,7 @@ func CommentInfo(req *http.Request) string {
 }
 
 /*
- |    Function: Recommendhistory
+ |    Function: RecentComments
  |      Author: Mr.Sancho
  |        Date: 2016-02-12
  |   Arguments:
@@ -46,7 +46,7 @@ func CommentInfo(req *http.Request) string {
  | Description: 获取最新的消息
  |
 */
-func Recommendhistory(req *http.Request) string {
+func RecentComments(req *http.Request) string {
 	var lastmsgid int
 	var fromid int
 	var toid int
@@ -510,4 +510,47 @@ func MessagePushSet(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	return
+}
+
+/*
+ |    Function: AdminChartsList
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-03
+ | Description:
+ |      Return:
+ |
+*/
+func AdminChartsList(req *http.Request) (int, string) {
+	var searchInfo cmsSearchInfo
+	countsentence := "select count(distinct fromid) from recommend where toid=1"
+	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
+	if nil == err && 0 != searchInfo.Count {
+		sentence := "select distinct fromid from recommend where toid=1 order by fromid desc limit ?,?"
+		page, count := lib.Get_pageid_count_fromreq(req)
+		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
+		if nil != err {
+			return 404, ""
+		}
+		defer rows.Close()
+
+		var info cmsUserInfo
+		for rows.Next() {
+			rows.Scan(&info.Id)
+			code, userinfo := handlers.GetUserInfoById(info.Id)
+			if 200 == code {
+				info.Name = userinfo.Name
+				info.Age = userinfo.Age
+				info.Img = userinfo.IconUrl
+				info.Province = userinfo.Province
+				info.VipLevel = userinfo.VipLevel
+
+				searchInfo.Users = append(searchInfo.Users, info)
+			}
+		}
+	} else if nil != err {
+		lib.SQLError(countsentence, err, nil)
+	}
+
+	jsonRlt, _ := json.Marshal(searchInfo)
+	return 200, string(jsonRlt)
 }

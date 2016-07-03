@@ -127,18 +127,26 @@ func GetRegistUserNumber() int {
 	return gCountRegist
 }
 
-func updateVipUserInfo(usersinfo *vipUsersInfo, id, gender, level, days int, expiretime int64) bool {
-	usersinfo.lock.Lock()
-	info, ok := usersinfo.users[id]
+/*
+ |    Function: UpdateVipUserInfo
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-03
+ | Description:
+ |      Return:
+ |
+*/
+func UpdateVipUserInfo(id, gender, level, days int, expiretime int64) bool {
+	gVipUsersInfo.lock.Lock()
+	info, ok := gVipUsersInfo.users[id]
 	if true == ok {
 		info.level = level
 		info.days = days
 		info.expiretime = expiretime
 	} else {
-		usersinfo.users[id] = &vipUser{gender: gender, level: level, days: days, expiretime: expiretime}
+		gVipUsersInfo.users[id] = &vipUser{gender: gender, level: level, days: days, expiretime: expiretime}
 	}
 
-	usersinfo.lock.Unlock()
+	gVipUsersInfo.lock.Unlock()
 
 	return ok
 }
@@ -489,9 +497,10 @@ func checkIfUserHavePicture(id, gender int) bool {
 func checkIfUserHaveViplevel(id, gender int) bool {
 	var viplevel int
 	var vipdays int
+	var expiretime int64
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_VipLevelByID, gender)
-	err := lib.SQLQueryRow(sentence, id).Scan(&viplevel, &vipdays)
+	err := lib.SQLQueryRow(sentence, id).Scan(&viplevel, &vipdays, &expiretime)
 	if nil == err && 0 != viplevel {
 		return true
 	} else if nil != err {
@@ -759,7 +768,7 @@ func UpdateProfile(req *http.Request, id, gender int) int {
 	v := req.URL.Query()
 
 	for key, values := range v {
-		if "id" != key && "password" != key && "newpassword" != key {
+		if "id" != key && "password" != key && "newpassword" != key && "_" != key {
 			sqlStr := func() string {
 				if "province" == key {
 					lib.SQLExec("update heartbeat set province=? where id=?", values[0], id)
@@ -1540,7 +1549,7 @@ func vipUserGoRoute() {
 				if curtime >= expiretime {
 					detachVipFromUser(userid, 0, level)
 				} else {
-					updateVipUserInfo(gVipUsersInfo, userid, 0, level, days, expiretime)
+					UpdateVipUserInfo(userid, 0, level, days, expiretime)
 				}
 			}
 		}
@@ -1557,7 +1566,7 @@ func vipUserGoRoute() {
 				if curtime >= expiretime {
 					detachVipFromUser(userid, 1, level)
 				} else {
-					updateVipUserInfo(gVipUsersInfo, userid, 1, level, days, expiretime)
+					UpdateVipUserInfo(userid, 1, level, days, expiretime)
 				}
 			}
 		}
@@ -1607,6 +1616,8 @@ func detachVipFromUser(id, gender, level int) {
 		timevalue := lib.CurrentTimeUTCInt64()
 		RecommendInsertMessageToDB(1, id, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
 		RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+
+		lib.DelRedisUserInfo(id)
 	}
 }
 
@@ -1638,9 +1649,10 @@ func BuyVip(req *http.Request) (int, string) {
 	/* check if ther user already buy VIP */
 	var oldlevel int
 	var olddays int
+	var expiretime int64
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_VipLevelByID, gender)
-	lib.SQLQueryRow(sentence, id).Scan(&oldlevel, &olddays)
+	lib.SQLQueryRow(sentence, id).Scan(&oldlevel, &olddays, &expiretime)
 	if 0 != oldlevel {
 		if oldlevel > level {
 			level = oldlevel
@@ -1650,7 +1662,11 @@ func BuyVip(req *http.Request) (int, string) {
 	}
 
 	//秒为单位
-	expiretime := lib.CurrentTimeUTCInt64() + int64(days)*int64(time.Hour/time.Second)*24
+	if 0 == expiretime {
+		expiretime = lib.CurrentTimeUTCInt64()
+	}
+
+	expiretime += int64(days) * int64(time.Hour/time.Second) * 24
 	sentence = lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
 	_, err := lib.SQLExec(sentence, level, days, expiretime, id)
 	if nil != err {
@@ -1661,7 +1677,7 @@ func BuyVip(req *http.Request) (int, string) {
 	updateUserActive()
 
 	//更新到线程
-	go updateVipUserInfo(gVipUsersInfo, id, gender, level, days, expiretime)
+	go UpdateVipUserInfo(id, gender, level, days, expiretime)
 
 	//发送信息, VIP已经开通
 	expireUTC := lib.Int64_To_UTCTime(expiretime)

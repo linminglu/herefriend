@@ -117,6 +117,7 @@ const (
 	SQLMAP_Delete_MultiClientID
 	SQLMAP_Delete_UnCrawledGirlsId
 	SQLMAP_CMS_Select_BriefInfo
+	SQLMAP_CMS_Select_SetVipAppVersion
 	SQLMAP_CMS_Select_Pictures
 	SQLMAP_CMS_Select_BriefInfoByRows
 	SQLMAP_CMS_Select_CheckHeatbeatValid
@@ -169,7 +170,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_LastEvaluationTime:    {"s", "select evaluationtime from %s where id=?"},
 	SQLMAP_Select_ClientID:              {"s", "select clientid from %s where id=?"},
 	SQLMAP_Select_VIPRows:               {"s", "select id, viplevel, vipdays, vipexpiretime from %s where usertype=1 and viplevel!=0"},
-	SQLMAP_Select_VipLevelByID:          {"s", "select viplevel, vipdays from %s where id=?"},
+	SQLMAP_Select_VipLevelByID:          {"s", "select viplevel, vipdays, vipexpiretime from %s where id=?"},
 	SQLMAP_Select_VGirlProcess:          {"", "select areaindex, page from vgirlprocess where base=0"},
 	SQLMAP_Select_ZQProcess:             {"", "select areaindex, page from zhenqingprocess where base=?"},
 	SQLMAP_Select_CheckVGirlId:          {"", "select id from vgirlsid where id=?"},
@@ -246,6 +247,7 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Delete_MultiClientID:          {"s", "update %s set clientid='' where clientid=?"},
 	SQLMAP_Delete_UnCrawledGirlsId:       {"", "delete from girlsid where id=?"},
 	SQLMAP_CMS_Select_BriefInfo:          {"s", "select id from %s"},
+	SQLMAP_CMS_Select_SetVipAppVersion:   {"s", "select setvip_appversion from %s where id=?"},
 	SQLMAP_CMS_Select_Pictures:           {"s", "select filename, tag from %s_picture where id=?"},
 	SQLMAP_CMS_Select_BriefInfoByRows:    {"s", "select id from %s order by id desc limit ?,?"},
 	SQLMAP_CMS_Select_CheckHeatbeatValid: {"", "select id from heartbeat where id=?"},

@@ -174,7 +174,7 @@ function getcomment_li(info) {
 }
 
 function refreshCommendHistory() {
-	$.getJSON("/cms/recommendhistory?lastmsgid=" + g_lastmsgid, function(data) {
+	$.getJSON("/cms/recentComments?lastmsgid=" + g_lastmsgid, function(data) {
 		if (null != data && data.length) {
 			$.each(data, function(i, info) {
 				g_msgarray[g_msgindex] = info

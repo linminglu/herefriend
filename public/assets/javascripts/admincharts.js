@@ -1,4 +1,3 @@
-var gGender = 0
 var gPage = 1
 var gCount = 20
 var gMaxPage = 0
@@ -6,13 +5,13 @@ var gMaxPage = 0
 var gTalkerCount = 10
 var gTalkerPage = 0
 var gTalkerMaxPage = 0
-
-var gShowWindow = true
-
 var focus_id = 0
 var gCurUserId = 0
 var gCurTalkerId = 0
 var gLastMsgId = 0
+
+var gShowprofile = true
+var g_profile_id = 0
 
 $.fn.scrollTo = function( target, options, callback ){
   if(typeof options == 'function' && arguments.length == 2){ callback = options; options = target; }
@@ -84,17 +83,9 @@ Date.prototype.formate = function(fmt) {
 	return fmt;
 }
 
-function setResultNull() {
-	$("#gallery_list").html('<div class="text-center control-group error"><label class="control-label">无数据</label></div>')
-	$("#gallery_list").hide()
-	$("#gallery_list").fadeIn("slow");
-	$("#gallery_list").fadeOut("slow");
-	$("#gallery_list").fadeIn("slow");
-}
-
 function getUserInfo_ul(item) {
 	var str = "<div class='picture'>"
-	str += "<div class='tags' onclick='getTalkerList(" + item["Id"] + ")'>"
+	str += "<div class='tags' onclick='showprofile(" + item["Id"] + ")'>"
     str += "<div class='badge badge-info pull-right'>" + item["Name"] + "-" + item["Age"] + "</div><br>"
     str += "<div class='badge pull-right' style='opacity:0.5'>" + item["Province"] + "</div><br>"
     str += (0 != item["VipLevel"])? "<div class='badge badge-important pull-right'>vip:" + item["VipLevel"] + "</div>" : ""
@@ -106,80 +97,45 @@ function getUserInfo_ul(item) {
     } else {
         str += " src='assets/images/black.jpg'"
     }
-    str += " onclick='getTalkerList(" + item["Id"] + ")'/>"
+    str += " onclick='showprofile(" + item["Id"] + ")'/>"
 	str += "</div>"
 
 	return str
 }
 
+function showprofile(userid) {
+	if (false == gShowprofile) {
+		animation()
+	}
+
+	if (0 != focus_id) {
+		$("img#img_" + focus_id).removeClass("focus")
+	}
+
+	focus_id = userid
+    refreshTalkWindows(1, userid)
+	refreshProfileInfo(userid)
+}
+
 function animation() {
-	if (false == gShowWindow) {
-		gShowWindow = true
-		$("#box-registlist").removeClass("span12").addClass("span8")
-		$("#box-chartswindows").toggle()
-		$("#box-chartswindows").animate({left:''}, "slow")
+	if (false == gShowprofile) {
+		gShowprofile = true
+		$("#box-registlist").removeClass("span12").addClass("span5")
+		$("#box-profile").toggle()
+		$("#box-profile").animate({left:''}, "slow")
 	} else {
-		gShowWindow = false
-		$("#box-chartswindows").animate({
+		gShowprofile = false
+		$("#box-profile").animate({
 			left: '110%'
 		},
 		"slow", function() {
-			$("#box-chartswindows").toggle()
-			$("#box-registlist").removeClass("span8").addClass("span12")
+			$("#box-profile").toggle()
+			$("#box-registlist").removeClass("span5").addClass("span12")
 		})
 	}
 }
 
-function getTalkerInfo_ul(id, item) {
-    var talkerid = 0
-    var talkerinfo = ""
-    var picture = ""
-	var t = new Date(item["TimeUTC"])
-
-    if (0 == item["Direction"]) {
-        talkerid = item["FromId"]
-        talkerinfo = item["From"]
-        picture = item["FromPic"]
-    } else {
-        talkerid = item["ToId"]
-        talkerinfo = item["To"]
-        picture = item["ToPic"]
-    }
-
-	var str = '<li><div id="talker_' + talkerid + '">'
-            + '<div class="pull-left">'
-	        + '    <img class="lazy" style="width:50px;height:50px;border-radius:50px;cursor:pointer;"'
-
-    if ("" != picture) {
-        str += ' data-original="' + picture + '"'
-    } else {
-        str += ' src="assets/images/black.jpg"'
-    }
-
-    str += ' data-toggle="modal" onclick="getTalkWindow(' + id + ',' + talkerid + ')" href="#talk_window_dlg"/>'
-         + '</div>'
-         + '<div class="text-right pull-right">'
-         + '    <p>' + item["MsgText"] + '</p>'
-         + '</div>'
-         + '<div class="clearfix"></div>'
-         + '<div class="pull-left">'
-         + '    <p>'
-         + '        <span class="text-contrast">' + talkerinfo + '</span>'
-         + '    </p>'
-         + '</div>'
-         + '<div class="text-right pull-right">'
-         + '    <p>'
-         + '        <i class="icon-time text-muted"></i>'
-         + '        <span class="text-muted">' + t.formate("yyyy-MM-dd HH:mm:ss") + '</span>'
-         + '    </p>'
-         + '</div>'
-         + '<div class="clearfix"></div>'
-	     + '</div></li>'
-
-	return str
-}
-
-function getTalkWindow(id, talkerid) {
+function refreshTalkWindows(talkerid, id) {
     gLastMsgId = 0
     $.getJSON("/cms/GetTalkHistory?id=" + id + "&talkid=" + talkerid + "&count=100&lastmsgid=" + gLastMsgId, function(data) {
         if (null != data) {
@@ -187,7 +143,7 @@ function getTalkWindow(id, talkerid) {
             $("#title-talkright").html(data["TalkerName"])
 		    var listStr = ""
 
-            msgs = data["Comments"]
+            msgs = data["Comments"] || " "
             if (null != msgs && 0 != msgs.length) {
                 var i = 0
 
@@ -231,71 +187,39 @@ function getTalkWindow(id, talkerid) {
 	})
 }
 
-function dotalk() {
-    if (0 == gCurUserId || 0 == gCurTalkerId) {
-        return
-    }
-
-    msg = $("#talk_input").val().trim()
-    if (0 == msg.length) {
-        return
-    }
-
-	var result = 0
-	$.ajax({
-		type: "GET",
-		url: "/cms/DoTalk?fromid=" + gCurTalkerId + "&toid=" + gCurUserId + "&msg=" + msg,
-		dataType: "json",
-		async: false,
-		cache: false,
-		success: function(data) {
-            $("#talk_input").val("")
-            if (data["MsgId"] > gLastMsgId) {
-                gLastMsgId = data["MsgId"]
-            }
-
-            t = new Date(data["TimeUTC"])
-            $('#ul-talkwindow').append('<li class="right">' + msg + '<br><small class="date pull-right muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>')
-
-            lisize = $('#ul-talkwindow > li').length
-            if (0 != lisize) {
-                $('#ul-talkwindow'). scrollTo($('#ul-talkwindow > li')[lisize - 1])
-            }
-		},
-		error: function() {
-			alert("发生错误,请检查网络!")
+function refreshProfilePicture(userid) {
+	$.getJSON("/cms/GetSingleUserInfo?id=" + userid, function(item) {
+		if (null != item) {
+			$("li#user_" + userid).html(getUserInfo_ul(item))
+			$("li#user_" + userid + " img").lazyload();
 		}
-	});
+	})
 }
 
-function getTalkerList(id) {
-	if (false == gShowWindow) {
-		animation()
-	}
+function refreshProfileInfo(userid) {
+	$.getJSON("/cms/GetSingleUserInfo?id=" + userid, function(item) {
+		if (null != item) {
+            if (null == item["VipSetAppVersion"]) {
+			    $("#edit_appversion").editable("setValue", "")
+            } else {
+			    $("#edit_appversion").editable("setValue", item["VipSetAppVersion"])
+            }
 
-    if (0 != focus_id) {
-        $("img#img_"+focus_id).removeClass("focus")
-    }
+            if (null == item["VipLevel"]) {
+			    $("#edit_viplevel").editable("setValue", 0)
+            } else {
+			    $("#edit_viplevel").editable("setValue", item["VipLevel"])
+            }
 
-    focus_id = id
-    $("img#img_"+id).addClass("focus")
-    
-    $.getJSON("/cms/GetChartsList?id=" + id + "&count=100", function(data) {
-		var listStr = ""
-        if (null != data) {
-		    $.each(data, function(i, item) {
-		    	listStr += getTalkerInfo_ul(id, item)
-		    });
-        }
-
-		$("#talker_list").html(listStr)
-		$("#talker_list img.lazy").lazyload({effect: "fadeIn", failure_limit: 6, effect_speed: 1000});
-    }).fail(function() {
+			g_profile_id = userid
+		}
+	}).fail(function() {
+		g_profile_id = 0
 		alert("发生错误,请检查网络!")
 	})
 }
 
-function listRegistUserInfo(gender, page, count, bscroll, beffect) {
+function listAdminChartsList(page, count, bscroll, beffect) {
 	if (page <= 0 || (0 != gMaxPage && page > gMaxPage)) {
 		return 0
 	}
@@ -303,7 +227,7 @@ function listRegistUserInfo(gender, page, count, bscroll, beffect) {
 	var result = 0
 	$.ajax({
 		type: "GET",
-		url: "/cms/RegistUserInfo?page=" + page + "&count=" + count + "&gender=" + gender,
+		url: "/cms/AdminChartsList?page=" + page + "&count=" + count,
 		dataType: "json",
 		async: false,
 		cache: false,
@@ -387,6 +311,7 @@ function refreshTalkWindow() {
 	window.setTimeout(refreshTalkWindow, 10000)
 }
 
+
 function refreshPageBtn(page) {
 	var btnlist = ''
 	var start = 0
@@ -442,23 +367,7 @@ function refreshPageBtn(page) {
 
 function gotopage(num) {
 	if (num) {
-		listRegistUserInfo(gGender, num, gCount, true, true)
-	}
-}
-
-function changegender() {
-	gGender = 1 - gGender
-	gPage = 1
-
-	var result = listRegistUserInfo(gGender, gPage, gCount, true, true)
-	if ( - 1 == result) {
-		gGender = 1 - gGender
-	} else {
-		if (0 == result) {
-			setResultNull()
-		}
-
-		$("#gallery_changegender").html("切换为 [" + (0 == gGender ? "男生": "女生") + "]")
+		listAdminChartsList(num, gCount, true, true)
 	}
 }
 
@@ -466,8 +375,56 @@ function chartspagejump() {
 	gotopage(parseInt($("#charts_pagejump").val()))
 }
 
+function refreshEditable() {
+	$('#edit_viplevel').editable({
+		source: [{
+			value: 0,
+			text: "0"
+		},
+		{
+			value: 1,
+			text: "1"
+		},
+		{
+			value: 2,
+			text: "2"
+		},
+		{
+			value: 3,
+			text: "3"
+		}],
+		url: function(data) {
+			result = $.ajax({
+				type: "GET",
+				url: "/cms/AdminGiveVipLevel?id=" + g_profile_id + "&level=" + data["value"],
+				async: false,
+				cache: false,
+				success: function() {
+					refreshProfilePicture(g_profile_id)
+				},
+			})
+
+			return result
+		}
+	});
+
+	$('#edit_appversion').editable({
+		url: function(data) {
+			result = $.ajax({
+				type: "GET",
+				url: "/cms/SetSingleUserInfo?id=" + g_profile_id + "&setvip_appversion=" + data["value"],
+				async: false,
+				cache: false,
+			})
+
+			return result
+		}
+	});
+}
+
 $(document).ready(function() {
     animation()
+	refreshEditable()
 
 	$('#charts_pagejump').bind('keypress', function(event) {
 		if (event.keyCode == "13") {
@@ -475,13 +432,7 @@ $(document).ready(function() {
 		}
 	});
 
-	$('#talk_input').bind('keypress', function(event) {
-		if (event.keyCode == "13") {
-			dotalk()
-		}
-	});
-
-	listRegistUserInfo(gGender, gPage, gCount, true, true)
+	listAdminChartsList(gPage, gCount, true, true)
     refreshTalkWindow()
 });
 

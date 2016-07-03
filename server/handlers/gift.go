@@ -240,7 +240,6 @@ func PresentGift(r *http.Request) (int, string) {
 	if nil != err {
 		if sql.ErrNoRows == err {
 			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_ReceiveValueById)
-			fmt.Println(insertSentence)
 			lib.SQLExec(insertSentence, toid, togender, giftvalue)
 		} else {
 			lib.SQLError(sentence, err, toid)

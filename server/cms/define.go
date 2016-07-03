@@ -67,14 +67,15 @@ type cmsMessageTempalte struct {
 }
 
 type cmsUserInfo struct {
-	Id       int
-	Age      int
-	Name     string
-	Img      string
-	Province string
-	Selected bool
-	Usertype int
-	VipLevel int
+	Id               int
+	Age              int
+	Name             string
+	Img              string
+	Province         string
+	Selected         bool
+	Usertype         int
+	VipLevel         int
+	VipSetAppVersion string
 }
 
 type cmsSearchInfo struct {
