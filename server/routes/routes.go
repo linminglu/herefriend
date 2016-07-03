@@ -37,13 +37,16 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	 * Comments
 	 */
 	m.Get("/Action/Recommend", handlers.ActionRecommend)
-	m.Get("/Action/DelRecommend", handlers.DelRecommend)
-	m.Get("/User/Visit", handlers.DoVisit)
-	m.Get("/User/ReadVisit", handlers.ReadVisit)
-	m.Get("/User/DelVisit", handlers.DeleteVisit)
+	//根据id获取预指定用户的聊天流水
 	m.Get("/User/WaterFlow", handlers.GetWaterFlow)
 	m.Get("/User/AllMessage", handlers.GetAllMessage)
 	m.Get("/User/UnreadMessage", handlers.GetUnreadMessage)
+	m.Get("/User/GetComments", handlers.GetComments)
+	m.Get("/Action/DelRecommend", handlers.DelRecommend)
+	m.Get("/User/GetVisits", handlers.GetVisits)
+	m.Get("/User/Visit", handlers.DoVisit)
+	m.Get("/User/ReadVisit", handlers.ReadVisit)
+	m.Get("/User/DelVisit", handlers.DeleteVisit)
 	m.Get("/User/Report", handlers.Report)
 	m.Get("/User/AddBlacklist", handlers.UserAddBlacklist)
 	m.Get("/User/DelBlacklist", handlers.UserDelBlacklist)

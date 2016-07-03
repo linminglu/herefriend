@@ -1,6 +1,6 @@
 package config
 
-const DEBUGGING = 1
+const DEBUGGING = 0
 const Conf_Driver = "mysql"
 const Conf_AccessKey = "AtpDdb9Eh642X53CZM5KM7-ncvmgxPq2sFnlgcg5"
 const Conf_SecretKey = "f-L1udoQwBf3wQiq-J-nnqX6UUhrZP6ZtYkcO6Ht"
@@ -15,7 +15,7 @@ var Conf_AgeMax = 85
 /*
  * 定期推送消息
  */
-var Conf_EvaluationMsgContent = "好评送免费VIP 3个月哦，赶紧去评价一下吧。"
+var Conf_EvaluationMsgContent = "好评送免费VIP两天哦，赶紧去评价一下吧。在您给予5星好评后，将评价内容发送给红娘，我们将人工验证，确认收到5星评论后，我们将会立即赠送您24小时VIP会员。"
 var Conf_EnableEvaluation = true
 
 /*

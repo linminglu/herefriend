@@ -581,7 +581,7 @@ func incomeAskCommentProc(id, gender, toid, togender int, msg string, timevalue 
  |
 */
 func incomeTalkCommentProc(id, gender, toid, togender int, msg string, timevalue int64) (int, int, string, bool) {
-	if gender == togender {
+	if 1 != toid && gender == togender {
 		return 403, -1, "抱歉,同性之间不能发消息.", false
 	}
 
@@ -590,7 +590,11 @@ func incomeTalkCommentProc(id, gender, toid, togender int, msg string, timevalue
 		return 404, -1, err.Error(), false
 	}
 
-	return 200, lastid, msg, true
+	if 1 == toid {
+		return 200, lastid, msg, false
+	} else {
+		return 200, lastid, msg, true
+	}
 }
 
 /*
@@ -673,10 +677,6 @@ func ActionRecommend(req *http.Request) (int, string) {
 	}
 
 	msg := v.Get("msg")
-	if 0 == strings.Compare("我对你感兴趣，方便聊一下吗？", msg) {
-		msgtype = RECOMMEND_MSGTYPE_GREET
-	}
-
 	t := time.Now()
 	timevalue := lib.Time_To_UTCInt64(t)
 
@@ -907,6 +907,7 @@ func GetAllMessage(req *http.Request) (int, string) {
 
 	var allmessage allMessageInfo
 	pageid, count := lib.Get_pageid_count_fromreq(req)
+
 	recommendAlls, err := GetRecommendAll(timeline, id, pageid, count)
 	if nil == err {
 		allmessage.RecommendArray = recommendAlls
@@ -918,6 +919,70 @@ func GetAllMessage(req *http.Request) (int, string) {
 	}
 
 	jsonRlt, _ := json.Marshal(allmessage)
+	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: GetComments
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-03
+ | Description:
+ |      Return:
+ |
+*/
+func GetComments(req *http.Request) (int, string) {
+	exist, id, _ := getIdGenderByRequest(req)
+	if true != exist {
+		return 404, ""
+	}
+
+	v := req.URL.Query()
+
+	var timeline int64
+	timelinestr := v.Get("lasttime")
+	if "" != timelinestr {
+		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+	}
+
+	pageid, count := lib.Get_pageid_count_fromreq(req)
+	recommendAlls, err := GetRecommendAll(timeline, id, pageid, count)
+	if nil != err {
+		return 404, ""
+	}
+
+	jsonRlt, _ := json.Marshal(recommendAlls)
+	return 200, string(jsonRlt)
+}
+
+/*
+ |    Function: GetVisits
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-03
+ | Description:
+ |      Return:
+ |
+*/
+func GetVisits(req *http.Request) (int, string) {
+	exist, id, _ := getIdGenderByRequest(req)
+	if true != exist {
+		return 404, ""
+	}
+
+	v := req.URL.Query()
+
+	var timeline int64
+	timelinestr := v.Get("lasttime")
+	if "" != timelinestr {
+		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+	}
+
+	pageid, count := lib.Get_pageid_count_fromreq(req)
+	visitAlls, err := getVisitAll(timeline, id, pageid, count)
+	if nil != err {
+		return 404, ""
+	}
+
+	jsonRlt, _ := json.Marshal(visitAlls)
 	return 200, string(jsonRlt)
 }
 
