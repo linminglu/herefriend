@@ -348,3 +348,16 @@ type giftRecvListInfo struct {
 	giftid  int
 	giftnum int
 }
+
+type AppConfig struct {
+	Person      common.PersonInfo
+	StartupView struct {
+		ImageUrl   string //图片地址
+		Duration   int    //图片显示时间
+		LinkEnable bool   //链接是否使能
+		LinkUrl    string //链接跳转地址
+	}
+	VersionInfo struct {
+		VersionStr string //版本信息
+	}
+}

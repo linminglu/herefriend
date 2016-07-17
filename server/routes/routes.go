@@ -32,6 +32,7 @@ func InstallRoutes(m *martini.ClassicMartini) {
 	m.Get("/User/DelImage", handlers.DeleteImage)
 	m.Get("/vip/price", handlers.VipPrice)
 	m.Get("/User/BuyVIP", handlers.BuyVip)
+	m.Get("/User/AppConfig", handlers.GetAppConfig)
 
 	/*
 	 * Comments

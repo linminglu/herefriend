@@ -1721,3 +1721,29 @@ func SubUserCount(gender int) {
 		}
 	}
 }
+
+/*
+ |    Function: GetAppConfig
+ |      Author: Mr.Sancho
+ |        Date: 2016-07-17
+ | Description:
+ |      Return:
+ |
+*/
+func GetAppConfig(req *http.Request) (int, string) {
+	exist, id, gender := getIdGenderByRequest(req)
+	if true != exist {
+		return 404, ""
+	}
+
+	var appconfig AppConfig
+	var code int
+	code, appconfig.Person = GetUserInfo(id, gender)
+	appconfig.Person.SendGiftList = GetUserSendGiftList(id)
+	appconfig.StartupView.ImageUrl = "http://7xjwto.com1.z0.glb.clouddn.com/images/startup/c44eb332f28cfe1b8d067d7da68ffc1e.png"
+	appconfig.StartupView.Duration = 4
+	appconfig.StartupView.LinkEnable = false
+	appconfig.VersionInfo.VersionStr = ""
+	jsonRlt, _ := json.Marshal(appconfig)
+	return code, string(jsonRlt)
+}
