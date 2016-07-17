@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
+	"time"
 
 	"herefriend/common"
+	"herefriend/config"
 	"herefriend/lib"
 	"herefriend/lib/push"
 )
@@ -442,32 +445,85 @@ func CharmTopList(r *http.Request) (int, string) {
 	v := r.URL.Query()
 	genderstr := v.Get("gender")
 	gender, _ := strconv.Atoi(genderstr)
-	page, count := lib.Get_pageid_count_fromreq(r)
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CharmToplist)
-	rows, err := lib.SQLQuery(sentence, gender, (page-1)*count, count)
-	if nil != err {
-		return 404, ""
-	}
-	defer rows.Close()
+	var charmlist *[]common.UserCharmInfo
+	var exists bool
 
-	charmlist := make([]userCharmInfo, 0)
-	for rows.Next() {
-		var tempid int
-		var code int
-		var info userCharmInfo
+	nowtime := time.Now().UTC()
+	year, month, day := nowtime.Date()
+	charmlist, exists = lib.GetRedisCharmToplist(gender, year, month, day)
+	if true != exists {
+		err, infolist := GetGiftList()
+		if nil != err {
+			return 404, ""
+		}
 
-		err = rows.Scan(&tempid, &info.GiftValue)
-		if nil == err {
-			code, info.Person = GetUserInfo(tempid, gender)
-			if 200 == code {
-				info.GiftValue = info.GiftValue * 10
-				charmlist = append(charmlist, info)
+		giftmap := make(map[int]*GiftInfo)
+		for _, g := range infolist {
+			giftmap[g.Id] = &g
+		}
+
+		until := lib.Time_To_UTCInt64(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
+		from := until - config.Toplist_Duration
+		sentence := lib.SQLSentence(lib.SQLMAP_Select_CharmToplist)
+		rows, err := lib.SQLQuery(sentence, 1-gender, from, until)
+		if nil != err {
+			return 404, ""
+		}
+		defer rows.Close()
+
+		charminfomap := make(map[int]common.UserCharmInfo)
+		for rows.Next() {
+			var toid int
+			var giftid int
+			var giftnum int
+			err = rows.Scan(&toid, &giftid, &giftnum)
+			if nil == err {
+				value := giftmap[giftid].Price * giftnum * 10
+
+				charminfo, ok := charminfomap[toid]
+				if true == ok {
+					charminfo.GiftValue += value
+					charminfomap[toid] = charminfo
+				} else {
+					var info common.UserCharmInfo
+
+					var code int
+					code, info.Person = GetUserInfo(toid, gender)
+					if 200 == code {
+						info.GiftValue = value
+						charminfomap[toid] = info
+					}
+				}
 			}
 		}
+
+		var newlist []common.UserCharmInfo
+		for _, info := range charminfomap {
+			newlist = append(newlist, info)
+		}
+
+		sortcharmlist := common.UserCharmInfoList(newlist)
+		sort.Sort(sortcharmlist)
+		charmlist = &newlist
+		lib.SetRedisCharmToplist(gender, year, month, day, &newlist)
 	}
 
-	jsonRlt, _ := json.Marshal(charmlist)
+	maxlen := len(*charmlist)
+	page, count := lib.Get_pageid_count_fromreq(r)
+	start := (page - 1) * count
+
+	if start >= maxlen {
+		return 200, "[]"
+	}
+
+	end := start + count
+	if end >= maxlen {
+		end = maxlen
+	}
+
+	resultlist := (*charmlist)[start:end]
+	jsonRlt, _ := json.Marshal(resultlist)
 	return 200, string(jsonRlt)
 }
 
@@ -485,31 +541,84 @@ func WealthTopList(r *http.Request) (int, string) {
 		return 404, ""
 	}
 
-	page, count := lib.Get_pageid_count_fromreq(r)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_WealthToplist)
-	rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
-	if nil != err {
-		return 404, ""
-	}
-	defer rows.Close()
+	var wealthlist *[]common.UserWealthInfo
+	var exists bool
 
-	wealthlist := make([]userWealthInfo, 0)
-	var tempid int
-	var code int
-	var info userWealthInfo
+	nowtime := time.Now().UTC()
+	year, month, day := nowtime.Date()
+	wealthlist, exists = lib.GetRedisWealthToplist(year, month, day)
+	if true != exists {
+		err, infolist := GetGiftList()
+		if nil != err {
+			return 404, ""
+		}
 
-	for rows.Next() {
-		err = rows.Scan(&tempid, &info.ConsumedBeans)
-		if nil == err {
-			code, info.Person = GetUserInfoById(tempid)
-			if 200 == code {
-				info.ConsumedBeans = info.ConsumedBeans * 10
-				wealthlist = append(wealthlist, info)
+		giftmap := make(map[int]*GiftInfo)
+		for _, g := range infolist {
+			giftmap[g.Id] = &g
+		}
+
+		until := lib.Time_To_UTCInt64(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
+		from := until - config.Toplist_Duration
+		sentence := lib.SQLSentence(lib.SQLMAP_Select_WealthToplist)
+		rows, err := lib.SQLQuery(sentence, from, until)
+		if nil != err {
+			return 404, ""
+		}
+		defer rows.Close()
+
+		wealthinfomap := make(map[int]common.UserWealthInfo)
+		for rows.Next() {
+			var fromid int
+			var giftid int
+			var giftnum int
+			err = rows.Scan(&fromid, &giftid, &giftnum)
+			if nil == err {
+				value := giftmap[giftid].Price * giftnum * 10
+
+				wealthinfo, ok := wealthinfomap[fromid]
+				if true == ok {
+					wealthinfo.ConsumedBeans += value
+					wealthinfomap[fromid] = wealthinfo
+				} else {
+					var info common.UserWealthInfo
+
+					var code int
+					code, info.Person = GetUserInfoById(fromid)
+					if 200 == code {
+						info.ConsumedBeans = value
+						wealthinfomap[fromid] = info
+					}
+				}
 			}
 		}
+
+		var newlist []common.UserWealthInfo
+		for _, info := range wealthinfomap {
+			newlist = append(newlist, info)
+		}
+
+		sortwealthlist := common.UserWealthInfoList(newlist)
+		sort.Sort(sortwealthlist)
+		wealthlist = &newlist
+		lib.SetRedisWealthToplist(year, month, day, &newlist)
 	}
 
-	jsonRlt, _ := json.Marshal(wealthlist)
+	maxlen := len(*wealthlist)
+	page, count := lib.Get_pageid_count_fromreq(r)
+	start := (page - 1) * count
+
+	if start >= maxlen {
+		return 200, "[]"
+	}
+
+	end := start + count
+	if end >= maxlen {
+		end = maxlen
+	}
+
+	resultlist := (*wealthlist)[start:end]
+	jsonRlt, _ := json.Marshal(resultlist)
 	return 200, string(jsonRlt)
 }
 

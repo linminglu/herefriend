@@ -378,8 +378,6 @@ func GetUsertypeByIdGender(id, gender int) (bool, int) {
 	err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 	if nil == err && id == idtmp {
 		return true, usertype
-	} else if nil != err {
-		lib.SQLError(sentence, err, id)
 	}
 
 	return false, 0

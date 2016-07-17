@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"herefriend/common"
 
@@ -33,6 +34,10 @@ const (
 	REDIS_PREFIX_GIFT_RECVLIST = "gift_recvlist_%d"
 	//gift_sendlist_${id}
 	REDIS_PREFIX_GIFT_SENDLIST = "gift_sendlist_%d"
+	//charm_toplist_${gender}_${year}_${month}_${day} (the charm list for last weak)
+	REDIS_PREFIX_CHARM_TOPLIST = "charm_toplist_%d_%4d_%2d_%2d"
+	//wealth_toplist_${year}_${month}_${day} (the wealth list for last weak)
+	REDIS_PREFIX_WEALTH_TOPLIST = "wealth_toplist_%d_%4d_%2d_%2d"
 )
 
 var gRedisPool *redis.Pool
@@ -71,6 +76,10 @@ func setRedisValue(key string, v interface{}) {
 		content, _ = json.Marshal(v.(*common.PersonInfo))
 	case *[]common.GiftSendRecvInfo:
 		content, _ = json.Marshal(v.(*[]common.GiftSendRecvInfo))
+	case *[]common.UserCharmInfo:
+		content, _ = json.Marshal(v.(*[]common.UserCharmInfo))
+	case *[]common.UserWealthInfo:
+		content, _ = json.Marshal(v.(*[]common.UserWealthInfo))
 	}
 
 	c := gRedisPool.Get()
@@ -406,5 +415,59 @@ func GetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomem
 
 func DelRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) {
 	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	delRedisValue(key)
+}
+
+/*
+ * charm toplist
+ */
+func SetRedisCharmToplist(gender, year int, month time.Month, day int, list *[]common.UserCharmInfo) {
+	key := fmt.Sprintf(REDIS_PREFIX_CHARM_TOPLIST, gender, year, month, day)
+	setRedisValue(key, list)
+}
+
+func GetRedisCharmToplist(gender, year int, month time.Month, day int) (*[]common.UserCharmInfo, bool) {
+	key := fmt.Sprintf(REDIS_PREFIX_CHARM_TOPLIST, gender, year, month, day)
+	value, exist := getRedisValue(key)
+	if true == exist {
+		var list []common.UserCharmInfo
+		err := json.Unmarshal(value, &list)
+		if nil == err {
+			return &list, true
+		}
+	}
+
+	return nil, false
+}
+
+func DelRedisCharmToplist(gender, year int, month time.Month, day int) {
+	key := fmt.Sprintf(REDIS_PREFIX_CHARM_TOPLIST, gender, year, month, day)
+	delRedisValue(key)
+}
+
+/*
+ * wealth toplist
+ */
+func SetRedisWealthToplist(year int, month time.Month, day int, list *[]common.UserWealthInfo) {
+	key := fmt.Sprintf(REDIS_PREFIX_WEALTH_TOPLIST, year, month, day)
+	setRedisValue(key, list)
+}
+
+func GetRedisWealthToplist(year int, month time.Month, day int) (*[]common.UserWealthInfo, bool) {
+	key := fmt.Sprintf(REDIS_PREFIX_WEALTH_TOPLIST, year, month, day)
+	value, exist := getRedisValue(key)
+	if true == exist {
+		var list []common.UserWealthInfo
+		err := json.Unmarshal(value, &list)
+		if nil == err {
+			return &list, true
+		}
+	}
+
+	return nil, false
+}
+
+func DelRedisWealthToplist(year int, month time.Month, day int) {
+	key := fmt.Sprintf(REDIS_PREFIX_WEALTH_TOPLIST, year, month, day)
 	delRedisValue(key)
 }

@@ -263,6 +263,10 @@ func AdminGiveVipLevel(w http.ResponseWriter, req *http.Request) {
 
 	levelstr := v.Get("level")
 	level, _ := strconv.Atoi(levelstr)
+	if 0 == level {
+		w.WriteHeader(200)
+		return
+	}
 
 	/* check if ther user already buy VIP */
 	var oldlevel int

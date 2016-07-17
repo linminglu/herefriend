@@ -191,8 +191,8 @@ var gSqlMap = map[int]sqlmapnode{
 	SQLMAP_Select_GiftRecvListByGender:  {"", "select toid, giftid, giftnum from giftconsume where fromgender=? order by toid"},
 	SQLMAP_Select_GoldBeansById:         {"", "select beans,consumed from wealth where id=?"},
 	SQLMAP_Select_ReceiveValueById:      {"", "select receive from wealth where id=?"},
-	SQLMAP_Select_CharmToplist:          {"", "select id, receive from wealth where receive!=0 and gender=? order by receive desc limit ?,?"},
-	SQLMAP_Select_WealthToplist:         {"", "select id, consumed from wealth where consumed!=0 order by consumed desc limit ?,?"},
+	SQLMAP_Select_CharmToplist:          {"", "select toid, giftid, giftnum from giftconsume where fromgender=? and time>=? and time<?"},
+	SQLMAP_Select_WealthToplist:         {"", "select fromid, giftid, giftnum from giftconsume where time>=? and time<?"},
 	SQLMAP_Insert_Info: {"s", "insert into %s (id, password, name, gender, logintime, age, usertype, clientid, height, weight, " +
 		"province, district, citylove, naken) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"},
 	SQLMAP_Insert_Picture:          {"s", "insert into %s_picture (id, filename, tag, flag) value (?,?,?,1)"},

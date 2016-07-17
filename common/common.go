@@ -76,3 +76,54 @@ type PersonInfo struct {
 	RecvGiftList    []GiftSendRecvInfo `json:",omitempty"` //收到的礼物列表
 	SendGiftList    []GiftSendRecvInfo `json:",omitempty"` //送出的礼物列表
 }
+
+type UserCharmInfo struct {
+	Person      PersonInfo //用户信息
+	GiftValue   int        //收到礼物的总价值
+	AdmireCount int        //被心仪的数量
+}
+
+type UserCharmInfoList []UserCharmInfo
+
+func (list UserCharmInfoList) Len() int {
+	return len(list)
+}
+
+func (list UserCharmInfoList) Less(i, j int) bool {
+	if list[i].GiftValue > list[j].GiftValue {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (list UserCharmInfoList) Swap(i, j int) {
+	var temp UserCharmInfo = list[i]
+	list[i] = list[j]
+	list[j] = temp
+}
+
+type UserWealthInfo struct {
+	Person        PersonInfo //用户信息
+	ConsumedBeans int        //花费金币的总数量
+}
+
+type UserWealthInfoList []UserWealthInfo
+
+func (list UserWealthInfoList) Len() int {
+	return len(list)
+}
+
+func (list UserWealthInfoList) Less(i, j int) bool {
+	if list[i].ConsumedBeans > list[j].ConsumedBeans {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (list UserWealthInfoList) Swap(i, j int) {
+	var temp UserWealthInfo = list[i]
+	list[i] = list[j]
+	list[j] = temp
+}
