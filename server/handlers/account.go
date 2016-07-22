@@ -151,12 +151,6 @@ func UpdateVipUserInfo(id, gender, level, days int, expiretime int64) bool {
 	return ok
 }
 
-func deleteVipUserInfo(usersinfo *vipUsersInfo, id int) {
-	usersinfo.lock.Lock()
-	delete(usersinfo.users, id)
-	usersinfo.lock.Unlock()
-}
-
 func onlineProc(id, gender int) {
 	sentence := lib.SQLSentence(lib.SQLMAP_Update_Online, gender)
 	lib.SQLExec(sentence, lib.CurrentTimeUTCInt64(), id)
@@ -1578,9 +1572,8 @@ func vipUserGoRoute() {
 		needpush = false
 
 		gVipUsersInfo.lock.Lock()
+		curtime = lib.CurrentTimeUTCInt64()
 		for id, user := range gVipUsersInfo.users {
-			curtime = lib.CurrentTimeUTCInt64()
-
 			if curtime >= user.expiretime {
 				detachVipFromUser(id, user.gender, user.level)
 				needpush = true
@@ -1604,7 +1597,7 @@ func vipUserGoRoute() {
 }
 
 func detachVipFromUser(id, gender, level int) {
-	deleteVipUserInfo(gVipUsersInfo, id)
+	delete(gVipUsersInfo.users, id)
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
 	_, err := lib.SQLExec(sentence, 0, 0, 0, id)
