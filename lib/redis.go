@@ -35,9 +35,9 @@ const (
 	//gift_sendlist_${id}
 	REDIS_PREFIX_GIFT_SENDLIST = "gift_sendlist_%d"
 	//charm_toplist_${gender}_${year}_${month}_${day} (the charm list for last weak)
-	REDIS_PREFIX_CHARM_TOPLIST = "charm_toplist_%d_%4d_%2d_%2d"
+	REDIS_PREFIX_CHARM_TOPLIST = "charm_toplist_%d_%04d_%02d_%02d"
 	//wealth_toplist_${year}_${month}_${day} (the wealth list for last weak)
-	REDIS_PREFIX_WEALTH_TOPLIST = "wealth_toplist_%d_%4d_%2d_%2d"
+	REDIS_PREFIX_WEALTH_TOPLIST = "wealth_toplist_%d_%04d_%02d_%02d"
 )
 
 var gRedisPool *redis.Pool

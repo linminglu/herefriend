@@ -13,22 +13,31 @@ var gLastMsgId = 0
 var gShowprofile = true
 var g_profile_id = 0
 
-$.fn.scrollTo = function( target, options, callback ){
-  if(typeof options == 'function' && arguments.length == 2){ callback = options; options = target; }
-  var settings = $.extend({
-    scrollTarget  : target,
-    offsetTop     : 50,
-    duration      : 500,
-    easing        : 'swing'
-  }, options);
-  return this.each(function(){
-    var scrollPane = $(this);
-    var scrollTarget = (typeof settings.scrollTarget == "number") ? settings.scrollTarget : $(settings.scrollTarget);
-    var scrollY = (typeof scrollTarget == "number") ? scrollTarget : scrollTarget.offset().top + scrollPane.scrollTop() - parseInt(settings.offsetTop);
-    scrollPane.animate({scrollTop : scrollY }, parseInt(settings.duration), settings.easing, function(){
-      if (typeof callback == 'function') { callback.call(this); }
-    });
-  });
+$.fn.scrollTo = function(target, options, callback) {
+	if (typeof options == 'function' && arguments.length == 2) {
+		callback = options;
+		options = target;
+	}
+	var settings = $.extend({
+		scrollTarget: target,
+		offsetTop: 50,
+		duration: 500,
+		easing: 'swing'
+	},
+	options);
+	return this.each(function() {
+		var scrollPane = $(this);
+		var scrollTarget = (typeof settings.scrollTarget == "number") ? settings.scrollTarget: $(settings.scrollTarget);
+		var scrollY = (typeof scrollTarget == "number") ? scrollTarget: scrollTarget.offset().top + scrollPane.scrollTop() - parseInt(settings.offsetTop);
+		scrollPane.animate({
+			scrollTop: scrollY
+		},
+		parseInt(settings.duration), settings.easing, function() {
+			if (typeof callback == 'function') {
+				callback.call(this);
+			}
+		});
+	});
 }
 
 /**
@@ -86,18 +95,18 @@ Date.prototype.formate = function(fmt) {
 function getUserInfo_ul(item) {
 	var str = "<div class='picture'>"
 	str += "<div class='tags' onclick='showprofile(" + item["Id"] + ")'>"
-    str += "<div class='badge badge-info pull-right'>" + item["Name"] + "-" + item["Age"] + "</div><br>"
-    str += "<div class='badge pull-right' style='opacity:0.5'>" + item["Province"] + "</div><br>"
-    str += (0 != item["VipLevel"])? "<div class='badge badge-important pull-right'>vip:" + item["VipLevel"] + "</div>" : ""
-    str += "</div>"
-	str += "<img class='" + (true == item["Selected"] ? "selected" : "") +" lazy' style='width:120px;height:120px' "
-    str += "id='img_" + item["Id"] + "'"
-    if ("" != item["Img"]) {
-        str += " data-original='" + item["Img"] + "'"
-    } else {
-        str += " src='assets/images/black.jpg'"
-    }
-    str += " onclick='showprofile(" + item["Id"] + ")'/>"
+	str += "<div class='badge badge-info pull-right'>" + item["Name"] + "-" + item["Age"] + "</div><br>"
+	str += "<div class='badge pull-right' style='opacity:0.5'>" + item["Province"] + "</div><br>"
+	str += (0 != item["VipLevel"]) ? "<div class='badge badge-important pull-right'>vip:" + item["VipLevel"] + "</div>": ""
+	str += "</div>"
+	str += "<img class='" + (true == item["Selected"] ? "selected": "") + " lazy' style='width:120px;height:120px' "
+	str += "id='img_" + item["Id"] + "'"
+	if ("" != item["Img"]) {
+		str += " data-original='" + item["Img"] + "'"
+	} else {
+		str += " src='assets/images/black.jpg'"
+	}
+	str += " onclick='showprofile(" + item["Id"] + ")'/>"
 	str += "</div>"
 
 	return str
@@ -113,7 +122,7 @@ function showprofile(userid) {
 	}
 
 	focus_id = userid
-    refreshTalkWindows(1, userid)
+	refreshTalkWindows(1, userid)
 	refreshProfileInfo(userid)
 }
 
@@ -122,7 +131,10 @@ function animation() {
 		gShowprofile = true
 		$("#box-registlist").removeClass("span12").addClass("span5")
 		$("#box-profile").toggle()
-		$("#box-profile").animate({left:''}, "slow")
+		$("#box-profile").animate({
+			left: ''
+		},
+		"slow")
 	} else {
 		gShowprofile = false
 		$("#box-profile").animate({
@@ -136,53 +148,53 @@ function animation() {
 }
 
 function refreshTalkWindows(talkerid, id) {
-    gLastMsgId = 0
-    $.getJSON("/cms/GetTalkHistory?id=" + id + "&talkid=" + talkerid + "&count=100&lastmsgid=" + gLastMsgId, function(data) {
-        if (null != data) {
-            $("#title-talkleft").html(data["UserName"])
-            $("#title-talkright").html(data["TalkerName"])
-		    var listStr = ""
+	gLastMsgId = 0
+	$.getJSON("/cms/GetTalkHistory?id=" + id + "&talkid=" + talkerid + "&count=100&lastmsgid=" + gLastMsgId, function(data) {
+		if (null != data) {
+			$("#title-talkleft").html(data["UserName"])
+			$("#title-talkright").html(data["TalkerName"])
+			var listStr = ""
 
-            msgs = data["Comments"] || " "
-            if (null != msgs && 0 != msgs.length) {
-                var i = 0
+			msgs = data["Comments"] || " "
+			if (null != msgs && 0 != msgs.length) {
+				var i = 0
 
-                for (i = msgs.length - 1; i >= 0; i--) {
-                    item = msgs[i]
-                    if (item["MsgId"] > gLastMsgId) {
-                        gLastMsgId = item["MsgId"]
-                    }
+				for (i = msgs.length - 1; i >= 0; i--) {
+					item = msgs[i]
+					if (item["MsgId"] > gLastMsgId) {
+						gLastMsgId = item["MsgId"]
+					}
 
-                    t = new Date(item["TimeUTC"])
-                    if (id == item["FromId"]) {
-                        listStr += '<li class="left">' + item["MsgText"] + '<br><small class="date pull-left muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
-                    } else {
-                        listStr += '<li class="right">' + item["MsgText"] + '<br><small class="date pull-right muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
-                    }
-		        }
-            }
+					t = new Date(item["TimeUTC"])
+					if (id == item["FromId"]) {
+						listStr += '<li class="left">' + item["MsgText"] + '<br><small class="date pull-left muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
+					} else {
+						listStr += '<li class="right">' + item["MsgText"] + '<br><small class="date pull-right muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
+					}
+				}
+			}
 
-		    $("#ul-talkwindow").html(listStr)
+			$("#ul-talkwindow").html(listStr)
 
-            if ("" == data["UserPic"]) {
-                data["UserPic"] = "assets/images/black.jpg"
-            }
+			if ("" == data["UserPic"]) {
+				data["UserPic"] = "assets/images/black.jpg"
+			}
 
-            if ("" == data["TalkerPic"]) {
-                data["TalkerPic"] = "assets/images/black.jpg"
-            }
+			if ("" == data["TalkerPic"]) {
+				data["TalkerPic"] = "assets/images/black.jpg"
+			}
 
-            $('#ul-talkwindow').append("<style>li.left:before{background-image:url('" + data["UserPic"] +"');background-size:contain}</style>");
-            $('#ul-talkwindow').append("<style>li.right:before{background-image:url('" + data["TalkerPic"] +"');background-size:contain}</style>");
-            lisize = $('#ul-talkwindow > li').length
-            if (0 != lisize) {
-                $('#ul-talkwindow'). scrollTo($('#ul-talkwindow > li')[lisize - 1])
-            }
+			$('#ul-talkwindow').append("<style>li.left:before{background-image:url('" + data["UserPic"] + "');background-size:contain}</style>");
+			$('#ul-talkwindow').append("<style>li.right:before{background-image:url('" + data["TalkerPic"] + "');background-size:contain}</style>");
+			lisize = $('#ul-talkwindow > li').length
+			if (0 != lisize) {
+				$('#ul-talkwindow').scrollTo($('#ul-talkwindow > li')[lisize - 1])
+			}
 
-            gCurUserId = id
-            gCurTalkerId = talkerid
-        }
-    }).fail(function() {
+			gCurUserId = id
+			gCurTalkerId = talkerid
+		}
+	}).fail(function() {
 		alert("发生错误,请检查网络!")
 	})
 }
@@ -199,17 +211,17 @@ function refreshProfilePicture(userid) {
 function refreshProfileInfo(userid) {
 	$.getJSON("/cms/GetSingleUserInfo?id=" + userid, function(item) {
 		if (null != item) {
-            if (null == item["VipSetAppVersion"]) {
-			    $("#edit_appversion").editable("setValue", "")
-            } else {
-			    $("#edit_appversion").editable("setValue", item["VipSetAppVersion"])
-            }
+			if (null == item["VipSetAppVersion"]) {
+				$("#edit_appversion").editable("setValue", "")
+			} else {
+				$("#edit_appversion").editable("setValue", item["VipSetAppVersion"])
+			}
 
-            if (null == item["VipLevel"]) {
-			    $("#edit_viplevel").editable("setValue", 0)
-            } else {
-			    $("#edit_viplevel").editable("setValue", item["VipLevel"])
-            }
+			if (null == item["VipLevel"]) {
+				$("#edit_viplevel").editable("setValue", 0)
+			} else {
+				$("#edit_viplevel").editable("setValue", item["VipLevel"])
+			}
 
 			g_profile_id = userid
 		}
@@ -258,7 +270,7 @@ function listAdminChartsList(page, count, bscroll, beffect) {
 			}
 
 			gPage = page
-	        gMaxPage = parseInt((data["Count"] + (gCount - 1)) / gCount)
+			gMaxPage = parseInt((data["Count"] + (gCount - 1)) / gCount)
 			refreshPageBtn(page)
 
 			result = 1
@@ -273,44 +285,43 @@ function listAdminChartsList(page, count, bscroll, beffect) {
 }
 
 function refreshTalkWindow() {
-    if (0 != gCurUserId && 0 != gCurTalkerId) {
-        $.getJSON("/cms/GetTalkHistory?id=" + gCurUserId + "&talkid=" + gCurTalkerId + "&count=100&lastmsgid=" + gLastMsgId, function(data) {
-            if (null != data) {
-                $("#title-talkleft").html(data["UserName"])
-                $("#title-talkright").html(data["TalkerName"])
-                msgs = data["Comments"]
-                if (null != msgs && 0 != msgs.length) {
-	    	        var listStr = ""
-                    var i = 0
+	if (0 != gCurUserId && 0 != gCurTalkerId) {
+		$.getJSON("/cms/GetTalkHistory?id=" + gCurUserId + "&talkid=" + gCurTalkerId + "&count=100&lastmsgid=" + gLastMsgId, function(data) {
+			if (null != data) {
+				$("#title-talkleft").html(data["UserName"])
+				$("#title-talkright").html(data["TalkerName"])
+				msgs = data["Comments"]
+				if (null != msgs && 0 != msgs.length) {
+					var listStr = ""
+					var i = 0
 
-                    for (i = msgs.length - 1; i >= 0; i--) {
-                        item = msgs[i]
-                        if (item["MsgId"] > gLastMsgId) {
-                            gLastMsgId = item["MsgId"]
-                        }
+					for (i = msgs.length - 1; i >= 0; i--) {
+						item = msgs[i]
+						if (item["MsgId"] > gLastMsgId) {
+							gLastMsgId = item["MsgId"]
+						}
 
-                        t = new Date(item["TimeUTC"])
-                        if (gCurUserId == item["FromId"]) {
-                            listStr += '<li class="left">' + item["MsgText"] + '<br><small class="date pull-left muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
-                        } else {
-                            listStr += '<li class="right">' + item["MsgText"] + '<br><small class="date pull-right muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
-                        }
-	    	        }
+						t = new Date(item["TimeUTC"])
+						if (gCurUserId == item["FromId"]) {
+							listStr += '<li class="left">' + item["MsgText"] + '<br><small class="date pull-left muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
+						} else {
+							listStr += '<li class="right">' + item["MsgText"] + '<br><small class="date pull-right muted">' + t.formate("MM-dd HH:mm:ss") + '</small></li>'
+						}
+					}
 
-	    	        $("#ul-talkwindow").append(listStr)
+					$("#ul-talkwindow").append(listStr)
 
-                    lisize = $('#ul-talkwindow > li').length
-                    if (0 != lisize) {
-                        $('#ul-talkwindow'). scrollTo($('#ul-talkwindow > li')[lisize - 1])
-                    }
-                }
-            }
-        })
-    }
+					lisize = $('#ul-talkwindow > li').length
+					if (0 != lisize) {
+						$('#ul-talkwindow').scrollTo($('#ul-talkwindow > li')[lisize - 1])
+					}
+				}
+			}
+		})
+	}
 
 	window.setTimeout(refreshTalkWindow, 10000)
 }
-
 
 function refreshPageBtn(page) {
 	var btnlist = ''
@@ -423,7 +434,7 @@ function refreshEditable() {
 }
 
 $(document).ready(function() {
-    animation()
+	animation()
 	refreshEditable()
 
 	$('#charts_pagejump').bind('keypress', function(event) {
@@ -433,6 +444,6 @@ $(document).ready(function() {
 	});
 
 	listAdminChartsList(gPage, gCount, true, true)
-    refreshTalkWindow()
+	refreshTalkWindow()
 });
 
