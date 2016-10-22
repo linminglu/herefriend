@@ -2,22 +2,9 @@ package cms
 
 import (
 	"html/template"
-	"net/http"
-)
 
-/*
- |    Function: login
- |      Author: Mr.Sancho
- |        Date: 2016-01-30
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
-func CmsLogin(w http.ResponseWriter) {
-	t, _ := template.ParseFiles("public/signin.html")
-	t.Execute(w, nil)
-}
+	"github.com/gin-gonic/gin"
+)
 
 /*
  |    Function: dashboard
@@ -28,15 +15,15 @@ func CmsLogin(w http.ResponseWriter) {
  | Description:
  |
 */
-func CmsDashBoard(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	username, ok := r.Form["username"]
-	if true != ok || ("sc" != username[0] && "fan" != username[0]) {
+func CmsDashBoard(c *gin.Context) {
+	username := c.DefaultPostForm("username", "")
+	if username != "sc" && username != "fan" {
 		t, _ := template.ParseFiles("public/err500.html")
-		t.Execute(w, nil)
+		t.Execute(c.Writer, nil)
 		return
 	}
 
 	t, _ := template.ParseFiles("public/dashboard.html")
-	t.Execute(w, nil)
+	t.Execute(c.Writer, nil)
+	return
 }

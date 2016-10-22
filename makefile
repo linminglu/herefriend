@@ -21,7 +21,6 @@ SERVER_GOFILES := \
 	$(wildcard ./lib/*.go) \
 	$(wildcard ./lib/push/*.go) \
    	$(wildcard ./server/handlers/*.go) \
-	$(wildcard ./server/routes/*.go) \
 	$(wildcard ./server/cms/*.go) \
 	$(wildcard ./server/*.go) 
 

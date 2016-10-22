@@ -1,11 +1,12 @@
 package cms
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"herefriend/common"
 	"herefriend/lib"
@@ -21,14 +22,14 @@ import (
  * Description: change the heartbeat status
  *
  */
-func SetHeartbeat(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	acttionStr := v.Get("action")
-	genderStr := v.Get("gender")
+func SetHeartbeat(c *gin.Context) {
+	idStr := c.Query("id")
+	acttionStr := c.Query("action")
+	genderStr := c.Query("gender")
 
-	if "" == idStr || "" == acttionStr || "" == genderStr {
-		return 404, ""
+	if idStr == "" || acttionStr == "" || genderStr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
@@ -44,11 +45,13 @@ func SetHeartbeat(req *http.Request) (int, string) {
 		_, err = lib.SQLExec(sentence, id, gender, userinfo.Province)
 	}
 
-	if nil != err {
-		return 404, ""
+	if err != nil {
+		c.Status(http.StatusNotFound)
+	} else {
+		c.Status(http.StatusOK)
 	}
 
-	return 200, ""
+	return
 }
 
 /*
@@ -60,12 +63,11 @@ func SetHeartbeat(req *http.Request) (int, string) {
  | Description:
  |
 */
-func GetUserInfos(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	genderStr := v.Get("gender")
-
+func GetUserInfos(c *gin.Context) {
+	genderStr := c.Query("gender")
 	if "" == genderStr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
@@ -73,11 +75,12 @@ func GetUserInfos(req *http.Request) (int, string) {
 	/*
 	 * Second get the persons' infos
 	 */
-	page, count := lib.Get_pageid_count_fromreq(req)
+	page, count := lib.Get_pageid_count_fromreq(c)
 	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfoByRows, gender)
 	rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 	defer rows.Close()
 
@@ -105,8 +108,7 @@ func GetUserInfos(req *http.Request) (int, string) {
 		}
 	}
 
-	jsonRlt, _ := json.Marshal(infos)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, infos)
 }
 
 /*
@@ -118,13 +120,12 @@ func GetUserInfos(req *http.Request) (int, string) {
  | Description:
  |
 */
-func GetSingleUserInfo(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	genderStr := v.Get("gender")
-
+func GetSingleUserInfo(c *gin.Context) {
+	idStr := c.Query("id")
+	genderStr := c.Query("gender")
 	if "" == idStr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
@@ -134,7 +135,8 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
 		var exists bool
 		exists, gender, _ = handlers.GetGenderUsertypeById(id)
 		if true != exists {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 	} else {
 		gender, _ = strconv.Atoi(genderStr)
@@ -164,8 +166,7 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
 	appversioinSentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_SetVipAppVersion, gender)
 	lib.SQLQueryRow(appversioinSentence, info.Id).Scan(&info.VipSetAppVersion)
 
-	jsonRlt, _ := json.Marshal(info)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -177,13 +178,12 @@ func GetSingleUserInfo(req *http.Request) (int, string) {
  | Description:
  |
 */
-func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	genderStr := v.Get("gender")
+func SetSingleUserInfo(c *gin.Context) {
+	idStr := c.Query("id")
+	genderStr := c.Query("gender")
 
 	if "" == idStr {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -194,14 +194,14 @@ func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
 		var exists bool
 		exists, gender, _ = handlers.GetGenderUsertypeById(id)
 		if true != exists {
-			w.WriteHeader(404)
+			c.Status(http.StatusNotFound)
 			return
 		}
 	} else {
 		gender, _ = strconv.Atoi(genderStr)
 	}
 
-	deleteStr := v.Get("delete")
+	deleteStr := c.Query("delete")
 	if "" != deleteStr {
 		sqlStr := func() string {
 			if 0 == gender {
@@ -218,12 +218,12 @@ func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
 
 		_, err := lib.SQLExec(sqlStr, usertype, id)
 		if nil != err {
-			w.WriteHeader(404)
+			c.Status(http.StatusNotFound)
 		} else {
-			w.WriteHeader(200)
+			c.Status(http.StatusOK)
 		}
 	} else {
-		w.WriteHeader(handlers.UpdateProfile(req, id, gender))
+		c.Status(handlers.UpdateProfile(c.Request, id, gender))
 	}
 
 	return
@@ -237,13 +237,12 @@ func SetSingleUserInfo(w http.ResponseWriter, req *http.Request) {
  |      Return:
  |
 */
-func AdminGiveVipLevel(w http.ResponseWriter, req *http.Request) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	genderStr := v.Get("gender")
+func AdminGiveVipLevel(c *gin.Context) {
+	idStr := c.Query("id")
+	genderStr := c.Query("gender")
 
 	if "" == idStr {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -254,17 +253,17 @@ func AdminGiveVipLevel(w http.ResponseWriter, req *http.Request) {
 		var exists bool
 		exists, gender, _ = handlers.GetGenderUsertypeById(id)
 		if true != exists {
-			w.WriteHeader(404)
+			c.Status(http.StatusNotFound)
 			return
 		}
 	} else {
 		gender, _ = strconv.Atoi(genderStr)
 	}
 
-	levelstr := v.Get("level")
+	levelstr := c.Query("level")
 	level, _ := strconv.Atoi(levelstr)
 	if 0 == level {
-		w.WriteHeader(200)
+		c.Status(http.StatusOK)
 		return
 	}
 
@@ -293,7 +292,7 @@ func AdminGiveVipLevel(w http.ResponseWriter, req *http.Request) {
 	sentence = lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
 	_, err := lib.SQLExec(sentence, level, days, expiretime, id)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -322,20 +321,19 @@ func AdminGiveVipLevel(w http.ResponseWriter, req *http.Request) {
  | Description:
  |
 */
-func ChangeHeadImage(w http.ResponseWriter, req *http.Request) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	genderStr := v.Get("gender")
+func ChangeHeadImage(c *gin.Context) {
+	idStr := c.Query("id")
+	genderStr := c.Query("gender")
 
 	if "" == idStr || "" == genderStr {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
 	_, _, usertype := handlers.GetGenderUsertypeById(id)
 	if common.USERTYPE_USER == usertype {
-		w.WriteHeader(403)
+		c.Status(http.StatusForbidden)
 		return
 	}
 
@@ -344,7 +342,7 @@ func ChangeHeadImage(w http.ResponseWriter, req *http.Request) {
 	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_Pictures, gender)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 	defer rows.Close()
@@ -388,25 +386,24 @@ func ChangeHeadImage(w http.ResponseWriter, req *http.Request) {
  | Description:
  |
 */
-func DeleteHeadImage(w http.ResponseWriter, req *http.Request) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	genderStr := v.Get("gender")
+func DeleteHeadImage(c *gin.Context) {
+	idStr := c.Query("id")
+	genderStr := c.Query("gender")
 
-	if "" == idStr || "" == genderStr {
-		w.WriteHeader(404)
+	if idStr == "" || genderStr == "" {
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
 	if 1 == id {
-		w.WriteHeader(403)
+		c.Status(http.StatusForbidden)
 		return
 	}
 
 	_, _, usertype := handlers.GetGenderUsertypeById(id)
 	if common.USERTYPE_USER == usertype {
-		w.WriteHeader(403)
+		c.Status(http.StatusForbidden)
 		return
 	}
 
@@ -414,7 +411,7 @@ func DeleteHeadImage(w http.ResponseWriter, req *http.Request) {
 	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_Pictures, gender)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 	defer rows.Close()
@@ -463,23 +460,25 @@ func DeleteHeadImage(w http.ResponseWriter, req *http.Request) {
  | Description:
  |
 */
-func AddBlacklist(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-	genderStr := v.Get("gender")
+func AddBlacklist(c *gin.Context) {
+	idStr := c.Query("id")
+	genderStr := c.Query("gender")
 
-	if "" == idStr || "" == genderStr {
-		return 404, ""
+	if idStr == "" || genderStr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
 	if 1 == id {
-		return 403, ""
+		c.Status(http.StatusForbidden)
+		return
 	}
 
 	_, _, usertype := handlers.GetGenderUsertypeById(id)
 	if common.USERTYPE_USER == usertype {
-		return 403, ""
+		c.Status(http.StatusForbidden)
+		return
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
@@ -513,7 +512,9 @@ func AddBlacklist(req *http.Request) (int, string) {
 	}
 
 	handlers.SubUserCount(gender)
-	return 200, ""
+
+	c.Status(http.StatusOK)
+	return
 }
 
 /*
@@ -525,14 +526,14 @@ func AddBlacklist(req *http.Request) (int, string) {
  | Description:
  |
 */
-func SearchUserInfos(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	genderStr := v.Get("gender")
-	fieldStr := v.Get("field")
-	keyStr := v.Get("key")
+func SearchUserInfos(c *gin.Context) {
+	genderStr := c.Query("gender")
+	fieldStr := c.Query("field")
+	keyStr := c.Query("key")
 
 	if "" == genderStr || "" == fieldStr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
@@ -542,7 +543,8 @@ func SearchUserInfos(req *http.Request) (int, string) {
 	 * check the field
 	 */
 	if 2 < fieldid {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	field := []string{"name", "introduction", "id"}[fieldid]
@@ -564,10 +566,11 @@ func SearchUserInfos(req *http.Request) (int, string) {
 			sentence += fmt.Sprintf(" where position('%s' in %s) order by id desc limit ?,?", keyStr, field)
 		}
 
-		page, count := lib.Get_pageid_count_fromreq(req)
+		page, count := lib.Get_pageid_count_fromreq(c)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 		defer rows.Close()
 
@@ -597,8 +600,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
 		lib.SQLError(countsentence, err, nil)
 	}
 
-	jsonRlt, _ := json.Marshal(searchInfo)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, searchInfo)
 }
 
 /*
@@ -610,7 +612,7 @@ func SearchUserInfos(req *http.Request) (int, string) {
  | Description:
  |
 */
-func SystemUserInfo(r *http.Request) string {
+func SystemUserInfo(c *gin.Context) {
 	info := cmsSystemUsersSummary{
 		GirlsNum:  handlers.GetUserCountByGender(0),
 		GuysNum:   handlers.GetUserCountByGender(1),
@@ -619,8 +621,7 @@ func SystemUserInfo(r *http.Request) string {
 		RegistNum: handlers.GetRegistUserNumber(),
 	}
 
-	jsonRlt, _ := json.Marshal(info)
-	return string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -632,18 +633,16 @@ func SystemUserInfo(r *http.Request) string {
  | Description: 刷新用户信息
  |
 */
-func RefreshUserInfo(w http.ResponseWriter, req *http.Request) {
-	v := req.URL.Query()
-	idstr := v.Get("id")
-
+func RefreshUserInfo(c *gin.Context) {
+	idstr := c.Query("id")
 	if "" == idstr {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	id, err := strconv.Atoi(idstr)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -660,12 +659,11 @@ func RefreshUserInfo(w http.ResponseWriter, req *http.Request) {
  | Description: 获取注册用户信息
  |
 */
-func RegistUserInfo(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	genderStr := v.Get("gender")
-
+func RegistUserInfo(c *gin.Context) {
+	genderStr := c.Query("gender")
 	if "" == genderStr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
@@ -676,10 +674,11 @@ func RegistUserInfo(req *http.Request) (int, string) {
 	if nil == err && 0 != searchInfo.Count {
 		sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfo, gender) + " where usertype=1 order by id desc limit ?,?"
 
-		page, count := lib.Get_pageid_count_fromreq(req)
+		page, count := lib.Get_pageid_count_fromreq(c)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 		defer rows.Close()
 
@@ -702,6 +701,5 @@ func RegistUserInfo(req *http.Request) (int, string) {
 		lib.SQLError(countsentence, err, nil)
 	}
 
-	jsonRlt, _ := json.Marshal(searchInfo)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, searchInfo)
 }

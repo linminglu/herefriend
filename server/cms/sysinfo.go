@@ -2,7 +2,6 @@ package cms
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"herefriend/lib"
 	"html/template"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
@@ -75,25 +75,24 @@ func getCpuUsage() float64 {
  | Description: 获取最新的系统信息
  |
 */
-func SystemInfo(r *http.Request) string {
-	v, _ := mem.VirtualMemory()
-	c, _ := cpu.CPUInfo()
-	d, _ := disk.DiskUsage("/")
-	n, _ := host.HostInfo()
+func SystemInfo(c *gin.Context) {
+	meminfo, _ := mem.VirtualMemory()
+	cpuinfo, _ := cpu.CPUInfo()
+	diskinfo, _ := disk.DiskUsage("/")
+	hostinfo, _ := host.HostInfo()
 
 	info := cmsSystemSummary{
-		OSDescribe:  fmt.Sprintf("%s %s", n.OS, n.PlatformVersion),
-		CpuDescribe: fmt.Sprintf("%s %d Cores", c[0].ModelName, c[0].Cores),
-		MemTotal:    v.Total / 1024 / 1024,
-		MemUsed:     v.Used / 1024 / 1024,
-		MemUsage:    lib.TruncFloat(v.UsedPercent, 1),
-		HDTotal:     d.Total / 1024 / 1024 / 1024,
-		HDUsed:      d.Used / 1024 / 1024 / 1024,
-		HDUsage:     lib.TruncFloat(d.UsedPercent, 1),
+		OSDescribe:  fmt.Sprintf("%s %s", hostinfo.OS, hostinfo.PlatformVersion),
+		CpuDescribe: fmt.Sprintf("%s %d Cores", cpuinfo[0].ModelName, cpuinfo[0].Cores),
+		MemTotal:    meminfo.Total / 1024 / 1024,
+		MemUsed:     meminfo.Used / 1024 / 1024,
+		MemUsage:    lib.TruncFloat(meminfo.UsedPercent, 1),
+		HDUsage:     lib.TruncFloat(diskinfo.UsedPercent, 1),
+		HDTotal:     diskinfo.Total / 1024 / 1024 / 1024,
+		HDUsed:      diskinfo.Used / 1024 / 1024 / 1024,
 	}
 
-	jsonRlt, _ := json.Marshal(info)
-	return string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -105,13 +104,12 @@ func SystemInfo(r *http.Request) string {
  | Description:
  |
 */
-func CpuInfo(r *http.Request) string {
+func CpuInfo(c *gin.Context) {
 	info := cmsCpuInfo{
 		CpuUsage: lib.TruncFloat(getCpuUsage(), 1),
 	}
 
-	jsonRlt, _ := json.Marshal(info)
-	return string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -122,12 +120,12 @@ func CpuInfo(r *http.Request) string {
  |      Return:
  |
 */
-func Log(w http.ResponseWriter) {
+func Log(c *gin.Context) {
 	t, err := template.ParseFiles("/var/log/herefriend.log")
-	if nil != err {
-		w.WriteHeader(200)
+	if err != nil {
+		c.Status(http.StatusOK)
 		return
 	}
 
-	t.Execute(w, nil)
+	t.Execute(c.Writer, nil)
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	log "github.com/cihub/seelog"
+	"github.com/gin-gonic/gin"
 
 	"herefriend/common"
 	"herefriend/config"
@@ -654,17 +655,18 @@ func incomeCommentPushMsgProc(id, gender, toid, msgtype int, msg string, timeval
  * Description: 打招呼
  *
  */
-func ActionRecommend(req *http.Request) (int, string) {
-	exist, id, gender := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, http.ErrNotSupported.Error()
+func ActionRecommend(c *gin.Context) {
+	exist, id, gender := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusForbidden)
+		return
 	}
 
-	v := req.URL.Query()
-	toidStr := v.Get("toid")
-	typeStr := v.Get("type")
+	toidStr := c.Query("toid")
+	typeStr := c.Query("type")
 	if "" == toidStr || "" == typeStr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	msgtype, _ := strconv.Atoi(typeStr)
@@ -673,10 +675,11 @@ func ActionRecommend(req *http.Request) (int, string) {
 	/* the dest id not exist */
 	exist, togender := getGenderById(toid)
 	if true != exist {
-		return 404, http.ErrNotSupported.Error()
+		c.Status(http.StatusForbidden)
+		return
 	}
 
-	msg := v.Get("msg")
+	msg := c.Query("msg")
 	t := time.Now()
 	timevalue := lib.Time_To_UTCInt64(t)
 
@@ -694,12 +697,14 @@ func ActionRecommend(req *http.Request) (int, string) {
 	case RECOMMEND_MSGTYPE_TALK:
 		code, lastid, replymsg, bpush = incomeTalkCommentProc(id, gender, toid, togender, msg, timevalue)
 	default:
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	//不继续处理
 	if 200 != code {
-		return code, replymsg
+		c.String(code, replymsg)
+		return
 	}
 
 	if true == bpush {
@@ -707,7 +712,8 @@ func ActionRecommend(req *http.Request) (int, string) {
 	}
 
 	gCountApiRecommend = gCountApiRecommend + 1
-	jsonRlt, _ := json.Marshal(messageInfo{
+
+	c.JSON(http.StatusOK, messageInfo{
 		MsgId:     lastid,
 		MsgText:   replymsg,
 		UserId:    toid,
@@ -715,8 +721,6 @@ func ActionRecommend(req *http.Request) (int, string) {
 		Readed:    false,
 		TimeUTC:   t,
 	})
-
-	return 200, string(jsonRlt)
 }
 
 /*
@@ -727,21 +731,23 @@ func ActionRecommend(req *http.Request) (int, string) {
  * Description: delete the recommend
  *
  */
-func DelRecommend(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, http.ErrNotSupported.Error()
+func DelRecommend(c *gin.Context) {
+	exist, id, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusForbidden)
+		return
 	}
 
-	v := req.URL.Query()
-	msgidStr := v.Get("msgid")
-	if "" == msgidStr {
-		return 404, http.ErrNotSupported.Error()
+	msgidStr := c.Query("msgid")
+	if msgidStr == "" {
+		c.Status(http.StatusForbidden)
+		return
 	}
 
-	talkidStr := v.Get("talkid")
+	talkidStr := c.Query("talkid")
 	if "" == talkidStr {
-		return 404, http.ErrNotSupported.Error()
+		c.Status(http.StatusForbidden)
+		return
 	}
 
 	/* the dest id not exist */
@@ -751,7 +757,7 @@ func DelRecommend(req *http.Request) (int, string) {
 	lib.SQLExec(sentence, msgid, talkid, id, id, talkid)
 	gRecommendNumber = gRecommendNumber - 1
 
-	return 200, ""
+	c.Status(http.StatusOK)
 }
 
 /*
@@ -808,20 +814,21 @@ func getRecommendByRows(id int, rows *sql.Rows) []messageInfo {
  * Description: 获取聊天流水
  *
  */
-func GetWaterFlow(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	talkidStr := v.Get("talkid")
-	if "" == talkidStr {
-		return 404, ""
+func GetWaterFlow(c *gin.Context) {
+	talkidStr := c.Query("talkid")
+	if talkidStr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	exist, id, _ := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, ""
+	exist, id, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	var lastMsgId int
-	lastMsgIdStr := v.Get("lastmsgid")
+	lastMsgIdStr := c.Query("lastmsgid")
 	if "" != lastMsgIdStr {
 		lastMsgId, _ = strconv.Atoi(lastMsgIdStr)
 		if 0 > lastMsgId {
@@ -829,17 +836,19 @@ func GetWaterFlow(req *http.Request) (int, string) {
 		}
 	}
 
-	pageid, count := lib.Get_pageid_count_fromreq(req)
+	pageid, count := lib.Get_pageid_count_fromreq(c)
 	talkid, _ := strconv.Atoi(talkidStr)
 	exist, _ = getGenderById(talkid)
 	if true != exist {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_MessageHistory)
 	rows, err := lib.SQLQuery(sentence, RECOMMEND_MSGTYPE_TALK, lastMsgId, id, talkid, talkid, id, (pageid-1)*count, count)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	defer rows.Close()
@@ -849,9 +858,8 @@ func GetWaterFlow(req *http.Request) (int, string) {
 		sentence := lib.SQLSentence(lib.SQLMAP_Update_RecommendRead)
 		lib.SQLExec(sentence, talkid, id, infos[0].MsgId)
 	}
-	jsonRlt, _ := json.Marshal(infos)
 
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, infos)
 }
 
 /*
@@ -890,23 +898,21 @@ func GetRecommendAll(timeline int64, id, pageid, count int) ([]messageInfo, erro
  * Description: 获取所有的聊天信息和谁看过我信息
  *
  */
-func GetAllMessage(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
+func GetAllMessage(c *gin.Context) {
+	exist, id, _ := getIdGenderByRequest(c)
 	if true != exist {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	var timeline int64
-
-	v := req.URL.Query()
-
-	timelinestr := v.Get("lasttime")
+	timelinestr := c.Query("lasttime")
 	if "" != timelinestr {
 		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
 	}
 
 	var allmessage allMessageInfo
-	pageid, count := lib.Get_pageid_count_fromreq(req)
+	pageid, count := lib.Get_pageid_count_fromreq(c)
 
 	recommendAlls, err := GetRecommendAll(timeline, id, pageid, count)
 	if nil == err {
@@ -918,8 +924,7 @@ func GetAllMessage(req *http.Request) (int, string) {
 		allmessage.VisitArray = visitAlls
 	}
 
-	jsonRlt, _ := json.Marshal(allmessage)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, allmessage)
 }
 
 /*
@@ -930,28 +935,27 @@ func GetAllMessage(req *http.Request) (int, string) {
  |      Return:
  |
 */
-func GetComments(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, ""
+func GetComments(c *gin.Context) {
+	exist, id, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := req.URL.Query()
-
 	var timeline int64
-	timelinestr := v.Get("lasttime")
-	if "" != timelinestr {
+	timelinestr := c.Query("lasttime")
+	if timelinestr != "" {
 		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
 	}
 
-	pageid, count := lib.Get_pageid_count_fromreq(req)
+	pageid, count := lib.Get_pageid_count_fromreq(c)
 	recommendAlls, err := GetRecommendAll(timeline, id, pageid, count)
-	if nil != err {
-		return 404, ""
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	jsonRlt, _ := json.Marshal(recommendAlls)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, recommendAlls)
 }
 
 /*
@@ -962,28 +966,27 @@ func GetComments(req *http.Request) (int, string) {
  |      Return:
  |
 */
-func GetVisits(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
+func GetVisits(c *gin.Context) {
+	exist, id, _ := getIdGenderByRequest(c)
 	if true != exist {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := req.URL.Query()
-
 	var timeline int64
-	timelinestr := v.Get("lasttime")
+	timelinestr := c.Query("lasttime")
 	if "" != timelinestr {
 		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
 	}
 
-	pageid, count := lib.Get_pageid_count_fromreq(req)
+	pageid, count := lib.Get_pageid_count_fromreq(c)
 	visitAlls, err := getVisitAll(timeline, id, pageid, count)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	jsonRlt, _ := json.Marshal(visitAlls)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, visitAlls)
 }
 
 /*
@@ -994,16 +997,16 @@ func GetVisits(req *http.Request) (int, string) {
  |      Return:
  |
 */
-func GetUnreadMessage(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
+func GetUnreadMessage(c *gin.Context) {
+	exist, id, _ := getIdGenderByRequest(c)
 	if true != exist {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	var timeline int64
 
-	v := req.URL.Query()
-	timelinestr := v.Get("lasttime")
+	timelinestr := c.Query("lasttime")
 	if "" != timelinestr {
 		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
 	}
@@ -1011,8 +1014,8 @@ func GetUnreadMessage(req *http.Request) (int, string) {
 	recommendCount := recommend_GetUnreadNum(id, timeline)
 	visitCount := visit_GetUnreadNum(id, timeline)
 	unreadmsg := unreadMessageInfo{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
-	jsonRlt, _ := json.Marshal(unreadmsg)
-	return 200, string(jsonRlt)
+
+	c.JSON(http.StatusOK, unreadmsg)
 }
 
 func recommend_GetUnreadNum(id int, timeline int64) int {

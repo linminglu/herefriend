@@ -2,7 +2,7 @@ package config
 
 import "time"
 
-const DEBUGGING = 0
+const DEBUGGING = 1
 const Conf_Driver = "mysql"
 const Conf_AccessKey = "AtpDdb9Eh642X53CZM5KM7-ncvmgxPq2sFnlgcg5"
 const Conf_SecretKey = "f-L1udoQwBf3wQiq-J-nnqX6UUhrZP6ZtYkcO6Ht"

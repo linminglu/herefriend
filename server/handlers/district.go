@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 
 	"herefriend/common"
 	"herefriend/lib"
@@ -63,7 +64,6 @@ func GetIpAddress(r *http.Request) (string, string) {
  * Description: get the district information
  *
  */
-func GetDistrict() (int, string) {
-	jsonRlt, _ := json.Marshal(lib.GetDistrictJsonArray())
-	return 200, string(jsonRlt)
+func GetDistrict(c *gin.Context) {
+	c.JSON(http.StatusOK, lib.GetDistrictJsonArray())
 }

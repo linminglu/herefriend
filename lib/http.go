@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log "github.com/cihub/seelog"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/net/html/charset"
 
 	"herefriend/common"
@@ -133,17 +134,14 @@ func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, erro
  * Description: 从请求中获取page编号和每页数目
  *
  */
-func Get_pageid_count_fromreq(req *http.Request) (int, int) {
-	v := req.URL.Query()
-
-	pageStr := v.Get("page")
-	countStr := v.Get("count")
-
-	if "" == pageStr || "0" == pageStr {
+func Get_pageid_count_fromreq(c *gin.Context) (int, int) {
+	pageStr := c.Query("page")
+	countStr := c.Query("count")
+	if pageStr == "" || pageStr == "0" {
 		pageStr = "1"
 	}
 
-	if "" == countStr {
+	if countStr == "" {
 		countStr = "10"
 	}
 
@@ -153,8 +151,8 @@ func Get_pageid_count_fromreq(req *http.Request) (int, int) {
 	return pageid, count
 }
 
-func GetCountRequestArgument(req *http.Request) int {
-	countStr := req.URL.Query().Get("count")
+func GetCountRequestArgument(c *gin.Context) int {
+	countStr := c.Query("count")
 	if "" == countStr {
 		countStr = "10"
 	}

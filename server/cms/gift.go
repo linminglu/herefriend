@@ -2,9 +2,10 @@ package cms
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 
 	"herefriend/lib"
 	"herefriend/server/handlers"
@@ -18,13 +19,12 @@ import (
  |      Return:
  |
 */
-func PresentGift(r *http.Request) (int, string) {
-	v := r.URL.Query()
-	idstr := v.Get("id")
-	genderstr := v.Get("gender")
-	toidstr := v.Get("toid")
-	giftidstr := v.Get("giftid")
-	numstr := v.Get("num")
+func PresentGift(c *gin.Context) {
+	idstr := c.Query("id")
+	genderstr := c.Query("gender")
+	toidstr := c.Query("toid")
+	giftidstr := c.Query("giftid")
+	numstr := c.Query("num")
 
 	id, _ := strconv.Atoi(idstr)
 	gender, _ := strconv.Atoi(genderstr)
@@ -33,7 +33,8 @@ func PresentGift(r *http.Request) (int, string) {
 	giftnum, _ := strconv.Atoi(numstr)
 
 	if 0 == giftnum {
-		return 403, ""
+		c.Status(http.StatusForbidden)
+		return
 	}
 
 	var tmpid int
@@ -47,7 +48,8 @@ func PresentGift(r *http.Request) (int, string) {
 		if nil != err {
 			lib.SQLError(sentence, err, giftid)
 		}
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	giftvalue := price * giftnum
@@ -56,7 +58,8 @@ func PresentGift(r *http.Request) (int, string) {
 	sentence = lib.SQLSentence(lib.SQLMAP_Insert_PresentGift)
 	_, err = lib.SQLExec(sentence, id, gender, toid, giftid, giftnum, lib.CurrentTimeUTCInt64(), "")
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	var value int
@@ -71,7 +74,8 @@ func PresentGift(r *http.Request) (int, string) {
 			lib.SQLExec(insertSentence, id, gender, 0, giftvalue)
 		} else {
 			lib.SQLError(selectSentence, err, id)
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 	} else {
 		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
@@ -87,13 +91,16 @@ func PresentGift(r *http.Request) (int, string) {
 			lib.SQLExec(insertSentence, toid, 1-gender, giftvalue)
 		} else {
 			lib.SQLError(selectSentence, err, toid)
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 	} else {
 		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)
 		lib.SQLExec(updateSentence, value+giftvalue, toid)
 	}
-	return 200, ""
+
+	c.Status(http.StatusOK)
+	return
 }
 
 /*
@@ -104,14 +111,14 @@ func PresentGift(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func GetGiftList(r *http.Request) (int, string) {
+func GetGiftList(c *gin.Context) {
 	err, infolist := handlers.GetGiftList()
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	jsonRlt, _ := json.Marshal(infolist)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, infolist)
 }
 
 /*
@@ -122,12 +129,12 @@ func GetGiftList(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func GetGiftVerbose(r *http.Request) (int, string) {
-	v := r.URL.Query()
-	idstr := v.Get("id")
+func GetGiftVerbose(c *gin.Context) {
+	idstr := c.Query("id")
 	id, _ := strconv.Atoi(idstr)
 	if id <= 0 {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	var info handlers.GiftInfo
@@ -136,10 +143,10 @@ func GetGiftVerbose(r *http.Request) (int, string) {
 		&info.Price, &info.OriginPrice, &info.DiscountDescription)
 	if nil != err {
 		lib.SQLError(sentence, err, id)
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	info.ImageUrl = lib.GetQiniuGiftImageURL(info.ImageUrl)
-	jsonRlt, _ := json.Marshal(info)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }

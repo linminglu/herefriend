@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
 	"strconv"
 
 	log "github.com/cihub/seelog"
+	"github.com/gin-gonic/gin"
 
 	"herefriend/common"
 	"herefriend/lib"
@@ -89,13 +89,12 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
  * Description: 心动女生
  *
  */
-func Heartbeat(req *http.Request) (int, string) {
-	v := req.URL.Query()
-	idStr := v.Get("id")
-
+func Heartbeat(c *gin.Context) {
+	idStr := c.Query("id")
 	id, _ := strconv.Atoi(idStr)
 	_, gender := getGenderById(id)
 
-	count := lib.GetCountRequestArgument(req)
-	return doReqHeartbeat(id, gender, count)
+	count := lib.GetCountRequestArgument(c)
+	code, content := doReqHeartbeat(id, gender, count)
+	c.String(code, content)
 }

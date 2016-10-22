@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"herefriend/common"
 	"herefriend/config"
 	"herefriend/lib"
@@ -46,9 +48,8 @@ func prepare() {
  | Description: 获取金币价格列表
  |
 */
-func GoldPrice(r *http.Request) (int, string) {
-	jsonRlt, _ := json.Marshal(gGoldBeansPrices)
-	return 200, string(jsonRlt)
+func GoldPrice(c *gin.Context) {
+	c.JSON(http.StatusOK, gGoldBeansPrices)
 }
 
 /*
@@ -59,21 +60,23 @@ func GoldPrice(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func BuyBeans(r *http.Request) (int, string) {
-	exist, id, gender := getIdGenderByRequest(r)
-	if true != exist {
-		return 404, ""
+func BuyBeans(c *gin.Context) {
+	exist, id, gender := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := r.URL.Query()
-	beansStr := v.Get("beans")
+	beansStr := c.Query("beans")
 	if "" == beansStr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	beans, _ := strconv.Atoi(beansStr)
 	if 0 == beans {
-		return 403, ""
+		c.Status(http.StatusForbidden)
+		return
 	}
 
 	var value int
@@ -86,7 +89,8 @@ func BuyBeans(r *http.Request) (int, string) {
 			lib.SQLExec(insertSentence, id, gender, beans, 0)
 		} else {
 			lib.SQLError(selectSentence, err, id)
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 	} else {
 		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
@@ -97,9 +101,8 @@ func BuyBeans(r *http.Request) (int, string) {
 	lib.DelRedisUserInfo(id)
 	code, info := GetUserInfo(id, gender)
 	info.SendGiftList = GetUserSendGiftList(id)
-	jsonRlt, _ := json.Marshal(info)
 
-	return code, string(jsonRlt)
+	c.JSON(code, info)
 }
 
 /*
@@ -141,14 +144,14 @@ func GetGiftList() (error, []GiftInfo) {
  |      Return:
  |
 */
-func GiftList(r *http.Request) (int, string) {
+func GiftList(c *gin.Context) {
 	err, infolist := GetGiftList()
-	if nil != err {
-		return 404, ""
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	jsonRlt, _ := json.Marshal(infolist)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, infolist)
 }
 
 /*
@@ -159,27 +162,29 @@ func GiftList(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func PresentGift(r *http.Request) (int, string) {
-	exist, id, gender := getIdGenderByRequest(r)
-	if true != exist {
-		return 404, ""
+func PresentGift(c *gin.Context) {
+	exist, id, gender := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := r.URL.Query()
-	toidstr := v.Get("toid")
-	giftidstr := v.Get("giftid")
-	numstr := v.Get("num")
-	msg := v.Get("message")
-	if "" == toidstr || "" == giftidstr || "" == numstr {
-		return 404, ""
+	toidstr := c.Query("toid")
+	giftidstr := c.Query("giftid")
+	numstr := c.Query("num")
+	msg := c.Query("message")
+	if toidstr == "" || giftidstr == "" || numstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	toid, _ := strconv.Atoi(toidstr)
 	giftid, _ := strconv.Atoi(giftidstr)
 	giftnum, _ := strconv.Atoi(numstr)
 	exist, togender, usertype := GetGenderUsertypeById(toid)
-	if false == exist || 0 == giftnum {
-		return 403, ""
+	if !exist || giftnum == 0 {
+		c.Status(http.StatusForbidden)
+		return
 	}
 
 	// check the gifts
@@ -194,7 +199,8 @@ func PresentGift(r *http.Request) (int, string) {
 		if nil != err {
 			lib.SQLError(sentence, err, giftid)
 		}
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	if validnum > giftnum {
@@ -215,14 +221,17 @@ func PresentGift(r *http.Request) (int, string) {
 		if nil != err {
 			lib.SQLError(sentence, err, id)
 		}
-		return 403, "没有足够的金币购买此数量的礼物"
+
+		c.String(http.StatusForbidden, "没有足够的金币购买此数量的礼物")
+		return
 	}
 
 	// present the gifts
 	sentence = lib.SQLSentence(lib.SQLMAP_Insert_PresentGift)
 	_, err = lib.SQLExec(sentence, id, gender, toid, giftid, giftnum, lib.CurrentTimeUTCInt64(), msg)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	// consume the gold beans
@@ -233,7 +242,8 @@ func PresentGift(r *http.Request) (int, string) {
 	sentence = lib.SQLSentence(lib.SQLMAP_Update_ConsumeGift)
 	_, err = lib.SQLExec(sentence, validnum, giftid)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	// updathe the receive value
@@ -246,7 +256,8 @@ func PresentGift(r *http.Request) (int, string) {
 			lib.SQLExec(insertSentence, toid, togender, giftvalue)
 		} else {
 			lib.SQLError(sentence, err, toid)
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 	} else {
 		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)
@@ -294,8 +305,7 @@ func PresentGift(r *http.Request) (int, string) {
 	_, presentInfo.UserInfo = GetUserInfo(id, gender)
 	presentInfo.UserInfo.SendGiftList = GetUserSendGiftList(id)
 
-	jsonRlt, _ := json.Marshal(presentInfo)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, presentInfo)
 }
 
 /*
@@ -340,27 +350,28 @@ func getRecvGiftListById(id int, page, count int) (error, []GiftListVerbose) {
  |      Return:
  |
 */
-func RecvListVerbose(r *http.Request) (int, string) {
-	exist, _, _ := getIdGenderByRequest(r)
-	if true != exist {
-		return 404, ""
+func RecvListVerbose(c *gin.Context) {
+	exist, _, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := r.URL.Query()
-	queryidstr := v.Get("queryid")
-	if "" == queryidstr {
-		return 404, ""
+	queryidstr := c.Query("queryid")
+	if queryidstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	queryid, _ := strconv.Atoi(queryidstr)
-	page, count := lib.Get_pageid_count_fromreq(r)
+	page, count := lib.Get_pageid_count_fromreq(c)
 	err, giftlist := getRecvGiftListById(queryid, page, count)
-	if nil != err {
-		return 404, ""
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	jsonRlt, _ := json.Marshal(giftlist)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, giftlist)
 }
 
 /*
@@ -404,28 +415,29 @@ func getSendGiftListById(id int, page, count int) (error, []GiftListVerbose) {
  |      Return:
  |
 */
-func SendListVerbose(r *http.Request) (int, string) {
-	exist, _, _ := getIdGenderByRequest(r)
-	if true != exist {
-		return 404, ""
+func SendListVerbose(c *gin.Context) {
+	exist, _, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := r.URL.Query()
-	queryidstr := v.Get("queryid")
-	if "" == queryidstr {
-		return 404, ""
+	queryidstr := c.Query("queryid")
+	if queryidstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	queryid, _ := strconv.Atoi(queryidstr)
-	page, count := lib.Get_pageid_count_fromreq(r)
+	page, count := lib.Get_pageid_count_fromreq(c)
 
 	err, giftlist := getSendGiftListById(queryid, page, count)
-	if nil != err {
-		return 404, ""
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	jsonRlt, _ := json.Marshal(giftlist)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, giftlist)
 }
 
 /*
@@ -436,14 +448,14 @@ func SendListVerbose(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func CharmTopList(r *http.Request) (int, string) {
-	exist, _, _ := getIdGenderByRequest(r)
+func CharmTopList(c *gin.Context) {
+	exist, _, _ := getIdGenderByRequest(c)
 	if true != exist {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := r.URL.Query()
-	genderstr := v.Get("gender")
+	genderstr := c.Query("gender")
 	gender, _ := strconv.Atoi(genderstr)
 
 	var charmlist *[]common.UserCharmInfo
@@ -455,7 +467,8 @@ func CharmTopList(r *http.Request) (int, string) {
 	if true != exists {
 		err, infolist := GetGiftList()
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 
 		giftmap := make(map[int]*GiftInfo)
@@ -468,7 +481,8 @@ func CharmTopList(r *http.Request) (int, string) {
 		sentence := lib.SQLSentence(lib.SQLMAP_Select_CharmToplist)
 		rows, err := lib.SQLQuery(sentence, 1-gender, from, until)
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 		defer rows.Close()
 
@@ -510,11 +524,12 @@ func CharmTopList(r *http.Request) (int, string) {
 	}
 
 	maxlen := len(*charmlist)
-	page, count := lib.Get_pageid_count_fromreq(r)
+	page, count := lib.Get_pageid_count_fromreq(c)
 	start := (page - 1) * count
 
 	if start >= maxlen {
-		return 200, "[]"
+		c.String(http.StatusOK, "[]")
+		return
 	}
 
 	end := start + count
@@ -523,8 +538,7 @@ func CharmTopList(r *http.Request) (int, string) {
 	}
 
 	resultlist := (*charmlist)[start:end]
-	jsonRlt, _ := json.Marshal(resultlist)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, resultlist)
 }
 
 /*
@@ -535,10 +549,11 @@ func CharmTopList(r *http.Request) (int, string) {
  |      Return:
  |
 */
-func WealthTopList(r *http.Request) (int, string) {
-	exist, _, _ := getIdGenderByRequest(r)
+func WealthTopList(c *gin.Context) {
+	exist, _, _ := getIdGenderByRequest(c)
 	if true != exist {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	var wealthlist *[]common.UserWealthInfo
@@ -550,7 +565,8 @@ func WealthTopList(r *http.Request) (int, string) {
 	if true != exists {
 		err, infolist := GetGiftList()
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 
 		giftmap := make(map[int]*GiftInfo)
@@ -563,7 +579,8 @@ func WealthTopList(r *http.Request) (int, string) {
 		sentence := lib.SQLSentence(lib.SQLMAP_Select_WealthToplist)
 		rows, err := lib.SQLQuery(sentence, from, until)
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 		defer rows.Close()
 
@@ -605,11 +622,12 @@ func WealthTopList(r *http.Request) (int, string) {
 	}
 
 	maxlen := len(*wealthlist)
-	page, count := lib.Get_pageid_count_fromreq(r)
+	page, count := lib.Get_pageid_count_fromreq(c)
 	start := (page - 1) * count
 
 	if start >= maxlen {
-		return 200, "[]"
+		c.String(http.StatusOK, "[]")
+		return
 	}
 
 	end := start + count
@@ -618,8 +636,7 @@ func WealthTopList(r *http.Request) (int, string) {
 	}
 
 	resultlist := (*wealthlist)[start:end]
-	jsonRlt, _ := json.Marshal(resultlist)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, resultlist)
 }
 
 /*

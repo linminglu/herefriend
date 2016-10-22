@@ -1,9 +1,10 @@
 package cms
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 
 	"herefriend/lib"
 	"herefriend/lib/push"
@@ -26,15 +27,14 @@ const CMS_LittleImgView = "?imageView2/5/w/50/h/50"
  | Description:
  |
 */
-func CommentInfo(req *http.Request) string {
+func CommentInfo(c *gin.Context) {
 	info := cmsCommentSummary{
 		TalkNum:   handlers.GetApiRecommendCount(),
 		PushNum:   push.GetPushNum(),
 		BuyVIPNum: handlers.GetBuyVIPCount(),
 	}
 
-	jsonRlt, _ := json.Marshal(info)
-	return string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -46,13 +46,12 @@ func CommentInfo(req *http.Request) string {
  | Description: 获取最新的消息
  |
 */
-func RecentComments(req *http.Request) string {
+func RecentComments(c *gin.Context) {
 	var lastmsgid int
 	var fromid int
 	var toid int
 
-	v := req.URL.Query()
-	lastmsgidstr := v.Get("lastmsgid")
+	lastmsgidstr := c.Query("lastmsgid")
 	if "" == lastmsgidstr {
 		lastmsgid = 0
 	} else {
@@ -62,7 +61,8 @@ func RecentComments(req *http.Request) string {
 	sentence := "select id,fromid,toid,time,type,msg from recommend where id>? order by id desc limit 20"
 	rows, err := lib.SQLQuery(sentence, lastmsgid)
 	if nil != err {
-		return "[]"
+		c.String(http.StatusOK, "[]")
+		return
 	}
 	defer rows.Close()
 
@@ -104,8 +104,7 @@ func RecentComments(req *http.Request) string {
 		}
 	}
 
-	jsonRlt, _ := json.Marshal(infos)
-	return string(jsonRlt)
+	c.JSON(http.StatusOK, infos)
 }
 
 /*
@@ -117,13 +116,12 @@ func RecentComments(req *http.Request) string {
  | Description:
  |
 */
-func MsgTemplate(req *http.Request) string {
+func MsgTemplate(c *gin.Context) {
 	var msgtype int
 	var gender int
 
-	v := req.URL.Query()
-	msgtypestr := v.Get("type")
-	genderstr := v.Get("gender")
+	msgtypestr := c.Query("type")
+	genderstr := c.Query("gender")
 
 	if "" == msgtypestr {
 		msgtype = 0
@@ -141,7 +139,7 @@ func MsgTemplate(req *http.Request) string {
 
 	rows, err := lib.SQLQuery(sentence, msgtype, gender)
 	if nil != err {
-		return "[]"
+		c.String(http.StatusOK, "[]")
 	}
 	defer rows.Close()
 
@@ -157,8 +155,7 @@ func MsgTemplate(req *http.Request) string {
 		infos = append(infos, info)
 	}
 
-	jsonRlt, _ := json.Marshal(infos)
-	return string(jsonRlt)
+	c.JSON(http.StatusOK, infos)
 }
 
 /*
@@ -170,17 +167,17 @@ func MsgTemplate(req *http.Request) string {
  | Description:
  |
 */
-func MsgTemplateAdd(req *http.Request) (int, string) {
+func MsgTemplateAdd(c *gin.Context) {
 	var msgtype int
 	var gender int
 
-	v := req.URL.Query()
-	msgtypestr := v.Get("type")
-	genderstr := v.Get("gender")
-	templatestr := v.Get("template")
+	msgtypestr := c.Query("type")
+	genderstr := c.Query("gender")
+	templatestr := c.Query("template")
 
 	if "" == templatestr {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	if "" == msgtypestr {
@@ -198,12 +195,14 @@ func MsgTemplateAdd(req *http.Request) (int, string) {
 	sentence := "insert into msgtemplate (msg,type,gender) values (?,?,?)"
 	result, err := lib.SQLExec(sentence, templatestr, msgtype, gender)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	lastid, err := result.LastInsertId()
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	handlers.ReloadRecommendTemplates()
@@ -212,8 +211,7 @@ func MsgTemplateAdd(req *http.Request) (int, string) {
 	info.Id = int(lastid)
 	info.Template = templatestr
 
-	jsonRlt, _ := json.Marshal(info)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -225,25 +223,24 @@ func MsgTemplateAdd(req *http.Request) (int, string) {
  | Description:
  |
 */
-func MsgTemplateDel(req *http.Request, w http.ResponseWriter) {
-	v := req.URL.Query()
-	idstr := v.Get("id")
+func MsgTemplateDel(c *gin.Context) {
+	idstr := c.Query("id")
 
 	if "" == idstr {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	id, err := strconv.Atoi(idstr)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	sentence := "delete from msgtemplate where id=?"
 	_, err = lib.SQLExec(sentence, id)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -260,26 +257,25 @@ func MsgTemplateDel(req *http.Request, w http.ResponseWriter) {
  | Description:
  |
 */
-func MsgTemplateModify(w http.ResponseWriter, r *http.Request) {
-	v := r.URL.Query()
-	idstr := v.Get("id")
-	templatestr := v.Get("template")
+func MsgTemplateModify(c *gin.Context) {
+	idstr := c.Query("id")
+	templatestr := c.Query("template")
 
 	if "" == idstr || "" == templatestr {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	id, err := strconv.Atoi(idstr)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	sentence := "update msgtemplate set msg=? where id=?"
 	_, err = lib.SQLExec(sentence, templatestr, id)
 	if nil != err {
-		w.WriteHeader(404)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -295,21 +291,21 @@ func MsgTemplateModify(w http.ResponseWriter, r *http.Request) {
  | Description: get the charts list
  |
 */
-func GetChartsList(w http.ResponseWriter, r *http.Request) (int, string) {
-	v := r.URL.Query()
-
-	idstr := v.Get("id")
-	if "" == idstr {
-		return 404, ""
+func GetChartsList(c *gin.Context) {
+	idstr := c.Query("id")
+	if idstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	id, _ := strconv.Atoi(idstr)
 
 	var commentsInfo []cmsCommentInfo
-	pageid, count := lib.Get_pageid_count_fromreq(r)
+	pageid, count := lib.Get_pageid_count_fromreq(c)
 	recommendAlls, err := handlers.GetRecommendAll(0, id, pageid, count)
 	if nil != err {
-		return 404, err.Error()
+		c.String(http.StatusNotFound, err.Error())
+		return
 	}
 
 	_, userinfo := handlers.GetUserInfoById(id)
@@ -353,8 +349,7 @@ func GetChartsList(w http.ResponseWriter, r *http.Request) (int, string) {
 		commentsInfo = append(commentsInfo, c)
 	}
 
-	jsonRlt, _ := json.Marshal(commentsInfo)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, commentsInfo)
 }
 
 /*
@@ -366,19 +361,19 @@ func GetChartsList(w http.ResponseWriter, r *http.Request) (int, string) {
  | Description:
  |
 */
-func GetTalkHistory(r *http.Request) (int, string) {
-	v := r.URL.Query()
-	idStr := v.Get("id")
-	talkidStr := v.Get("talkid")
-	if "" == talkidStr {
-		return 404, ""
+func GetTalkHistory(c *gin.Context) {
+	idStr := c.Query("id")
+	talkidStr := c.Query("talkid")
+	if talkidStr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	id, _ := strconv.Atoi(idStr)
 	talkid, _ := strconv.Atoi(talkidStr)
 
 	var lastMsgId int
-	lastMsgIdStr := v.Get("lastmsgid")
+	lastMsgIdStr := c.Query("lastmsgid")
 	if "" != lastMsgIdStr {
 		lastMsgId, _ = strconv.Atoi(lastMsgIdStr)
 		if 0 > lastMsgId {
@@ -387,10 +382,11 @@ func GetTalkHistory(r *http.Request) (int, string) {
 	}
 
 	sentence := lib.SQLSentence(lib.SQLMAP_Select_MessageHistory)
-	pageid, count := lib.Get_pageid_count_fromreq(r)
+	pageid, count := lib.Get_pageid_count_fromreq(c)
 	rows, err := lib.SQLQuery(sentence, handlers.RECOMMEND_MSGTYPE_TALK, lastMsgId, id, talkid, talkid, id, (pageid-1)*count, count)
 	if nil != err {
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	defer rows.Close()
@@ -422,8 +418,7 @@ func GetTalkHistory(r *http.Request) (int, string) {
 		}
 	}
 
-	jsonRlt, _ := json.Marshal(history)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, history)
 }
 
 /*
@@ -435,14 +430,14 @@ func GetTalkHistory(r *http.Request) (int, string) {
  | Description:
  |
 */
-func DoTalk(w http.ResponseWriter, r *http.Request) (int, string) {
-	v := r.URL.Query()
-	fromidstr := v.Get("fromid")
-	toidstr := v.Get("toid")
-	msg := v.Get("msg")
+func DoTalk(c *gin.Context) {
+	fromidstr := c.Query("fromid")
+	toidstr := c.Query("toid")
+	msg := c.Query("msg")
 
-	if "" == fromidstr || "" == toidstr || "" == msg {
-		return 404, ""
+	if fromidstr == "" || toidstr == "" || msg == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	fromid, _ := strconv.Atoi(fromidstr)
@@ -464,8 +459,7 @@ func DoTalk(w http.ResponseWriter, r *http.Request) (int, string) {
 	info.MsgText = msg
 	info.TimeUTC = lib.Int64_To_UTCTime(timevalue)
 
-	jsonRlt, _ := json.Marshal(info)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -476,20 +470,19 @@ func DoTalk(w http.ResponseWriter, r *http.Request) (int, string) {
  |      Return:
  |
 */
-func MessagePushSet(w http.ResponseWriter, r *http.Request) {
-	v := r.URL.Query()
-	typestr := v.Get("type")
-	msg := v.Get("msg")
+func MessagePushSet(c *gin.Context) {
+	typestr := c.Query("type")
+	msg := c.Query("msg")
 
-	if "" == typestr || "" == msg {
-		w.WriteHeader(404)
+	if typestr == "" || msg == "" {
+		c.Status(http.StatusNotFound)
 		return
 	}
 
 	t, _ := strconv.Atoi(typestr)
 	if CMS_PUSHMSG_TYPE_EVALUATION == t {
 		// 配置评价消息推送
-		enableStr := v.Get("enable")
+		enableStr := c.Query("enable")
 		enable := func() bool {
 			if "1" == enableStr {
 				return true
@@ -501,14 +494,14 @@ func MessagePushSet(w http.ResponseWriter, r *http.Request) {
 		handlers.PeriodOnlineCommentSet(enable, msg)
 	} else {
 		// 推送普通消息
-		genderstr := v.Get("gender")
+		genderstr := c.Query("gender")
 		if "" == genderstr {
-			w.WriteHeader(404)
+			c.Status(http.StatusNotFound)
 			return
 		}
 	}
 
-	w.WriteHeader(200)
+	c.Status(http.StatusOK)
 	return
 }
 
@@ -520,16 +513,17 @@ func MessagePushSet(w http.ResponseWriter, r *http.Request) {
  |      Return:
  |
 */
-func AdminChartsList(req *http.Request) (int, string) {
+func AdminChartsList(c *gin.Context) {
 	var searchInfo cmsSearchInfo
 	countsentence := "select count(distinct fromid) from recommend where toid=1"
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
 		sentence := "select distinct fromid from recommend where toid=1 order by fromid desc limit ?,?"
-		page, count := lib.Get_pageid_count_fromreq(req)
+		page, count := lib.Get_pageid_count_fromreq(c)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 		if nil != err {
-			return 404, ""
+			c.Status(http.StatusNotFound)
+			return
 		}
 		defer rows.Close()
 
@@ -551,6 +545,5 @@ func AdminChartsList(req *http.Request) (int, string) {
 		lib.SQLError(countsentence, err, nil)
 	}
 
-	jsonRlt, _ := json.Marshal(searchInfo)
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, searchInfo)
 }

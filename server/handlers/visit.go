@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
 	log "github.com/cihub/seelog"
+	"github.com/gin-gonic/gin"
 
 	"herefriend/lib"
 	"herefriend/lib/push"
@@ -161,27 +161,30 @@ func visitRobotRoutine() {
  * Description: 将浏览信息设置为已读
  *
  */
-func ReadVisit(req *http.Request) (int, string) {
-	exist, _, _ := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, ""
+func ReadVisit(c *gin.Context) {
+	exist, _, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := req.URL.Query()
-	visitidstr := v.Get("visitid")
-	if "" == visitidstr {
-		return 404, ""
+	visitidstr := c.Query("visitid")
+	if visitidstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	visitid, _ := strconv.Atoi(visitidstr)
 	sentence := lib.SQLSentence(lib.SQLMAP_Update_VisitRead)
 	_, err := lib.SQLExec(sentence, visitid)
-	if nil != err {
+	if err != nil {
 		log.Error(err.Error())
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	return 200, ""
+	c.Status(http.StatusOK)
+	return
 }
 
 /*
@@ -192,36 +195,37 @@ func ReadVisit(req *http.Request) (int, string) {
  * Description: post visit
  *
  */
-func DoVisit(req *http.Request) (int, string) {
-	exist, id, _ := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, ""
+func DoVisit(c *gin.Context) {
+	exist, id, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := req.URL.Query()
-	toidstr := v.Get("toid")
-	if "" == toidstr {
-		return 404, ""
+	toidstr := c.Query("toid")
+	if toidstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	toid, _ := strconv.Atoi(toidstr)
 	exist, togender := getGenderById(toid)
-	if true != exist {
-		return 404, ""
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	t := time.Now().UTC()
 	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Visit)
 	_, err := lib.SQLExec(sentence, id, toid, t.Unix())
-	if nil != err {
+	if err != nil {
 		log.Error(err.Error())
-		return 404, ""
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	_, info := GetUserInfo(toid, togender)
-	jsonRlt, _ := json.Marshal(info)
-
-	return 200, string(jsonRlt)
+	c.JSON(http.StatusOK, info)
 }
 
 /*
@@ -232,26 +236,28 @@ func DoVisit(req *http.Request) (int, string) {
  * Description: delete visit
  *
  */
-func DeleteVisit(req *http.Request) (int, string) {
-	exist, _, _ := getIdGenderByRequest(req)
-	if true != exist {
-		return 404, ""
+func DeleteVisit(c *gin.Context) {
+	exist, _, _ := getIdGenderByRequest(c)
+	if !exist {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	v := req.URL.Query()
-	visitidstr := v.Get("visitid")
-	if "" == visitidstr {
-		return 404, ""
+	visitidstr := c.Query("visitid")
+	if visitidstr == "" {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	visitid, _ := strconv.Atoi(visitidstr)
 	sentence := lib.SQLSentence(lib.SQLMAP_Delete_Visit)
 	_, err := lib.SQLExec(sentence, visitid)
-	if nil != err {
-		return 404, ""
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	return 200, ""
+	c.Status(http.StatusOK)
 }
 
 func visit_GetUnreadNum(id int, timeline int64) int {
