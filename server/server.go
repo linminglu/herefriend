@@ -116,5 +116,9 @@ func main() {
 		cmsGroup.GET("/GetGiftVerbose", cms.GetGiftVerbose)
 	}
 
+	if os.Getenv("DEBUG") != "1" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r.Run(":8080")
 }
