@@ -21,9 +21,9 @@ var gBucket kodo.Bucket
 var gCtx context.Context
 
 func init() {
-	kodo.SetMac(config.Conf_AccessKey, config.Conf_SecretKey)
+	kodo.SetMac(config.ConfQiniuAccessKey, config.ConfQiniuSecretKey)
 	gKodoClient = kodo.New(0, nil)
-	gBucket = gKodoClient.Bucket(config.Conf_QiniuScope)
+	gBucket = gKodoClient.Bucket(config.ConfQiniuScope)
 	gCtx = context.Background()
 }
 
@@ -31,27 +31,22 @@ func getQiniuUserImagePath(id int, filename string) string {
 	return fmt.Sprintf("images/%d/%s", id, filename)
 }
 
+// GetQiniuUserImageURL .
 func GetQiniuUserImageURL(id int, filename string) string {
-	return config.Conf_QiniuPre + fmt.Sprintf("images/%d/%s", id, filename)
+	return config.ConfQiniuPre + fmt.Sprintf("images/%d/%s", id, filename)
 }
 
+// GetQiniuGiftImageURL .
 func GetQiniuGiftImageURL(filename string) string {
-	return config.Conf_QiniuPre + fmt.Sprintf("images/gift/%s", filename)
+	return config.ConfQiniuPre + fmt.Sprintf("images/gift/%s", filename)
 }
 
+// GetQiniuLoveShowPicturePrefix .
 func GetQiniuLoveShowPicturePrefix(loveshowid int) string {
-	return config.Conf_QiniuPre + fmt.Sprintf("loveshow/%d/", loveshowid)
+	return config.ConfQiniuPre + fmt.Sprintf("loveshow/%d/", loveshowid)
 }
 
-/*
- |    Function: PutImageToQiniuByPath
- |      Author: Mr.Sancho
- |        Date: 2016-01-24
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// PutImageToQiniuByPath .
 func PutImageToQiniuByPath(path string, data io.Reader) error {
 	buf, err := ioutil.ReadAll(data)
 	if nil != err {
@@ -67,28 +62,12 @@ func PutImageToQiniuByPath(path string, data io.Reader) error {
 	return err
 }
 
-/*
- |    Function: PutImageToQiniu
- |      Author: Mr.Sancho
- |        Date: 2016-01-12
- |   Arguments:
- |      Return:
- | Description: put image to Qiniu with path
- |
-*/
+// PutImageToQiniu put image to Qiniu with path
 func PutImageToQiniu(id int, filename string, data io.Reader) error {
 	return PutImageToQiniuByPath(getQiniuUserImagePath(id, filename), data)
 }
 
-/*
- |    Function: DeleteImageFromQiniu
- |      Author: Mr.Sancho
- |        Date: 2016-01-12
- |   Arguments:
- |      Return:
- | Description: delete image from Qiniu with path
- |
-*/
+// DeleteImageFromQiniu delete image from Qiniu with path
 func DeleteImageFromQiniu(id int, filename string) error {
 	err := gBucket.Delete(gCtx, getQiniuUserImagePath(id, filename))
 	if nil != err {
@@ -98,15 +77,7 @@ func DeleteImageFromQiniu(id int, filename string) error {
 	return err
 }
 
-/*
- |    Function: DownloadImgAndRename
- |      Author: Mr.Sancho
- |        Date: 2016-01-12
- |   Arguments:
- |      Return:
- | Description: download the url as image and rename to new image
- |
-*/
+// DownloadImgAndRename download the url as image and rename to new image
 func DownloadImgAndRename(url string, prefix string) (string, error) {
 	if "" == url {
 		return "", nil
@@ -135,14 +106,7 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
-/*
- *
- *    Function: RandStringBytesMaskImprSrc
- *      Author: sunchao
- *        Date: 15/10/6
- * Description: 生成固定长度的随机字符串
- *
- */
+// RandStringBytesMaskImprSrc 生成固定长度的随机字符串
 func RandStringBytesMaskImprSrc(n int) string {
 	var src = rand.NewSource(time.Now().UnixNano())
 	b := make([]byte, n)

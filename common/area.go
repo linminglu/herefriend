@@ -2,14 +2,14 @@ package common
 
 import "strings"
 
-type DistrictInfo struct {
+type districtInfo struct {
 	Province string
 	Provcode string
 	District string
 	Distcode string
 }
 
-var gDistrictBrief = [...]DistrictInfo{
+var gDistrictBrief = [...]districtInfo{
 	{"北京", "8611", "东城", "861101"},
 	{"北京", "8611", "西城", "861102"},
 	{"北京", "8611", "崇文", "861103"},
@@ -450,7 +450,8 @@ var gDistrictBrief = [...]DistrictInfo{
 	{"台湾", "8671", "桃园", "867107"},
 	{"台湾", "8671", "云林", "867108"}}
 
-var CommonDistrcitInfos = []DistrictInfo{
+// CommonDistrcitInfos is the common district infos
+var CommonDistrcitInfos = []districtInfo{
 	{"北京市", "8611", "东城区", "861101"},
 	{"北京市", "8611", "西城区", "861102"},
 	{"北京市", "8611", "崇文区", "861103"},
@@ -891,14 +892,7 @@ var CommonDistrcitInfos = []DistrictInfo{
 	{"台湾省", "8671", "桃园县", "867107"},
 	{"台湾省", "8671", "云林县", "867108"}}
 
-/*
- |    Function: GetDistrictByString
- |      Author: Mr.Sancho
- |        Date: 2016-05-22
- | Description: get province and district by address string
- |      Return:
- |
-*/
+// GetDistrictByString get province and district by address string
 func GetDistrictByString(addStr string) (string, string) {
 	var provcode string
 	var distcode string

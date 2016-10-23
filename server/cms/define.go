@@ -4,7 +4,7 @@ import "time"
 
 type cmsSystemSummary struct {
 	OSDescribe  string  // 操作系统信息
-	CpuDescribe string  // CPU信息
+	CPUDescribe string  // CPU信息
 	MemTotal    uint64  // 内存总大小(MB)
 	MemUsed     uint64  // 内存使用大小(MB)
 	MemUsage    float64 // 内存使用率
@@ -13,8 +13,8 @@ type cmsSystemSummary struct {
 	HDUsage     float64 // HD使用率
 }
 
-type cmsCpuInfo struct {
-	CpuUsage float64 // CPU使用率
+type cmsCPUInfo struct {
+	CPUUsage float64 `json:"CpuUsage"` // CPU使用率
 }
 
 type cmsSystemUsersSummary struct {
@@ -32,13 +32,13 @@ type cmsCommentSummary struct {
 }
 
 type cmsCommentInfo struct {
-	MsgId     int
+	MsgID     int `json:"MsgId"`
 	From      string
 	FromPic   string
-	FromId    int
+	FromID    int `json:"FromId"`
 	To        string
 	ToPic     string
-	ToId      int
+	ToID      int `json:"ToId"`
 	TimeUTC   time.Time
 	Direction int //消息方向, 0: 收到消息, 1: 发送消息
 	MsgType   int
@@ -46,9 +46,9 @@ type cmsCommentInfo struct {
 }
 
 type cmsTalkCommentInfo struct {
-	MsgId   int
-	FromId  int
-	ToId    int
+	MsgID   int `json:"MsgId"`
+	FromID  int `json:"FromId"`
+	ToID    int `json:"ToId"`
 	TimeUTC time.Time
 	MsgText string
 }
@@ -62,12 +62,12 @@ type cmsTalkHistoryInfo struct {
 }
 
 type cmsMessageTempalte struct {
-	Id       int
+	ID       int `json:"Id"`
 	Template string
 }
 
 type cmsUserInfo struct {
-	Id               int
+	ID               int `json:"Id"`
 	Age              int
 	Name             string
 	Img              string

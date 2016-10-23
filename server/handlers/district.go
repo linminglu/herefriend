@@ -17,15 +17,8 @@ func init() {
 	gRegexp, _ = regexp.Compile("(?:</code>&nbsp;来自：)([^<]+)(?:</p>)")
 }
 
-/*
- *
- *    Function: GetIpAddress
- *      Author: sunchao
- *        Date: 15/7/11
- * Description: 根据IP地址获取地址信息
- *
- */
-func GetIpAddress(r *http.Request) (string, string) {
+// GetIPAddress 根据IP地址获取地址信息
+func GetIPAddress(r *http.Request) (string, string) {
 	ipaddr := r.Header.Get("x-forwarded-for")
 	if "" == ipaddr || "unknown" == strings.ToLower(ipaddr) {
 		ipaddr = r.Header.Get("Proxy-Client-IP")
@@ -56,14 +49,7 @@ func GetIpAddress(r *http.Request) (string, string) {
 	return common.GetDistrictByString(addStr)
 }
 
-/*
- *
- *    Function: GetDistrict
- *      Author: sunchao
- *        Date: 15/7/9
- * Description: get the district information
- *
- */
+// GetDistrict get the district information
 func GetDistrict(c *gin.Context) {
-	c.JSON(http.StatusOK, lib.GetDistrictJsonArray())
+	c.JSON(http.StatusOK, lib.GetDistrictJSONArray())
 }

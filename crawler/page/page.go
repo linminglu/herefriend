@@ -190,27 +190,27 @@ func (this *Page) Crawl(needpic bool) *Page {
 			switch sel.Eq(0).Text() {
 			case "年　　龄：":
 				this.info.Age, _ = strconv.Atoi(strings.Replace(sel.Eq(1).Text(), "岁", "", -1))
-				this.info.Allow_age = sel.Eq(3).Text()
+				this.info.AllowAge = sel.Eq(3).Text()
 			case "身　　高：":
 				this.info.Height, _ = strconv.Atoi(strings.Replace(sel.Eq(1).Text(), "cm", "", -1))
-				this.info.Allow_height = sel.Eq(3).Text()
+				this.info.AllowHeight = sel.Eq(3).Text()
 			case "学　　历：":
 				this.info.Education = sel.Eq(1).Text()
-				this.info.Allow_education = sel.Eq(3).Text()
+				this.info.AllowEducation = sel.Eq(3).Text()
 			case "月 收  入：":
 				this.info.Income = sel.Eq(1).Text()
-				this.info.Allow_income = sel.Eq(3).Text()
+				this.info.AllowIncome = sel.Eq(3).Text()
 			case "婚姻状况：":
 				this.info.Marriage = sel.Eq(1).Text()
-				this.info.Allow_marriage = sel.Eq(3).Text()
+				this.info.AllowMarriage = sel.Eq(3).Text()
 			case "购房情况：":
 				this.info.Housing = sel.Eq(1).Text()
-				this.info.Allow_housing = sel.Eq(3).Text()
+				this.info.AllowHousing = sel.Eq(3).Text()
 			case "所在地区：":
 				this.info.Province, this.info.District = common.GetDistrictByString(sel.Eq(1).Text())
-				this.info.Allow_residence = sel.Eq(3).Text()
+				this.info.AllowResidence = sel.Eq(3).Text()
 			case "有无子女：":
-				this.info.Allow_kidstatus = sel.Eq(3).Text()
+				this.info.AllowKidStatus = sel.Eq(3).Text()
 			}
 		}
 	}
@@ -319,8 +319,8 @@ func insertNewId(gender, usertype int, info *common.PersonInfo) int {
 
 	g_lastidLock.Lock()
 	if 0 == g_lastidtmp {
-		girlLastIdSentence := lib.SQLSentence(lib.SQLMAP_Select_LastId, 0)
-		guylLastIdSentence := lib.SQLSentence(lib.SQLMAP_Select_LastId, 1)
+		girlLastIdSentence := lib.SQLSentence(lib.SQLMapSelectLastID, 0)
+		guylLastIdSentence := lib.SQLSentence(lib.SQLMapSelectLastID, 1)
 
 		var girlsLastId int
 		var guysLastId int
@@ -341,7 +341,7 @@ func insertNewId(gender, usertype int, info *common.PersonInfo) int {
 	lastId = g_lastidtmp
 	g_lastidLock.Unlock()
 
-	insertsentence := lib.SQLSentence(lib.SQLMAP_Insert_Info, gender)
+	insertsentence := lib.SQLSentence(lib.SQLMapInsertInfo, gender)
 
 	for {
 		_, err := lib.SQLExec(insertsentence, lastId, "", info.Name, gender, 0, info.Age, usertype, "", info.Height, info.Weight, info.Province, info.District, info.CityLove, info.Naken)
@@ -368,12 +368,12 @@ func insertNewId(gender, usertype int, info *common.PersonInfo) int {
  |
 */
 func updateUserInfo(id, gender int, info *common.PersonInfo) error {
-	sentence := lib.SQLSentence(lib.SQLMAP_Update_Info, gender)
+	sentence := lib.SQLSentence(lib.SQLMapUpdateInfo, gender)
 	_, err := lib.SQLExec(sentence, info.LoveType, info.BodyType, info.Marriage, info.Province, info.District, info.Native,
 		info.Education, info.Occupation, info.Housing, info.Carstatus, info.Introduction, info.School, info.Speciality, info.Animal,
 		info.Constellation, info.Lang, info.BloodType, info.Selfjudge, info.Companytype, info.Companyindustry, info.Nationnality,
-		info.Religion, info.Charactor, info.Hobbies, info.Allow_age, info.Allow_residence, info.Allow_height, info.Allow_marriage,
-		info.Allow_education, info.Allow_housing, info.Allow_income, info.Allow_kidstatus, id)
+		info.Religion, info.Charactor, info.Hobbies, info.AllowAge, info.AllowResidence, info.AllowHeight, info.AllowMarriage,
+		info.AllowEducation, info.AllowHousing, info.AllowIncome, info.AllowKidStatus, id)
 	return err
 }
 
@@ -387,7 +387,7 @@ func updateUserInfo(id, gender int, info *common.PersonInfo) error {
  |
 */
 func insertPictureById(id, gender int, filename string, bHead bool) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Picture, gender)
+	sentence := lib.SQLSentence(lib.SQLMapInsertPicture, gender)
 
 	if true == bHead {
 		lib.SQLExec(sentence, id, filename, 1)
@@ -414,8 +414,8 @@ func (this *Page) Save() {
 		this.info.Selfjudge = string([]rune(this.info.Selfjudge)[:510])
 	}
 
-	this.usrid = insertNewId(this.gender, common.USERTYPE_RB, &this.info)
-	this.info.Id = this.usrid
+	this.usrid = insertNewId(this.gender, common.UserTypeRobot, &this.info)
+	this.info.ID = this.usrid
 
 	/* head image */
 	if "" != this.headimg {
@@ -423,7 +423,7 @@ func (this *Page) Save() {
 		err := image.DownloadImageAndPutToQiniu(this.headimg, true, this.usrid, imagename)
 		if nil == err {
 			insertPictureById(this.usrid, this.gender, imagename, true)
-			this.info.IconUrl = imagename
+			this.info.IconURL = imagename
 		}
 	}
 

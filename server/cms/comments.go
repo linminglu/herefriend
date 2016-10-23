@@ -12,24 +12,18 @@ import (
 )
 
 const (
-	CMS_PUSHMSG_TYPE_NORMALMSG  = 1
-	CMS_PUSHMSG_TYPE_EVALUATION = 2
+	// CmsPushMsgTypeNormalMsg .
+	CmsPushMsgTypeNormalMsg = 1
+	// CmsPushMsgTypeEvaluation .
+	CmsPushMsgTypeEvaluation = 2
+	// CmsLittleImageView .
+	CmsLittleImageView = "?imageView2/5/w/50/h/50"
 )
 
-const CMS_LittleImgView = "?imageView2/5/w/50/h/50"
-
-/*
- |    Function: CommentInfo
- |      Author: Mr.Sancho
- |        Date: 2016-02-28
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// CommentInfo .
 func CommentInfo(c *gin.Context) {
 	info := cmsCommentSummary{
-		TalkNum:   handlers.GetApiRecommendCount(),
+		TalkNum:   handlers.GetAPIRecommendCount(),
 		PushNum:   push.GetPushNum(),
 		BuyVIPNum: handlers.GetBuyVIPCount(),
 	}
@@ -37,15 +31,7 @@ func CommentInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: RecentComments
- |      Author: Mr.Sancho
- |        Date: 2016-02-12
- |   Arguments:
- |      Return:
- | Description: 获取最新的消息
- |
-*/
+// RecentComments 获取最新的消息
 func RecentComments(c *gin.Context) {
 	var lastmsgid int
 	var fromid int
@@ -68,32 +54,32 @@ func RecentComments(c *gin.Context) {
 
 	var info cmsCommentInfo
 	var timevalue int64
-	infos := make([]cmsCommentInfo, 0)
+	var infos []cmsCommentInfo
 
 	for rows.Next() {
-		err = rows.Scan(&info.MsgId, &fromid, &toid, &timevalue, &info.MsgType, &info.MsgText)
+		err = rows.Scan(&info.MsgID, &fromid, &toid, &timevalue, &info.MsgType, &info.MsgText)
 		if nil != err {
 			continue
 		}
 
-		code, userinfo := handlers.GetUserInfoById(fromid)
+		code, userinfo := handlers.GetUserInfoByID(fromid)
 		if 200 == code && "" != userinfo.Name {
 			info.From = "[" + userinfo.Province + "]" + userinfo.Name
 		} else {
 			info.From = "[" + userinfo.Province + "]" + strconv.Itoa(fromid)
 		}
 
-		info.FromPic = userinfo.IconUrl + CMS_LittleImgView
+		info.FromPic = userinfo.IconURL + CmsLittleImageView
 
-		code, userinfo = handlers.GetUserInfoById(toid)
+		code, userinfo = handlers.GetUserInfoByID(toid)
 		if 200 == code && "" != userinfo.Name {
 			info.To = "[" + userinfo.Province + "]" + userinfo.Name
 		} else {
 			info.To = "[" + userinfo.Province + "]" + strconv.Itoa(toid)
 		}
-		info.ToPic = userinfo.IconUrl + CMS_LittleImgView
+		info.ToPic = userinfo.IconURL + CmsLittleImageView
 
-		info.TimeUTC = lib.Int64_To_UTCTime(timevalue)
+		info.TimeUTC = lib.Int64ToUTCTime(timevalue)
 		infos = append(infos, info)
 	}
 
@@ -107,15 +93,7 @@ func RecentComments(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-/*
- |    Function: MsgTemplate
- |      Author: Mr.Sancho
- |        Date: 2016-02-17
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// MsgTemplate .
 func MsgTemplate(c *gin.Context) {
 	var msgtype int
 	var gender int
@@ -144,10 +122,10 @@ func MsgTemplate(c *gin.Context) {
 	defer rows.Close()
 
 	var info cmsMessageTempalte
-	infos := make([]cmsMessageTempalte, 0)
+	var infos []cmsMessageTempalte
 
 	for rows.Next() {
-		err = rows.Scan(&info.Id, &info.Template)
+		err = rows.Scan(&info.ID, &info.Template)
 		if nil != err {
 			continue
 		}
@@ -158,15 +136,7 @@ func MsgTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-/*
- |    Function: MsgTemplateAdd
- |      Author: Mr.Sancho
- |        Date: 2016-02-17
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// MsgTemplateAdd .
 func MsgTemplateAdd(c *gin.Context) {
 	var msgtype int
 	var gender int
@@ -208,21 +178,13 @@ func MsgTemplateAdd(c *gin.Context) {
 	handlers.ReloadRecommendTemplates()
 
 	var info cmsMessageTempalte
-	info.Id = int(lastid)
+	info.ID = int(lastid)
 	info.Template = templatestr
 
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: MsgTemplateDel
- |      Author: Mr.Sancho
- |        Date: 2016-02-17
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// MsgTemplateDel .
 func MsgTemplateDel(c *gin.Context) {
 	idstr := c.Query("id")
 
@@ -248,15 +210,7 @@ func MsgTemplateDel(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: MsgTemplateModify
- |      Author: Mr.Sancho
- |        Date: 2016-02-17
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// MsgTemplateModify .
 func MsgTemplateModify(c *gin.Context) {
 	idstr := c.Query("id")
 	templatestr := c.Query("template")
@@ -283,14 +237,7 @@ func MsgTemplateModify(c *gin.Context) {
 	return
 }
 
-/*
- |
- |    Function: GetChartsList
- |      Author: sunchao
- |        Date: 16/4/4
- | Description: get the charts list
- |
-*/
+// GetChartsList get the charts list
 func GetChartsList(c *gin.Context) {
 	idstr := c.Query("id")
 	if idstr == "" {
@@ -301,48 +248,48 @@ func GetChartsList(c *gin.Context) {
 	id, _ := strconv.Atoi(idstr)
 
 	var commentsInfo []cmsCommentInfo
-	pageid, count := lib.Get_pageid_count_fromreq(c)
+	pageid, count := lib.GetPageidCount(c)
 	recommendAlls, err := handlers.GetRecommendAll(0, id, pageid, count)
 	if nil != err {
 		c.String(http.StatusNotFound, err.Error())
 		return
 	}
 
-	_, userinfo := handlers.GetUserInfoById(id)
+	_, userinfo := handlers.GetUserInfoByID(id)
 	for _, r := range recommendAlls {
 		c := cmsCommentInfo{
-			MsgId:     r.MsgId,
+			MsgID:     r.MsgID,
 			MsgText:   r.MsgText,
 			TimeUTC:   r.TimeUTC,
 			Direction: r.Direction,
 		}
 
-		_, _, usertype := handlers.GetGenderUsertypeById(r.UserId)
+		_, _, usertype := handlers.GetGenderUsertypeByID(r.UserID)
 		if 1 == usertype {
 			continue
 		}
 
 		if 1 == c.Direction {
-			c.FromId = id
-			c.ToId = r.UserId
+			c.FromID = id
+			c.ToID = r.UserID
 			c.From = "[" + userinfo.Province + "]" + userinfo.Name
-			if "" != userinfo.IconUrl {
-				c.FromPic = userinfo.IconUrl + CMS_LittleImgView
+			if "" != userinfo.IconURL {
+				c.FromPic = userinfo.IconURL + CmsLittleImageView
 			}
 			c.To = "[" + r.UserInfo.Province + "]" + r.UserInfo.Name
-			if "" != r.UserInfo.IconUrl {
-				c.ToPic = r.UserInfo.IconUrl + CMS_LittleImgView
+			if "" != r.UserInfo.IconURL {
+				c.ToPic = r.UserInfo.IconURL + CmsLittleImageView
 			}
 		} else {
-			c.FromId = r.UserId
-			c.ToId = id
+			c.FromID = r.UserID
+			c.ToID = id
 			c.To = "[" + userinfo.Province + "]" + userinfo.Name
-			if "" != userinfo.IconUrl {
-				c.ToPic = userinfo.IconUrl + CMS_LittleImgView
+			if "" != userinfo.IconURL {
+				c.ToPic = userinfo.IconURL + CmsLittleImageView
 			}
 			c.From = "[" + r.UserInfo.Province + "]" + r.UserInfo.Name
-			if "" != r.UserInfo.IconUrl {
-				c.FromPic = r.UserInfo.IconUrl + CMS_LittleImgView
+			if "" != r.UserInfo.IconURL {
+				c.FromPic = r.UserInfo.IconURL + CmsLittleImageView
 			}
 		}
 
@@ -352,15 +299,7 @@ func GetChartsList(c *gin.Context) {
 	c.JSON(http.StatusOK, commentsInfo)
 }
 
-/*
- |    Function: GetTalkHistory
- |      Author: Mr.Sancho
- |        Date: 2016-04-12
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// GetTalkHistory .
 func GetTalkHistory(c *gin.Context) {
 	idStr := c.Query("id")
 	talkidStr := c.Query("talkid")
@@ -372,18 +311,18 @@ func GetTalkHistory(c *gin.Context) {
 	id, _ := strconv.Atoi(idStr)
 	talkid, _ := strconv.Atoi(talkidStr)
 
-	var lastMsgId int
-	lastMsgIdStr := c.Query("lastmsgid")
-	if "" != lastMsgIdStr {
-		lastMsgId, _ = strconv.Atoi(lastMsgIdStr)
-		if 0 > lastMsgId {
-			lastMsgId = 0
+	var lastMsgID int
+	lastMsgIDStr := c.Query("lastmsgid")
+	if "" != lastMsgIDStr {
+		lastMsgID, _ = strconv.Atoi(lastMsgIDStr)
+		if 0 > lastMsgID {
+			lastMsgID = 0
 		}
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_MessageHistory)
-	pageid, count := lib.Get_pageid_count_fromreq(c)
-	rows, err := lib.SQLQuery(sentence, handlers.RECOMMEND_MSGTYPE_TALK, lastMsgId, id, talkid, talkid, id, (pageid-1)*count, count)
+	sentence := lib.SQLSentence(lib.SQLMapSelectMessageHistory)
+	pageid, count := lib.GetPageidCount(c)
+	rows, err := lib.SQLQuery(sentence, handlers.CommentMsgTypeTalk, lastMsgID, id, talkid, talkid, id, (pageid-1)*count, count)
 	if nil != err {
 		c.Status(http.StatusNotFound)
 		return
@@ -396,24 +335,24 @@ func GetTalkHistory(c *gin.Context) {
 	var readtmp int
 	var timetmp int64
 
-	_, userinfo := handlers.GetUserInfoById(id)
-	if "" != userinfo.IconUrl {
-		history.UserPic = userinfo.IconUrl + CMS_LittleImgView
+	_, userinfo := handlers.GetUserInfoByID(id)
+	if "" != userinfo.IconURL {
+		history.UserPic = userinfo.IconURL + CmsLittleImageView
 	}
 
 	history.UserName = userinfo.Name
 
-	_, userinfo = handlers.GetUserInfoById(talkid)
-	if "" != userinfo.IconUrl {
-		history.TalkerPic = userinfo.IconUrl + CMS_LittleImgView
+	_, userinfo = handlers.GetUserInfoByID(talkid)
+	if "" != userinfo.IconURL {
+		history.TalkerPic = userinfo.IconURL + CmsLittleImageView
 	}
 
 	history.TalkerName = userinfo.Name
 
 	for rows.Next() {
-		err = rows.Scan(&info.MsgId, &info.FromId, &info.ToId, &readtmp, &timetmp, &info.MsgText)
+		err = rows.Scan(&info.MsgID, &info.FromID, &info.ToID, &readtmp, &timetmp, &info.MsgText)
 		if nil == err {
-			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
+			info.TimeUTC = lib.Int64ToUTCTime(timetmp)
 			history.Comments = append(history.Comments, info)
 		}
 	}
@@ -421,15 +360,7 @@ func GetTalkHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, history)
 }
 
-/*
- |    Function: DoTalk
- |      Author: Mr.Sancho
- |        Date: 2016-04-13
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// DoTalk .
 func DoTalk(c *gin.Context) {
 	fromidstr := c.Query("fromid")
 	toidstr := c.Query("toid")
@@ -448,28 +379,21 @@ func DoTalk(c *gin.Context) {
 
 	// 执行推送
 	timevalue := lib.CurrentTimeUTCInt64()
-	lastid, _ := handlers.RecommendInsertMessageToDB(fromid, toid, handlers.RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-	handlers.RecommendPushMessage(fromid, toid, 0, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+	lastid, _ := handlers.RecommendInsertMessageToDB(fromid, toid, handlers.CommentMsgTypeTalk, msg, timevalue)
+	handlers.RecommendPushMessage(fromid, toid, 0, 1, push.PushMsgComment, msg, timevalue)
 	push.DoPush()
 
 	var info cmsTalkCommentInfo
-	info.MsgId = lastid
-	info.FromId = fromid
-	info.ToId = toid
+	info.MsgID = lastid
+	info.FromID = fromid
+	info.ToID = toid
 	info.MsgText = msg
-	info.TimeUTC = lib.Int64_To_UTCTime(timevalue)
+	info.TimeUTC = lib.Int64ToUTCTime(timevalue)
 
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: MessagePushSet
- |      Author: Mr.Sancho
- |        Date: 2016-04-24
- | Description: 消息推送
- |      Return:
- |
-*/
+// MessagePushSet 消息推送
 func MessagePushSet(c *gin.Context) {
 	typestr := c.Query("type")
 	msg := c.Query("msg")
@@ -480,15 +404,15 @@ func MessagePushSet(c *gin.Context) {
 	}
 
 	t, _ := strconv.Atoi(typestr)
-	if CMS_PUSHMSG_TYPE_EVALUATION == t {
+	if CmsPushMsgTypeEvaluation == t {
 		// 配置评价消息推送
 		enableStr := c.Query("enable")
 		enable := func() bool {
-			if "1" == enableStr {
+			if enableStr == "1" {
 				return true
-			} else {
-				return false
 			}
+
+			return false
 		}()
 
 		handlers.PeriodOnlineCommentSet(enable, msg)
@@ -505,21 +429,14 @@ func MessagePushSet(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: AdminChartsList
- |      Author: Mr.Sancho
- |        Date: 2016-07-03
- | Description:
- |      Return:
- |
-*/
+// AdminChartsList .
 func AdminChartsList(c *gin.Context) {
 	var searchInfo cmsSearchInfo
 	countsentence := "select count(distinct fromid) from recommend where toid=1"
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
 		sentence := "select distinct fromid from recommend where toid=1 order by fromid desc limit ?,?"
-		page, count := lib.Get_pageid_count_fromreq(c)
+		page, count := lib.GetPageidCount(c)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 		if nil != err {
 			c.Status(http.StatusNotFound)
@@ -529,12 +446,12 @@ func AdminChartsList(c *gin.Context) {
 
 		var info cmsUserInfo
 		for rows.Next() {
-			rows.Scan(&info.Id)
-			code, userinfo := handlers.GetUserInfoById(info.Id)
+			rows.Scan(&info.ID)
+			code, userinfo := handlers.GetUserInfoByID(info.ID)
 			if 200 == code {
 				info.Name = userinfo.Name
 				info.Age = userinfo.Age
-				info.Img = userinfo.IconUrl
+				info.Img = userinfo.IconURL
 				info.Province = userinfo.Province
 				info.VipLevel = userinfo.VipLevel
 

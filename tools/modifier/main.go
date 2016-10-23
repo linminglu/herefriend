@@ -51,7 +51,7 @@ func init() {
 
 	//districts of prov
 	gDistrictMap = make(map[string]([]string))
-	districtinfo := lib.GetDistrictJsonArray()
+	districtinfo := lib.GetDistrictJSONArray()
 	for _, s := range *districtinfo {
 		gDistrictMap[s.Province] = s.District
 	}
@@ -367,7 +367,7 @@ func updateVipleveByGender(gender int) {
 				fmt.Println(err)
 			}
 
-			fmt.Printf("update %d vip: level=%d days=%d expiretime=%v\n", id, level, days, lib.Int64_To_UTCTime(expiretime))
+			fmt.Printf("update %d vip: level=%d days=%d expiretime=%v\n", id, level, days, lib.Int64ToUTCTime(expiretime))
 		}
 
 		rows.Close()

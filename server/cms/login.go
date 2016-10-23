@@ -6,15 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-/*
- |    Function: dashboard
- |      Author: Mr.Sancho
- |        Date: 2016-01-30
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// CmsDashBoard .
 func CmsDashBoard(c *gin.Context) {
 	username := c.DefaultPostForm("username", "")
 	if username != "sc" && username != "fan" {

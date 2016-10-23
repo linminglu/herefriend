@@ -11,19 +11,10 @@ import (
 	"herefriend/lib"
 )
 
-/*
- |    Function: getHeartbeatBaseCountByProvinceGender
- |      Author: Mr.Sancho
- |        Date: 2016-02-21
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
 func getHeartbeatBaseCountByProvinceGender(province string, gender int) int {
 	count, exist := lib.GetRedisHeartbeatProvCount(province, gender)
 	if true != exist {
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_HeartbeatProvinceCount, gender)
+		sentence := lib.SQLSentence(lib.SQLMapSelectHeartbeatProvinceCount, gender)
 		lib.SQLQueryRow(sentence, province).Scan(&count)
 		if 0 != count {
 			lib.SetRedisHeartbeatProvCount(province, gender, count)
@@ -33,15 +24,6 @@ func getHeartbeatBaseCountByProvinceGender(province string, gender int) int {
 	return count
 }
 
-/*
- |    Function: doReqHeartbeat
- |      Author: Mr.Sancho
- |        Date: 2016-02-21
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
 func doReqHeartbeat(id, gender, count int) (int, string) {
 	var info common.PersonInfo
 
@@ -52,7 +34,7 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 	 * get the persons' infos, with random page
 	 */
 	baseline := getHeartbeatBaseCountByProvinceGender(info.Province, gender)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_HeartbeatInfoByRows, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectHeartbeatInfoByRows, gender)
 	rows, err := lib.SQLQuery(sentence, info.Province, lib.Intn(baseline-count), count)
 	if nil != err {
 		log.Error(err.Error())
@@ -64,7 +46,7 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 	var code int
 
 	//init size with 0, if there is no data, http response body will be []
-	infos := make([]common.PersonInfo, 0)
+	var infos []common.PersonInfo
 	for rows.Next() {
 		err = rows.Scan(&idtmp)
 		if nil != err {
@@ -81,18 +63,11 @@ func doReqHeartbeat(id, gender, count int) (int, string) {
 	return 200, string(jsonRlt)
 }
 
-/*
- *
- *    Function: Heartbeat
- *      Author: sunchao
- *        Date: 15/8/15
- * Description: 心动女生
- *
- */
+// Heartbeat 心动女生
 func Heartbeat(c *gin.Context) {
 	idStr := c.Query("id")
 	id, _ := strconv.Atoi(idStr)
-	_, gender := getGenderById(id)
+	_, gender := getGenderByID(id)
 
 	count := lib.GetCountRequestArgument(c)
 	code, content := doReqHeartbeat(id, gender, count)

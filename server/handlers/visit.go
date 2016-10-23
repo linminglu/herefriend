@@ -14,31 +14,24 @@ import (
 )
 
 const (
-	VISIT_MAX_UNREADNUMBER = 15
+	// VisitMaxUnreadNum .
+	VisitMaxUnreadNum = 15
 )
 
 var gVisitUnreadSentence string
 var gVisitInsertSentence string
 
 func init() {
-	gVisitUnreadSentence = lib.SQLSentence(lib.SQLMAP_Select_VisitUnreadCount)
-	gVisitInsertSentence = lib.SQLSentence(lib.SQLMAP_Insert_Visit)
+	gVisitUnreadSentence = lib.SQLSentence(lib.SQLMapSelectVisitUnreadCount)
+	gVisitInsertSentence = lib.SQLSentence(lib.SQLMapInsertVisit)
 	go visitRobotRoutine()
 }
 
-/*
- |
- |    Function: getVisitAll
- |      Author: sunchao
- |        Date: 15/10/6
- | Description: get visit
- |
-*/
 func getVisitAll(timeline int64, id, pageid, count int) ([]messageInfo, error) {
 	var rows *sql.Rows
 	var err error
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_VisitByRows)
+	sentence := lib.SQLSentence(lib.SQLMapSelectVisitByRows)
 	rows, err = lib.SQLQuery(sentence, id, timeline, (pageid-1)*count, count)
 	if nil != err {
 		return nil, err
@@ -50,12 +43,12 @@ func getVisitAll(timeline int64, id, pageid, count int) ([]messageInfo, error) {
 	var readtmp int
 	var timetmp int64
 
-	infos := make([]messageInfo, 0)
+	var infos []messageInfo
 	for rows.Next() {
-		err = rows.Scan(&info.MsgId, &info.UserId, &readtmp, &timetmp)
+		err = rows.Scan(&info.MsgID, &info.UserID, &readtmp, &timetmp)
 		if nil == err {
-			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
-			info.Direction = MESSAGE_DIRECTION_TOME
+			info.TimeUTC = lib.Int64ToUTCTime(timetmp)
+			info.Direction = MessageDirectionToMe
 
 			if 1 == readtmp {
 				info.Readed = true
@@ -63,8 +56,8 @@ func getVisitAll(timeline int64, id, pageid, count int) ([]messageInfo, error) {
 				info.Readed = false
 			}
 
-			_, gender := getGenderById(info.UserId)
-			_, userinfo := GetUserInfo(info.UserId, gender)
+			_, gender := getGenderByID(info.UserID)
+			_, userinfo := GetUserInfo(info.UserID, gender)
 			info.UserInfo = &userinfo
 
 			infos = append(infos, info)
@@ -88,7 +81,7 @@ func visitAddVisitor(id, visitor int, timemin, timemax int64) {
 	}
 
 	lib.SQLExec(gVisitInsertSentence, visitor, id, t)
-	RecommendPushMessage(visitor, id, 0, 1, push.PUSHMSG_TYPE_VISIT, "", t)
+	RecommendPushMessage(visitor, id, 0, 1, push.PushMsgVisit, "", t)
 }
 
 /*
@@ -105,14 +98,14 @@ func visitRobotRoutine() {
 
 	needpush := false
 	for {
-		time.Sleep(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTVISIT))
+		time.Sleep(lib.SleepTimeDuration(lib.SleepTypeRobotVisit))
 
 		needpush = false
 		gLiveUsersInfo.lock.RLock()
 		for id, user := range gLiveUsersInfo.users {
 			count = 0
 			err := lib.SQLQueryRow(gVisitUnreadSentence, id, 0).Scan(&count)
-			if nil != err || VISIT_MAX_UNREADNUMBER <= count {
+			if nil != err || VisitMaxUnreadNum <= count {
 				if nil != err {
 					lib.SQLError(gVisitUnreadSentence, err, id, 0)
 				}
@@ -133,9 +126,9 @@ func visitRobotRoutine() {
 			}
 
 			if 0 == user.gender {
-				fromid = getRandomUserId(id, 1)
+				fromid = getRandomUserID(id, 1)
 			} else {
-				fromid = getRandomHeartbeatId(id, 0)
+				fromid = getRandomHeartbeatID(id, 0)
 			}
 
 			if 0 == fromid {
@@ -153,16 +146,9 @@ func visitRobotRoutine() {
 	}
 }
 
-/*
- *
- *    Function: ReadVisit
- *      Author: sunchao
- *        Date: 15/10/6
- * Description: 将浏览信息设置为已读
- *
- */
+// ReadVisit 将浏览信息设置为已读
 func ReadVisit(c *gin.Context) {
-	exist, _, _ := getIdGenderByRequest(c)
+	exist, _, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -175,7 +161,7 @@ func ReadVisit(c *gin.Context) {
 	}
 
 	visitid, _ := strconv.Atoi(visitidstr)
-	sentence := lib.SQLSentence(lib.SQLMAP_Update_VisitRead)
+	sentence := lib.SQLSentence(lib.SQLMapUpdateVisitRead)
 	_, err := lib.SQLExec(sentence, visitid)
 	if err != nil {
 		log.Error(err.Error())
@@ -187,16 +173,9 @@ func ReadVisit(c *gin.Context) {
 	return
 }
 
-/*
- *
- *    Function: DoVisit
- *      Author: sunchao
- *        Date: 15/10/6
- * Description: post visit
- *
- */
+// DoVisit .
 func DoVisit(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -209,14 +188,14 @@ func DoVisit(c *gin.Context) {
 	}
 
 	toid, _ := strconv.Atoi(toidstr)
-	exist, togender := getGenderById(toid)
+	exist, togender := getGenderByID(toid)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
 	t := time.Now().UTC()
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Visit)
+	sentence := lib.SQLSentence(lib.SQLMapInsertVisit)
 	_, err := lib.SQLExec(sentence, id, toid, t.Unix())
 	if err != nil {
 		log.Error(err.Error())
@@ -228,16 +207,9 @@ func DoVisit(c *gin.Context) {
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- *
- *    Function: DeleteVisit
- *      Author: sunchao
- *        Date: 15/10/6
- * Description: delete visit
- *
- */
+// DeleteVisit .
 func DeleteVisit(c *gin.Context) {
-	exist, _, _ := getIdGenderByRequest(c)
+	exist, _, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -250,7 +222,7 @@ func DeleteVisit(c *gin.Context) {
 	}
 
 	visitid, _ := strconv.Atoi(visitidstr)
-	sentence := lib.SQLSentence(lib.SQLMAP_Delete_Visit)
+	sentence := lib.SQLSentence(lib.SQLMapDeleteVisit)
 	_, err := lib.SQLExec(sentence, visitid)
 	if err != nil {
 		c.Status(http.StatusNotFound)
@@ -260,10 +232,10 @@ func DeleteVisit(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func visit_GetUnreadNum(id int, timeline int64) int {
+func visitGetUnreadNum(id int, timeline int64) int {
 	var count int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_VisitUnreadCount)
+	sentence := lib.SQLSentence(lib.SQLMapSelectVisitUnreadCount)
 	lib.SQLQueryRow(sentence, id, timeline).Scan(&count)
 
 	return count

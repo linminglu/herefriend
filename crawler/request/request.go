@@ -134,7 +134,7 @@ func (this *Request) Download3g() error {
 	httpreq.Header.Add("User-Agent", g_3gUserAgent)
 	httpreq.Header.Add("X-FirePHP-Version", "0.0.6")
 	client := &http.Client{
-		Transport: &http.Transport{Dial: lib.HttpTimeoutDial},
+		Transport: &http.Transport{Dial: lib.HTTPTimeoutDial},
 	}
 
 	fmt.Println("Downloading: " + this.url)
@@ -169,7 +169,7 @@ func (this *Request) Get3gResponse() (*http.Response, error) {
 	httpreq.Header.Add("User-Agent", g_3gUserAgent)
 	httpreq.Header.Add("X-FirePHP-Version", "0.0.6")
 	client := &http.Client{
-		Transport: &http.Transport{Dial: lib.HttpTimeoutDial},
+		Transport: &http.Transport{Dial: lib.HTTPTimeoutDial},
 	}
 
 	fmt.Println("Downloading: " + this.url)

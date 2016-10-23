@@ -14,14 +14,7 @@ import (
 	"herefriend/server/handlers"
 )
 
-/*
- *
- *    Function: SetHeartbeat
- *      Author: sunchao
- *        Date: 15/7/12
- * Description: change the heartbeat status
- *
- */
+// SetHeartbeat change the heartbeat status
 func SetHeartbeat(c *gin.Context) {
 	idStr := c.Query("id")
 	acttionStr := c.Query("action")
@@ -37,10 +30,10 @@ func SetHeartbeat(c *gin.Context) {
 
 	var err error
 	if "0" == acttionStr {
-		sentence := lib.SQLSentence(lib.SQLMAP_Delete_Heartbeat)
+		sentence := lib.SQLSentence(lib.SQLMapDeleteHeartbeat)
 		_, err = lib.SQLExec(sentence, id)
 	} else {
-		sentence := lib.SQLSentence(lib.SQLMAP_Insert_Heartbeat)
+		sentence := lib.SQLSentence(lib.SQLMapInsertHeartbeat)
 		_, userinfo := handlers.GetUserInfo(id, gender)
 		_, err = lib.SQLExec(sentence, id, gender, userinfo.Province)
 	}
@@ -54,15 +47,7 @@ func SetHeartbeat(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: GetUserInfos
- |      Author: Mr.Sancho
- |        Date: 2016-01-21
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// GetUserInfos .
 func GetUserInfos(c *gin.Context) {
 	genderStr := c.Query("gender")
 	if "" == genderStr {
@@ -75,8 +60,8 @@ func GetUserInfos(c *gin.Context) {
 	/*
 	 * Second get the persons' infos
 	 */
-	page, count := lib.Get_pageid_count_fromreq(c)
-	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfoByRows, gender)
+	page, count := lib.GetPageidCount(c)
+	sentence := lib.SQLSentence(lib.SQLMapCMSSelectBriefInfoByRows, gender)
 	rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -89,18 +74,18 @@ func GetUserInfos(c *gin.Context) {
 		var info cmsUserInfo
 		var idChk int
 
-		rows.Scan(&info.Id)
-		code, userinfo := handlers.GetUserInfo(info.Id, gender)
+		rows.Scan(&info.ID)
+		code, userinfo := handlers.GetUserInfo(info.ID, gender)
 		if 200 == code {
 			info.Name = userinfo.Name
 			info.Age = userinfo.Age
-			info.Img = userinfo.IconUrl
+			info.Img = userinfo.IconURL
 			info.Province = userinfo.Province
 
 			/* check if is heartbeat selected */
-			checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
-			lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
-			if idChk == info.Id {
+			checkSQL := lib.SQLSentence(lib.SQLMapCMSSelectCheckHeatbeatValid)
+			lib.SQLQueryRow(checkSQL, info.ID).Scan(&idChk)
+			if idChk == info.ID {
 				info.Selected = true
 			}
 
@@ -111,15 +96,7 @@ func GetUserInfos(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-/*
- |    Function: GetSingleUserInfo
- |      Author: Mr.Sancho
- |        Date: 2016-01-25
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// GetSingleUserInfo .
 func GetSingleUserInfo(c *gin.Context) {
 	idStr := c.Query("id")
 	genderStr := c.Query("gender")
@@ -133,7 +110,7 @@ func GetSingleUserInfo(c *gin.Context) {
 	var gender int
 	if "" == genderStr {
 		var exists bool
-		exists, gender, _ = handlers.GetGenderUsertypeById(id)
+		exists, gender, _ = handlers.GetGenderUsertypeByID(id)
 		if true != exists {
 			c.Status(http.StatusNotFound)
 			return
@@ -149,35 +126,27 @@ func GetSingleUserInfo(c *gin.Context) {
 	var idChk int
 
 	_, userinfo := handlers.GetUserInfo(id, gender)
-	info.Id = id
+	info.ID = id
 	info.Age = userinfo.Age
-	info.Img = userinfo.IconUrl
+	info.Img = userinfo.IconURL
 	info.Name = userinfo.Name
 	info.Province = userinfo.Province
-	_, info.Usertype = handlers.GetUsertypeByIdGender(id, gender)
+	_, info.Usertype = handlers.GetUsertypeByIDGender(id, gender)
 	info.VipLevel = userinfo.VipLevel
 
-	checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
-	lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
-	if idChk == info.Id {
+	checkSQL := lib.SQLSentence(lib.SQLMapCMSSelectCheckHeatbeatValid)
+	lib.SQLQueryRow(checkSQL, info.ID).Scan(&idChk)
+	if idChk == info.ID {
 		info.Selected = true
 	}
 
-	appversioinSentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_SetVipAppVersion, gender)
-	lib.SQLQueryRow(appversioinSentence, info.Id).Scan(&info.VipSetAppVersion)
+	appversioinSentence := lib.SQLSentence(lib.SQLMapCMSSelectSetVipAppVersion, gender)
+	lib.SQLQueryRow(appversioinSentence, info.ID).Scan(&info.VipSetAppVersion)
 
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: SetSingleUserInfo
- |      Author: Mr.Sancho
- |        Date: 2016-03-05
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// SetSingleUserInfo .
 func SetSingleUserInfo(c *gin.Context) {
 	idStr := c.Query("id")
 	genderStr := c.Query("gender")
@@ -192,7 +161,7 @@ func SetSingleUserInfo(c *gin.Context) {
 	var gender int
 	if "" == genderStr {
 		var exists bool
-		exists, gender, _ = handlers.GetGenderUsertypeById(id)
+		exists, gender, _ = handlers.GetGenderUsertypeByID(id)
 		if true != exists {
 			c.Status(http.StatusNotFound)
 			return
@@ -206,9 +175,9 @@ func SetSingleUserInfo(c *gin.Context) {
 		sqlStr := func() string {
 			if 0 == gender {
 				return "update girls set usertype=? where id=?"
-			} else {
-				return "update guys set usertype=? where id=?"
 			}
+
+			return "update guys set usertype=? where id=?"
 		}()
 
 		usertype := 1
@@ -229,14 +198,7 @@ func SetSingleUserInfo(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: AdminGiveVipLevel
- |      Author: Mr.Sancho
- |        Date: 2016-07-03
- | Description:
- |      Return:
- |
-*/
+// AdminGiveVipLevel .
 func AdminGiveVipLevel(c *gin.Context) {
 	idStr := c.Query("id")
 	genderStr := c.Query("gender")
@@ -251,7 +213,7 @@ func AdminGiveVipLevel(c *gin.Context) {
 	var gender int
 	if "" == genderStr {
 		var exists bool
-		exists, gender, _ = handlers.GetGenderUsertypeById(id)
+		exists, gender, _ = handlers.GetGenderUsertypeByID(id)
 		if true != exists {
 			c.Status(http.StatusNotFound)
 			return
@@ -273,7 +235,7 @@ func AdminGiveVipLevel(c *gin.Context) {
 	var expiretime int64
 	days := 2
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_VipLevelByID, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectVipLevelByID, gender)
 	lib.SQLQueryRow(sentence, id).Scan(&oldlevel, &olddays, &expiretime)
 	if 0 != oldlevel {
 		if oldlevel > level {
@@ -289,7 +251,7 @@ func AdminGiveVipLevel(c *gin.Context) {
 
 	//赠送两天vip, 秒为单位
 	expiretime += int64(2) * int64(time.Hour/time.Second) * 24
-	sentence = lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
+	sentence = lib.SQLSentence(lib.SQLMapUpdateVIPByID, gender)
 	_, err := lib.SQLExec(sentence, level, days, expiretime, id)
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -300,27 +262,19 @@ func AdminGiveVipLevel(c *gin.Context) {
 	go handlers.UpdateVipUserInfo(id, gender, level, days, expiretime)
 
 	//发送信息, VIP已经开通
-	expireUTC := lib.Int64_To_UTCTime(expiretime)
+	expireUTC := lib.Int64ToUTCTime(expiretime)
 	msg := "您的评论已经审核通过, " + []string{"初始会员", "写信会员", "钻石会员", "至尊会员"}[level] + " 已经赠送给您啦！重新登录即可生效。 会员到期时间：" +
 		fmt.Sprintf("%d年%d月%d日", expireUTC.Year(), expireUTC.Month(), expireUTC.Day()) + "。"
 	timevalue := lib.CurrentTimeUTCInt64()
-	handlers.RecommendInsertMessageToDB(1, id, handlers.RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-	handlers.RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+	handlers.RecommendInsertMessageToDB(1, id, handlers.CommentMsgTypeTalk, msg, timevalue)
+	handlers.RecommendPushMessage(1, id, 1, 1, push.PushMsgComment, msg, timevalue)
 	push.DoPush()
 
 	lib.DelRedisUserInfo(id)
 	return
 }
 
-/*
- |    Function: ChangeHeadImage
- |      Author: Mr.Sancho
- |        Date: 2016-01-25
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// ChangeHeadImage .
 func ChangeHeadImage(c *gin.Context) {
 	idStr := c.Query("id")
 	genderStr := c.Query("gender")
@@ -331,15 +285,15 @@ func ChangeHeadImage(c *gin.Context) {
 	}
 
 	id, _ := strconv.Atoi(idStr)
-	_, _, usertype := handlers.GetGenderUsertypeById(id)
-	if common.USERTYPE_USER == usertype {
+	_, _, usertype := handlers.GetGenderUsertypeByID(id)
+	if common.UserTypeUser == usertype {
 		c.Status(http.StatusForbidden)
 		return
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
 
-	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_Pictures, gender)
+	sentence := lib.SQLSentence(lib.SQLMapCMSSelectPictures, gender)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -347,7 +301,7 @@ func ChangeHeadImage(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	updateSentence := lib.SQLSentence(lib.SQLMAP_Update_SetPictureTag, gender)
+	updateSentence := lib.SQLSentence(lib.SQLMapUpdateSetPictureTag, gender)
 	lib.DelRedisUserInfo(id)
 
 	var infos []cmsImageInfo
@@ -377,15 +331,7 @@ func ChangeHeadImage(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: DeleteHeadImage
- |      Author: Mr.Sancho
- |        Date: 2016-02-13
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// DeleteHeadImage .
 func DeleteHeadImage(c *gin.Context) {
 	idStr := c.Query("id")
 	genderStr := c.Query("gender")
@@ -401,14 +347,14 @@ func DeleteHeadImage(c *gin.Context) {
 		return
 	}
 
-	_, _, usertype := handlers.GetGenderUsertypeById(id)
-	if common.USERTYPE_USER == usertype {
+	_, _, usertype := handlers.GetGenderUsertypeByID(id)
+	if common.UserTypeUser == usertype {
 		c.Status(http.StatusForbidden)
 		return
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
-	sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_Pictures, gender)
+	sentence := lib.SQLSentence(lib.SQLMapCMSSelectPictures, gender)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -416,7 +362,7 @@ func DeleteHeadImage(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	updateSentence := lib.SQLSentence(lib.SQLMAP_Update_SetPictureTag, gender)
+	updateSentence := lib.SQLSentence(lib.SQLMapUpdateSetPictureTag, gender)
 	lib.DelRedisUserInfo(id)
 
 	var infos []cmsImageInfo
@@ -438,7 +384,7 @@ func DeleteHeadImage(c *gin.Context) {
 		}
 	} else {
 		if 0 != len(infos) {
-			deletesentence := lib.SQLSentence(lib.SQLMAP_Delete_HeadPicture, gender)
+			deletesentence := lib.SQLSentence(lib.SQLMapDeleteHeadPicture, gender)
 			lib.SQLExec(deletesentence, id)
 			lib.DeleteImageFromQiniu(id, infos[headindex].filename)
 
@@ -451,15 +397,7 @@ func DeleteHeadImage(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: AddBlacklist
- |      Author: Mr.Sancho
- |        Date: 2016-01-24
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// AddBlacklist .
 func AddBlacklist(c *gin.Context) {
 	idStr := c.Query("id")
 	genderStr := c.Query("gender")
@@ -475,8 +413,8 @@ func AddBlacklist(c *gin.Context) {
 		return
 	}
 
-	_, _, usertype := handlers.GetGenderUsertypeById(id)
-	if common.USERTYPE_USER == usertype {
+	_, _, usertype := handlers.GetGenderUsertypeByID(id)
+	if common.UserTypeUser == usertype {
 		c.Status(http.StatusForbidden)
 		return
 	}
@@ -487,28 +425,28 @@ func AddBlacklist(c *gin.Context) {
 	handlers.OfflineProc(id, gender)
 
 	/* move to blacklist */
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Blacklist, gender)
+	sentence := lib.SQLSentence(lib.SQLMapInsertBlacklist, gender)
 	lib.SQLExec(sentence, id)
 
 	/* delete from wealth and gift */
 	handlers.DeleteUserWealthAndGiftInfo(id)
 
 	/* delete from comments and visit */
-	sentence = lib.SQLSentence(lib.SQLMAP_Delete_RecommendByUserId)
+	sentence = lib.SQLSentence(lib.SQLMapDeleteRecommendByUserID)
 	lib.SQLExec(sentence, id, id)
-	sentence = lib.SQLSentence(lib.SQLMAP_Delete_VisitByUserId)
+	sentence = lib.SQLSentence(lib.SQLMapDeleteVisitByUserID)
 	lib.SQLExec(sentence, id, id)
 
-	delSql := lib.SQLSentence(lib.SQLMAP_Delete_UserId, gender)
-	lib.SQLExec(delSql, id)
+	delSQL := lib.SQLSentence(lib.SQLMapDeleteUserID, gender)
+	lib.SQLExec(delSQL, id)
 	lib.DelRedisUserInfo(id)
 
 	var idChk int
-	checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
-	lib.SQLQueryRow(checkSql, id).Scan(&idChk)
+	checkSQL := lib.SQLSentence(lib.SQLMapCMSSelectCheckHeatbeatValid)
+	lib.SQLQueryRow(checkSQL, id).Scan(&idChk)
 	if idChk == id {
-		delSql := lib.SQLSentence(lib.SQLMAP_Delete_Heartbeat)
-		lib.SQLExec(delSql, id)
+		delSQL := lib.SQLSentence(lib.SQLMapDeleteHeartbeat)
+		lib.SQLExec(delSQL, id)
 	}
 
 	handlers.SubUserCount(gender)
@@ -517,15 +455,7 @@ func AddBlacklist(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: SearchUserInfos
- |      Author: Mr.Sancho
- |        Date: 2016-03-04
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// SearchUserInfos .
 func SearchUserInfos(c *gin.Context) {
 	genderStr := c.Query("gender")
 	fieldStr := c.Query("field")
@@ -549,7 +479,7 @@ func SearchUserInfos(c *gin.Context) {
 
 	field := []string{"name", "introduction", "id"}[fieldid]
 
-	countsentence := lib.SQLSentence(lib.SQLMAP_Select_UserCount, gender)
+	countsentence := lib.SQLSentence(lib.SQLMapSelectUserCount, gender)
 	if "" == keyStr {
 		countsentence += fmt.Sprintf(" where %s=''", field)
 	} else {
@@ -559,14 +489,14 @@ func SearchUserInfos(c *gin.Context) {
 	var searchInfo cmsSearchInfo
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
-		sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfo, gender)
+		sentence := lib.SQLSentence(lib.SQLMapCMSSelectBriefInfo, gender)
 		if "" == keyStr {
 			sentence += fmt.Sprintf(" where %s='' order by id desc limit ?,?", field)
 		} else {
 			sentence += fmt.Sprintf(" where position('%s' in %s) order by id desc limit ?,?", keyStr, field)
 		}
 
-		page, count := lib.Get_pageid_count_fromreq(c)
+		page, count := lib.GetPageidCount(c)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 		if nil != err {
 			c.Status(http.StatusNotFound)
@@ -578,18 +508,18 @@ func SearchUserInfos(c *gin.Context) {
 		var idChk int
 
 		for rows.Next() {
-			rows.Scan(&info.Id)
-			code, userinfo := handlers.GetUserInfo(info.Id, gender)
+			rows.Scan(&info.ID)
+			code, userinfo := handlers.GetUserInfo(info.ID, gender)
 			if 200 == code {
 				info.Name = userinfo.Name
 				info.Age = userinfo.Age
-				info.Img = userinfo.IconUrl
+				info.Img = userinfo.IconURL
 				info.Province = userinfo.Province
 
 				/* check if is heartbeat selected */
-				checkSql := lib.SQLSentence(lib.SQLMAP_CMS_Select_CheckHeatbeatValid)
-				lib.SQLQueryRow(checkSql, info.Id).Scan(&idChk)
-				if idChk == info.Id {
+				checkSQL := lib.SQLSentence(lib.SQLMapCMSSelectCheckHeatbeatValid)
+				lib.SQLQueryRow(checkSQL, info.ID).Scan(&idChk)
+				if idChk == info.ID {
 					info.Selected = true
 				}
 
@@ -603,15 +533,7 @@ func SearchUserInfos(c *gin.Context) {
 	c.JSON(http.StatusOK, searchInfo)
 }
 
-/*
- |    Function: SystemUserInfo
- |      Author: Mr.Sancho
- |        Date: 2016-01-30
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
+// SystemUserInfo .
 func SystemUserInfo(c *gin.Context) {
 	info := cmsSystemUsersSummary{
 		GirlsNum:  handlers.GetUserCountByGender(0),
@@ -624,15 +546,7 @@ func SystemUserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: RefreshUserInfo
- |      Author: Mr.Sancho
- |        Date: 2016-03-16
- |   Arguments:
- |      Return:
- | Description: 刷新用户信息
- |
-*/
+// RefreshUserInfo 刷新用户信息
 func RefreshUserInfo(c *gin.Context) {
 	idstr := c.Query("id")
 	if "" == idstr {
@@ -650,15 +564,7 @@ func RefreshUserInfo(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: RegistUserInfo
- |      Author: Mr.Sancho
- |        Date: 2016-03-31
- |   Arguments:
- |      Return:
- | Description: 获取注册用户信息
- |
-*/
+// RegistUserInfo 获取注册用户信息
 func RegistUserInfo(c *gin.Context) {
 	genderStr := c.Query("gender")
 	if "" == genderStr {
@@ -667,14 +573,14 @@ func RegistUserInfo(c *gin.Context) {
 	}
 
 	gender, _ := strconv.Atoi(genderStr)
-	countsentence := lib.SQLSentence(lib.SQLMAP_Select_UserCount, gender) + " where usertype=1"
+	countsentence := lib.SQLSentence(lib.SQLMapSelectUserCount, gender) + " where usertype=1"
 
 	var searchInfo cmsSearchInfo
 	err := lib.SQLQueryRow(countsentence).Scan(&searchInfo.Count)
 	if nil == err && 0 != searchInfo.Count {
-		sentence := lib.SQLSentence(lib.SQLMAP_CMS_Select_BriefInfo, gender) + " where usertype=1 order by id desc limit ?,?"
+		sentence := lib.SQLSentence(lib.SQLMapCMSSelectBriefInfo, gender) + " where usertype=1 order by id desc limit ?,?"
 
-		page, count := lib.Get_pageid_count_fromreq(c)
+		page, count := lib.GetPageidCount(c)
 		rows, err := lib.SQLQuery(sentence, (page-1)*count, count)
 		if nil != err {
 			c.Status(http.StatusNotFound)
@@ -685,12 +591,12 @@ func RegistUserInfo(c *gin.Context) {
 		var info cmsUserInfo
 
 		for rows.Next() {
-			rows.Scan(&info.Id)
-			code, userinfo := handlers.GetUserInfo(info.Id, gender)
+			rows.Scan(&info.ID)
+			code, userinfo := handlers.GetUserInfo(info.ID, gender)
 			if 200 == code {
 				info.Name = userinfo.Name
 				info.Age = userinfo.Age
-				info.Img = userinfo.IconUrl
+				info.Img = userinfo.IconURL
 				info.Province = userinfo.Province
 				info.VipLevel = userinfo.VipLevel
 

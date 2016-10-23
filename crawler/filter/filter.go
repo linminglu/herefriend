@@ -62,12 +62,12 @@ func getAgeRange(age, scan int) (min, max int) {
 	min = age - scan
 	max = age + scan
 
-	if config.Conf_AgeMin > min {
-		min = config.Conf_AgeMin
+	if config.ConfAgeMin > min {
+		min = config.ConfAgeMin
 	}
 
-	if config.Conf_AgeMax < max {
-		max = config.Conf_AgeMax
+	if config.ConfAgeMax < max {
+		max = config.ConfAgeMax
 	}
 
 	return

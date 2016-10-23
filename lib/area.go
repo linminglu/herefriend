@@ -1,15 +1,16 @@
 package lib
 
-import . "herefriend/common"
+import "herefriend/common"
 
-type DistrictJson struct {
+// DistrictJSON .
+type DistrictJSON struct {
 	Province string
 	District []string
 }
 
 var gProvMap map[string]string
 var gDistMap map[string]string
-var gDistrictJson []DistrictJson
+var gDistrictJSON []DistrictJSON
 
 func init() {
 	/* init maps */
@@ -17,7 +18,7 @@ func init() {
 	gDistMap = make(map[string]string)
 
 	var ok bool
-	for _, dist := range CommonDistrcitInfos {
+	for _, dist := range common.CommonDistrcitInfos {
 		_, ok = gProvMap[dist.Provcode]
 		if true != ok {
 			gProvMap[dist.Provcode] = dist.Province
@@ -29,21 +30,21 @@ func init() {
 		}
 	}
 
-	var districtJson DistrictJson
-	for i := range CommonDistrcitInfos {
-		if "" == districtJson.Province {
-			districtJson.Province = CommonDistrcitInfos[i].Province
-			districtJson.District = append(districtJson.District, CommonDistrcitInfos[i].District)
-		} else if CommonDistrcitInfos[i].Province == districtJson.Province {
-			districtJson.District = append(districtJson.District, CommonDistrcitInfos[i].District)
+	var districtJSON DistrictJSON
+	for i := range common.CommonDistrcitInfos {
+		if "" == districtJSON.Province {
+			districtJSON.Province = common.CommonDistrcitInfos[i].Province
+			districtJSON.District = append(districtJSON.District, common.CommonDistrcitInfos[i].District)
+		} else if common.CommonDistrcitInfos[i].Province == districtJSON.Province {
+			districtJSON.District = append(districtJSON.District, common.CommonDistrcitInfos[i].District)
 		} else {
-			gDistrictJson = append(gDistrictJson, districtJson)
-			districtJson.Province = CommonDistrcitInfos[i].Province
-			districtJson.District = []string{CommonDistrcitInfos[i].District}
+			gDistrictJSON = append(gDistrictJSON, districtJSON)
+			districtJSON.Province = common.CommonDistrcitInfos[i].Province
+			districtJSON.District = []string{common.CommonDistrcitInfos[i].District}
 		}
 	}
 
-	gDistrictJson = append(gDistrictJson, districtJson)
+	gDistrictJSON = append(gDistrictJSON, districtJSON)
 }
 
 func getProvinceByCode(code string) string {
@@ -58,6 +59,7 @@ func getDistrictByCode(code string) string {
 	return s
 }
 
-func GetDistrictJsonArray() *[]DistrictJson {
-	return &gDistrictJson
+// GetDistrictJSONArray returns district json struct
+func GetDistrictJSONArray() *[]DistrictJSON {
+	return &gDistrictJSON
 }

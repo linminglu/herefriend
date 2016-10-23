@@ -11,14 +11,7 @@ import (
 	"herefriend/server/handlers"
 )
 
-/*
- |    Function: PresentGift
- |      Author: Mr.Sancho
- |        Date: 2016-05-14
- | Description:
- |      Return:
- |
-*/
+// PresentGift .
 func PresentGift(c *gin.Context) {
 	idstr := c.Query("id")
 	genderstr := c.Query("gender")
@@ -42,7 +35,7 @@ func PresentGift(c *gin.Context) {
 	var price int
 	var validnum int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftById)
+	sentence := lib.SQLSentence(lib.SQLMapSelectGiftByID)
 	err := lib.SQLQueryRow(sentence, giftid).Scan(&tmpid, &giftname, &price, &validnum)
 	if nil != err || giftid != tmpid {
 		if nil != err {
@@ -55,7 +48,7 @@ func PresentGift(c *gin.Context) {
 	giftvalue := price * giftnum
 
 	// present the gifts
-	sentence = lib.SQLSentence(lib.SQLMAP_Insert_PresentGift)
+	sentence = lib.SQLSentence(lib.SQLMapInsertPresentGift)
 	_, err = lib.SQLExec(sentence, id, gender, toid, giftid, giftnum, lib.CurrentTimeUTCInt64(), "")
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -66,11 +59,11 @@ func PresentGift(c *gin.Context) {
 	var consume int
 
 	// consume the gold beans
-	selectSentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
+	selectSentence := lib.SQLSentence(lib.SQLMapSelectGoldBeansByID)
 	err = lib.SQLQueryRow(selectSentence, id).Scan(&value, &consume)
 	if nil != err {
 		if sql.ErrNoRows == err {
-			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_GoldBeansById)
+			insertSentence := lib.SQLSentence(lib.SQLMapInsertGoldBeansByID)
 			lib.SQLExec(insertSentence, id, gender, 0, giftvalue)
 		} else {
 			lib.SQLError(selectSentence, err, id)
@@ -78,16 +71,16 @@ func PresentGift(c *gin.Context) {
 			return
 		}
 	} else {
-		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_GoldBeansById)
+		updateSentence := lib.SQLSentence(lib.SQLMapUpdateGoldBeansByID)
 		lib.SQLExec(updateSentence, value, consume+giftvalue, id)
 	}
 
 	// updathe the receive value
-	selectSentence = lib.SQLSentence(lib.SQLMAP_Select_ReceiveValueById)
+	selectSentence = lib.SQLSentence(lib.SQLMapSelectReceiveValueByID)
 	err = lib.SQLQueryRow(selectSentence, toid).Scan(&value)
 	if nil != err {
 		if sql.ErrNoRows == err {
-			insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_ReceiveValueById)
+			insertSentence := lib.SQLSentence(lib.SQLMapInsertReceiveValueByID)
 			lib.SQLExec(insertSentence, toid, 1-gender, giftvalue)
 		} else {
 			lib.SQLError(selectSentence, err, toid)
@@ -95,7 +88,7 @@ func PresentGift(c *gin.Context) {
 			return
 		}
 	} else {
-		updateSentence := lib.SQLSentence(lib.SQLMAP_Update_ReceiveValueById)
+		updateSentence := lib.SQLSentence(lib.SQLMapUpdateReceiveValueByID)
 		lib.SQLExec(updateSentence, value+giftvalue, toid)
 	}
 
@@ -103,17 +96,10 @@ func PresentGift(c *gin.Context) {
 	return
 }
 
-/*
- |    Function: GetGiftList
- |      Author: Mr.Sancho
- |        Date: 2016-07-02
- | Description:
- |      Return:
- |
-*/
+// GetGiftList .
 func GetGiftList(c *gin.Context) {
-	err, infolist := handlers.GetGiftList()
-	if nil != err {
+	infolist, err := handlers.GetGiftList()
+	if err != nil {
 		c.Status(http.StatusNotFound)
 		return
 	}
@@ -121,14 +107,7 @@ func GetGiftList(c *gin.Context) {
 	c.JSON(http.StatusOK, infolist)
 }
 
-/*
- |    Function: GetGiftVerbose
- |      Author: Mr.Sancho
- |        Date: 2016-07-02
- | Description:
- |      Return:
- |
-*/
+// GetGiftVerbose .
 func GetGiftVerbose(c *gin.Context) {
 	idstr := c.Query("id")
 	id, _ := strconv.Atoi(idstr)
@@ -138,8 +117,8 @@ func GetGiftVerbose(c *gin.Context) {
 	}
 
 	var info handlers.GiftInfo
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftInfoById)
-	err := lib.SQLQueryRow(sentence, id).Scan(&info.Id, &info.Type, &info.Name, &info.Description, &info.ValidNum, &info.ImageUrl, &info.Effect,
+	sentence := lib.SQLSentence(lib.SQLMapSelectGiftInfoByID)
+	err := lib.SQLQueryRow(sentence, id).Scan(&info.ID, &info.Type, &info.Name, &info.Description, &info.ValidNum, &info.ImageURL, &info.Effect,
 		&info.Price, &info.OriginPrice, &info.DiscountDescription)
 	if nil != err {
 		lib.SQLError(sentence, err, id)
@@ -147,6 +126,6 @@ func GetGiftVerbose(c *gin.Context) {
 		return
 	}
 
-	info.ImageUrl = lib.GetQiniuGiftImageURL(info.ImageUrl)
+	info.ImageURL = lib.GetQiniuGiftImageURL(info.ImageURL)
 	c.JSON(http.StatusOK, info)
 }

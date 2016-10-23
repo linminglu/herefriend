@@ -13,9 +13,9 @@ func trimImagesByGender(gender int, baseid int) {
 	var filename string
 	var tag int
 
-	sentense := lib.SQLSentence(lib.SQLMAP_Select_SearchPicturesByFlag, gender)
-	updatesentense := lib.SQLSentence(lib.SQLMAP_Update_SetPictureFlag, gender)
-	deletesentence := lib.SQLSentence(lib.SQLMAP_Delete_Picture, gender)
+	sentense := lib.SQLSentence(lib.SQLMapSelectSearchPicturesByFlag, gender)
+	updatesentense := lib.SQLSentence(lib.SQLMapUpdateSetPictureFlag, gender)
+	deletesentence := lib.SQLSentence(lib.SQLMapDeletePicture, gender)
 	for {
 		count = 0
 		rows, err := lib.SQLQuery(sentense, baseid, 0, 1000)

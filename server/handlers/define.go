@@ -16,7 +16,7 @@ type reviewInfo struct {
 }
 
 type registerInfo struct {
-	Id              int               //用户ID
+	ID              int               `json:"Id"` //用户ID
 	PassWord        string            //用户密码
 	ShowGift        bool              //是否显示礼物
 	ClientVersion   int               //客户端版本
@@ -43,7 +43,7 @@ type vipPriceInfo struct {
 	Price        int
 	Discount     string
 	DailyAverage string
-	ProductId    string
+	ProductID    string `json:"ProductId"`
 	IabItemType  string
 }
 
@@ -65,7 +65,7 @@ var gVipLevels = []vipInfo{
 				Price:        198,
 				Discount:     "3折优惠",
 				DailyAverage: "0.5",
-				ProductId:    "12xx",
+				ProductID:    "12xx",
 				IabItemType:  "subs"},
 			{
 				Days:         93,
@@ -74,7 +74,7 @@ var gVipLevels = []vipInfo{
 				Price:        98,
 				Discount:     "6折优惠",
 				DailyAverage: "1.0",
-				ProductId:    "3xx",
+				ProductID:    "3xx",
 				IabItemType:  "inapp"},
 			{
 				Days:         31,
@@ -83,7 +83,7 @@ var gVipLevels = []vipInfo{
 				Price:        50,
 				Discount:     "",
 				DailyAverage: "1.6",
-				ProductId:    "1xx",
+				ProductID:    "1xx",
 				IabItemType:  "subs"},
 		},
 	},
@@ -98,7 +98,7 @@ var gVipLevels = []vipInfo{
 				Price:        98,
 				Discount:     "3折优惠",
 				DailyAverage: "0.3",
-				ProductId:    "12zs",
+				ProductID:    "12zs",
 				IabItemType:  "inapp"},
 			{
 				Days:         93,
@@ -107,7 +107,7 @@ var gVipLevels = []vipInfo{
 				Price:        60,
 				Discount:     "6折优惠",
 				DailyAverage: "0.6",
-				ProductId:    "3zs",
+				ProductID:    "3zs",
 				IabItemType:  "inapp"},
 			{
 				Days:         31,
@@ -116,7 +116,7 @@ var gVipLevels = []vipInfo{
 				Price:        30,
 				Discount:     "",
 				DailyAverage: "1.0",
-				ProductId:    "1zs",
+				ProductID:    "1zs",
 				IabItemType:  "inapp"},
 		},
 	},
@@ -131,7 +131,7 @@ var gVipLevels = []vipInfo{
 				Price:        388,
 				Discount:     "5折优惠",
 				DailyAverage: "1.0",
-				ProductId:    "12zz",
+				ProductID:    "12zz",
 				IabItemType:  "inapp"},
 			{
 				Days:         93,
@@ -140,7 +140,7 @@ var gVipLevels = []vipInfo{
 				Price:        188,
 				Discount:     "",
 				DailyAverage: "2.0",
-				ProductId:    "3zz",
+				ProductID:    "3zz",
 				IabItemType:  "inapp"},
 		},
 	},
@@ -150,7 +150,7 @@ type goldBeansPrice struct {
 	Price     int    //价格
 	Count     int    //普通会员购买数量
 	Song      int    //赠送
-	ProductId string //产品ID
+	ProductID string `json:"ProductId"` //产品ID
 }
 
 var gGoldBeansPrices = []goldBeansPrice{
@@ -158,32 +158,32 @@ var gGoldBeansPrices = []goldBeansPrice{
 		Price:     6,
 		Count:     60,
 		Song:      0,
-		ProductId: "6yuan1"},
+		ProductID: "6yuan1"},
 	{
 		Price:     30,
 		Count:     300,
 		Song:      0,
-		ProductId: "30yuan1"},
+		ProductID: "30yuan1"},
 	{
 		Price:     98,
 		Count:     980,
 		Song:      118,
-		ProductId: "98yuan1"},
+		ProductID: "98yuan1"},
 	{
 		Price:     298,
 		Count:     2980,
 		Song:      388,
-		ProductId: "298yuan1"},
+		ProductID: "298yuan1"},
 	{
 		Price:     588,
 		Count:     5880,
 		Song:      638,
-		ProductId: "588yuan1"},
+		ProductID: "588yuan1"},
 	{
 		Price:     998,
 		Count:     9980,
 		Song:      1388,
-		ProductId: "998yuan1"},
+		ProductID: "998yuan1"},
 }
 
 type liveUser struct {
@@ -199,19 +199,21 @@ type liveUsersInfo struct {
 }
 
 type userBlacklist struct {
-	Id        int   //用户id
+	ID        int   `json:"Id"` //用户id
 	Blacklist []int //用户id的黑名单
 }
 
 const (
-	MESSAGE_DIRECTION_TOME   = 0
-	MESSAGE_DIRECTION_FROMME = 1
+	// MessageDirectionToMe .
+	MessageDirectionToMe = 0
+	// MessageDirectionFromMe .
+	MessageDirectionFromMe = 1
 )
 
 type messageInfo struct {
-	MsgId     int                //消息Id
-	MsgText   string             `json:"MsgText,omitempty"` //消息内容, 无内容时此字段会自动隐藏
-	UserId    int                //用户Id
+	MsgID     int                `json:"MsgId"`              //消息Id
+	MsgText   string             `json:"MsgText,omitempty"`  //消息内容, 无内容时此字段会自动隐藏
+	UserID    int                `json:"UserId"`             //用户Id
 	UserInfo  *common.PersonInfo `json:"UserInfo,omitempty"` //用户信息
 	Direction int                //消息方向, 0: UserId发送给我的消息, 1: 我发送给UserId的消息
 	Readed    bool               //客户端是否显示为已读
@@ -229,29 +231,34 @@ type unreadMessageInfo struct {
 	Badge           int //badge: the icon number of app
 }
 
+// PushMsgUnread .
 type PushMsgUnread struct {
 	UnreadRecommend int //未读的聊天消息
 	UnreadVisit     int //未读的访问消息
 	Badge           int //badge: the icon number of app
 }
 
+// PushMsgEvaluation .
 type PushMsgEvaluation struct {
 	Enable      bool   //是否要弹出评价对话框
 	ShowMessage string //弹出对话框显示的信息
 }
 
+// PushMsgRefreshVIP .
 type PushMsgRefreshVIP struct {
 	ShowMessage string //弹出对话框显示的信息
 }
 
+// PushMsgRecvGift .
 type PushMsgRecvGift struct {
-	SenderId    int    //赠送者ID
-	GiftId      int    //礼物ID
+	SenderID    int    `json:"SenderId"` //赠送者ID
+	GiftID      int    `json:"GiftId"`   //礼物ID
 	GiftNum     int    //礼物数量
 	GiftName    string //礼物名称
 	ShowMessage string //弹出对话框显示的信息
 }
 
+// PushMessageInfo .
 type PushMessageInfo struct {
 	/*
 	 * 根据类型不同，消息实体的结构体不同，如下为具体对应关系:
@@ -306,8 +313,9 @@ var gRobotResponseCheckList = [...]string{
 	"器官",
 }
 
+// GiftInfo .
 type GiftInfo struct {
-	Id int //礼物固定id
+	ID int `json:"Id"` //礼物固定id
 	/* 礼物类型：
 	 * 0 免费
 	 * 1 普通礼物
@@ -319,7 +327,7 @@ type GiftInfo struct {
 	Name                string //礼物名称
 	ValidNum            int    //库存数量
 	Description         string //礼物描述
-	ImageUrl            string //礼物图片URL
+	ImageURL            string `json:"ImageUrl"` //礼物图片URL
 	Effect              int    //礼物特效，需要客户端支持
 	Price               int    //价格(beans)
 	OriginPrice         int    //原价(beans)，对于折扣礼物和Price不同
@@ -331,13 +339,11 @@ type presentGiftInfo struct {
 	WhoRecvGift common.PersonInfo //收到礼物的人的信息
 }
 
-/*
- * 礼物列表详情
- */
+// GiftListVerbose 礼物列表详情
 type GiftListVerbose struct {
-	Id      int               //数据唯一性标识
+	ID      int               `json:"Id"` //数据唯一性标识
 	Person  common.PersonInfo //赠送礼物或者收到礼物的用户信息
-	GiftId  int               //礼物ID
+	GiftID  int               `json:"GiftId"` //礼物ID
 	GiftNum int               //礼物数量
 	Message string            //礼物留言
 	TimeUTC time.Time         //送礼物的时间
@@ -349,13 +355,14 @@ type giftRecvListInfo struct {
 	giftnum int
 }
 
+// AppConfig .
 type AppConfig struct {
 	Person      common.PersonInfo
 	StartupView struct {
-		ImageUrl   string //图片地址
+		ImageURL   string `json:"ImageUrl"` //图片地址
 		Duration   int    //图片显示时间
 		LinkEnable bool   //链接是否使能
-		LinkUrl    string //链接跳转地址
+		LinkURL    string `json:"LinkUrl"` //链接跳转地址
 	}
 	VersionInfo struct {
 		VersionStr string //版本信息

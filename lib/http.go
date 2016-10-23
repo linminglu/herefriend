@@ -15,14 +15,7 @@ import (
 	"herefriend/common"
 )
 
-/*
- *
- *    Function: ConvertToUtf8
- *      Author: sunchao
- *        Date: 15/8/16
- * Description: Charset auto determine. Use golang.org/x/net/html/charset. Get html body and change it to utf-8
- *
- */
+// ConvertToUtf8 Charset auto determine. Use golang.org/x/net/html/charset. Get html body and change it to utf-8
 func ConvertToUtf8(contentTypeStr string, r io.ReadCloser) ([]byte, error) {
 	destReader, err := charset.NewReader(r, contentTypeStr)
 	if err != nil {
@@ -32,14 +25,7 @@ func ConvertToUtf8(contentTypeStr string, r io.ReadCloser) ([]byte, error) {
 	return ioutil.ReadAll(destReader)
 }
 
-/*
- *
- *    Function: DownloadUrl
- *      Author: sunchao
- *        Date: 15/8/23
- * Description: Download the content of the url and return the response
- *
- */
+// Get Download the content of the url and return the response
 func Get(url string, cookies []*http.Cookie) (*http.Response, error) {
 	httpreq, err := http.NewRequest("GET", url, nil)
 	if nil != err {
@@ -53,7 +39,7 @@ func Get(url string, cookies []*http.Cookie) (*http.Response, error) {
 	}
 
 	client := &http.Client{
-		Transport: &http.Transport{Dial: HttpTimeoutDial, DisableKeepAlives: true},
+		Transport: &http.Transport{Dial: HTTPTimeoutDial, DisableKeepAlives: true},
 	}
 
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
@@ -66,6 +52,7 @@ func Get(url string, cookies []*http.Cookie) (*http.Response, error) {
 	return resp, nil
 }
 
+// Post do rest post request
 func Post(url string, cookies []*http.Cookie) (*http.Response, error) {
 	httpreq, err := http.NewRequest("POST", url, nil)
 	if nil != err {
@@ -79,7 +66,7 @@ func Post(url string, cookies []*http.Cookie) (*http.Response, error) {
 	}
 
 	client := &http.Client{
-		Transport: &http.Transport{Dial: HttpTimeoutDial, DisableKeepAlives: true},
+		Transport: &http.Transport{Dial: HTTPTimeoutDial, DisableKeepAlives: true},
 	}
 
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
@@ -92,6 +79,7 @@ func Post(url string, cookies []*http.Cookie) (*http.Response, error) {
 	return resp, nil
 }
 
+// GetResultByMethod do rest request and return the result
 func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, error) {
 	httpreq, err := http.NewRequest(method, url, nil)
 	if nil != err {
@@ -105,7 +93,7 @@ func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, erro
 	}
 
 	client := &http.Client{
-		Transport: &http.Transport{Dial: HttpTimeoutDial, DisableKeepAlives: true},
+		Transport: &http.Transport{Dial: HTTPTimeoutDial, DisableKeepAlives: true},
 	}
 
 	httpreq.Header.Add("User-Agent", common.ClientAgent)
@@ -126,15 +114,8 @@ func GetResultByMethod(method, url string, cookies []*http.Cookie) ([]byte, erro
 	return bytebuf, nil
 }
 
-/*
- *
- *    Function: get_pageid_count_fromreq
- *      Author: sunchao
- *        Date: 15/8/16
- * Description: 从请求中获取page编号和每页数目
- *
- */
-func Get_pageid_count_fromreq(c *gin.Context) (int, int) {
+// GetPageidCount 从请求中获取page编号和每页数目
+func GetPageidCount(c *gin.Context) (int, int) {
 	pageStr := c.Query("page")
 	countStr := c.Query("count")
 	if pageStr == "" || pageStr == "0" {
@@ -151,6 +132,7 @@ func Get_pageid_count_fromreq(c *gin.Context) (int, int) {
 	return pageid, count
 }
 
+// GetCountRequestArgument .
 func GetCountRequestArgument(c *gin.Context) int {
 	countStr := c.Query("count")
 	if "" == countStr {
@@ -161,15 +143,8 @@ func GetCountRequestArgument(c *gin.Context) int {
 	return count
 }
 
-/*
- *
- *    Function: HttpTimeoutDial
- *      Author: sunchao
- *        Date: 15/8/23
- * Description: dial function
- *
- */
-func HttpTimeoutDial(netw, addr string) (net.Conn, error) {
+// HTTPTimeoutDial is dial function
+func HTTPTimeoutDial(netw, addr string) (net.Conn, error) {
 	deadline := time.Now().Add(time.Duration(60) * time.Minute)
 	c, err := net.DialTimeout(netw, addr, time.Duration(60)*time.Minute)
 	if err != nil {

@@ -9,17 +9,9 @@ import (
 	"herefriend/lib"
 )
 
-/*
- |    Function: Report
- |      Author: Mr.Sancho
- |        Date: 2016-01-24
- |   Arguments:
- |      Return:
- | Description: report with reason
- |
-*/
+// Report .
 func Report(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -33,7 +25,7 @@ func Report(c *gin.Context) {
 	}
 
 	reason := c.Query("reason")
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Report)
+	sentence := lib.SQLSentence(lib.SQLMapInsertReport)
 	_, err = lib.SQLExec(sentence, id, reportedid, reason)
 	if nil != err {
 		c.String(http.StatusNotFound, err.Error())
@@ -43,17 +35,9 @@ func Report(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-/*
- |    Function: UserAddBlacklist
- |      Author: Mr.Sancho
- |        Date: 2016-02-29
- |   Arguments:
- |      Return:
- | Description: 用户黑名单
- |
-*/
+// UserAddBlacklist 用户黑名单
 func UserAddBlacklist(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -67,14 +51,14 @@ func UserAddBlacklist(c *gin.Context) {
 	}
 
 	var idcheck int
-	checksentence := lib.SQLSentence(lib.SQLMAP_Select_CheckUserBlacklist)
+	checksentence := lib.SQLSentence(lib.SQLMapSelectCheckUserBlacklist)
 	lib.SQLQueryRow(checksentence, id, blackid).Scan(&idcheck)
 	if idcheck == blackid {
 		c.Status(http.StatusOK)
 		return
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_UserBlacklist)
+	sentence := lib.SQLSentence(lib.SQLMapInsertUserBlacklist)
 	_, err = lib.SQLExec(sentence, id, blackid)
 	if nil != err {
 		c.String(http.StatusNotFound, err.Error())
@@ -84,8 +68,9 @@ func UserAddBlacklist(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// UserDelBlacklist .
 func UserDelBlacklist(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -99,14 +84,14 @@ func UserDelBlacklist(c *gin.Context) {
 	}
 
 	var idcheck int
-	checksentence := lib.SQLSentence(lib.SQLMAP_Select_CheckUserBlacklist)
+	checksentence := lib.SQLSentence(lib.SQLMapSelectCheckUserBlacklist)
 	lib.SQLQueryRow(checksentence, id, blackid).Scan(&idcheck)
 	if 0 == idcheck {
 		c.Status(http.StatusOK)
 		return
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Delete_UserBlacklist)
+	sentence := lib.SQLSentence(lib.SQLMapDeleteUserBlacklist)
 	_, err = lib.SQLExec(sentence, id, blackid)
 	if nil != err {
 		c.String(http.StatusNotFound, err.Error())
@@ -116,8 +101,9 @@ func UserDelBlacklist(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// UserGetBlacklist .
 func UserGetBlacklist(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -126,7 +112,7 @@ func UserGetBlacklist(c *gin.Context) {
 	var blist userBlacklist
 	var blackid int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_UserBlacklist)
+	sentence := lib.SQLSentence(lib.SQLMapSelectUserBlacklist)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil == err {
 		defer rows.Close()
@@ -139,6 +125,6 @@ func UserGetBlacklist(c *gin.Context) {
 		}
 	}
 
-	blist.Id = id
+	blist.ID = id
 	c.JSON(http.StatusOK, blist)
 }

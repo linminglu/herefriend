@@ -5,33 +5,39 @@ import (
 	"strings"
 	"sync"
 
-	"git.apache.org/thrift.git/lib/go/thrift"
 	"herefriend/config"
 	"herefriend/lib/push/pushmsg"
+
+	"git.apache.org/thrift.git/lib/go/thrift"
 )
 
 const (
-	PUSHMSG_CHAN_SIZE = 1
+	gPushChanSize = 1
 )
 
-/*
- * 推送消息类型, getuiserver将采取不同的推送方式
- */
 const (
-	PUSHMSG_TYPE_GREET     = 0 //普通推送
-	PUSHMSG_TYPE_RECOMMEND = 1 //普通推送
-	PUSHMSG_TYPE_VISIT     = 2 //普通推送
-	PUSHMSG_TYPE_NOTIFYMSG = 3 //透明推送,无弹出框
+	// PushMsgGreet is greet msg type
+	PushMsgGreet = 0
+	// PushMsgComment is comment msg type
+	PushMsgComment = 1
+	// PushMsgVisit is visit msg type
+	PushMsgVisit = 2
+	// PushMsgNotify is notify msg type
+	PushMsgNotify = 3
 )
 
 /*
  * 透明推送的子消息类型
  */
 const (
-	PUSH_NOTIFYMSG_INVALID    = 0
-	PUSH_NOTIFYMSG_UNREAD     = 1
-	PUSH_NOTIFYMSG_EVALUATION = 2
-	PUSH_NOTIFYMSG_RECVGIFT   = 3
+	// NotifyMsgInvalid .
+	NotifyMsgInvalid = 0
+	// NotifyMsgUnRead .
+	NotifyMsgUnRead = 1
+	// NotifyMsgEvaluation .
+	NotifyMsgEvaluation = 2
+	// NotifyMsgRecvGift .
+	NotifyMsgRecvGift = 3
 )
 
 type pushMsgInfo struct {
@@ -44,16 +50,16 @@ type pushMsgInfo struct {
 
 var gPushSock thrift.TTransport
 var gPushClient *pushmsg.PushMsgClient
-
 var gPushLock sync.Mutex
 var gPushChan chan *pushMsgInfo
 var gPushActive chan int
 var gPushMap map[string]*pushMsgInfo
 var gPushCount int
 
+// InitPush init resources for push
 func InitPush() {
 	var err error
-	gPushSock, err = thrift.NewTSocket(config.Conf_GeTuiAddr)
+	gPushSock, err = thrift.NewTSocket(config.ConfGeTuiAddr)
 	if nil != err {
 		panic(err.Error())
 	}
@@ -65,7 +71,7 @@ func InitPush() {
 	}
 
 	gPushMap = make(map[string]*pushMsgInfo)
-	gPushChan = make(chan *pushMsgInfo, PUSHMSG_CHAN_SIZE)
+	gPushChan = make(chan *pushMsgInfo, gPushChanSize)
 	gPushActive = make(chan int)
 
 	go pushRoutine()
@@ -82,6 +88,7 @@ func connectServer() bool {
 	return true
 }
 
+// Add push new msg to buffer for later doPush
 func Add(badge int, cid string, pushtype, subtype int, title, content string) {
 	if "" == cid {
 		return
@@ -89,7 +96,7 @@ func Add(badge int, cid string, pushtype, subtype int, title, content string) {
 
 	key := func() string {
 		switch pushtype {
-		case PUSHMSG_TYPE_NOTIFYMSG:
+		case PushMsgNotify:
 			return fmt.Sprintf("%s_%d_%d", cid, pushtype, subtype)
 		default:
 			return fmt.Sprintf("%s_%d_%s_%s", cid, pushtype, title, content)
@@ -99,7 +106,7 @@ func Add(badge int, cid string, pushtype, subtype int, title, content string) {
 	gPushLock.Lock()
 	info, ok := gPushMap[key]
 	if true == ok {
-		if PUSHMSG_TYPE_NOTIFYMSG == pushtype {
+		if PushMsgNotify == pushtype {
 			info.content = content
 		}
 	} else {
@@ -108,19 +115,11 @@ func Add(badge int, cid string, pushtype, subtype int, title, content string) {
 	gPushLock.Unlock()
 }
 
+// DoPush active the push action
 func DoPush() {
 	gPushActive <- 1
 }
 
-/*
- |    Function: pushRoutine
- |      Author: Mr.Sancho
- |        Date: 2016-01-05
- |   Arguments:
- |      Return:
- | Description: 负责将要push的信息放入工作队列的routine
- |
-*/
 func pushRoutine() {
 	for {
 		<-gPushActive
@@ -135,15 +134,6 @@ func pushRoutine() {
 	}
 }
 
-/*
- |    Function: pushWorkRoutine
- |      Author: Mr.Sancho
- |        Date: 2016-01-06
- |   Arguments:
- |      Return:
- | Description: push的工作线程
- |
-*/
 func pushWorkRoutine() {
 	for info := range gPushChan {
 		if true != gPushSock.IsOpen() {
@@ -163,6 +153,7 @@ func pushWorkRoutine() {
 	}
 }
 
+// GetPushNum returns the push numbers
 func GetPushNum() int {
 	return gPushCount
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Intn .
 func Intn(v int) int {
 	if 0 >= v {
 		return 0
@@ -15,6 +16,7 @@ func Intn(v int) int {
 	return rand.New(src).Intn(v)
 }
 
+// Int63n .
 func Int63n(v int64) int64 {
 	if 0 >= v {
 		return 0
@@ -24,18 +26,20 @@ func Int63n(v int64) int64 {
 	return rand.New(src).Int63n(v)
 }
 
+// TruncFloat .
 func TruncFloat(f float64, n int) float64 {
-	pow10_n := math.Pow10(n)
-	return math.Trunc((f+0.5/pow10_n)*pow10_n) / pow10_n
+	pow10N := math.Pow10(n)
+	return math.Trunc((f+0.5/pow10N)*pow10N) / pow10N
 }
 
+// RandomHitPercent .
 func RandomHitPercent(percent int) bool {
 	src := rand.NewSource(time.Now().UnixNano())
 	key := rand.New(src).Intn(100)
 
 	if key < percent {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }

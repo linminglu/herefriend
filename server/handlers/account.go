@@ -19,14 +19,16 @@ import (
 )
 
 const (
-	LIVEUSER_TICK_ONLINE     = 15   // minutes
-	LIVEUSER_TICK_BACKGROUND = 2880 // minutes of 2 days
-	VIPUSER_SLEEPDURATION    = int64(time.Hour)
-)
-
-const (
-	LIVEUSER_STATUS_ONLINE     = 1
-	LIVEUSER_STATUS_BACKGROUND = 2
+	// LiveUserTickOnline .
+	LiveUserTickOnline = 15 // minutes
+	// LiveUserTickBackGround .
+	LiveUserTickBackGround = 2880 // minutes of 2 days
+	// VIPUserSleepDuration .
+	VIPUserSleepDuration = int64(time.Hour)
+	// LiveUserStatusOnline .
+	LiveUserStatusOnline = 1
+	// LiveUserStatusBackGround .
+	LiveUserStatusBackGround = 2
 )
 
 var gRegLock sync.Mutex
@@ -41,9 +43,9 @@ var gCountRegist int
 var gCountBuyVIP int
 
 func init() {
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserCount, 0)).Scan(&gCountGirls)
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserCount, 1)).Scan(&gCountGuys)
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_UserActive)).Scan(&gCountRegist, &gCountBuyVIP)
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMapSelectUserCount, 0)).Scan(&gCountGirls)
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMapSelectUserCount, 1)).Scan(&gCountGuys)
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMapSelectUserActive)).Scan(&gCountRegist, &gCountBuyVIP)
 
 	gLiveUsersInfo = &liveUsersInfo{users: make(map[int]*liveUser), lock: sync.RWMutex{}}
 	go liveUserGoRoute()
@@ -53,15 +55,16 @@ func init() {
 }
 
 func updateUserActive() {
-	lib.SQLExec(lib.SQLSentence(lib.SQLMAP_Update_UserActive), gCountRegist, gCountBuyVIP)
+	lib.SQLExec(lib.SQLSentence(lib.SQLMapUpdateUserActive), gCountRegist, gCountBuyVIP)
 }
 
+// GetUserCountByGender .
 func GetUserCountByGender(gender int) int {
 	if 0 == gender {
 		return gCountGirls
-	} else {
-		return gCountGuys
 	}
+
+	return gCountGuys
 }
 
 func updateLiveUserInfo(usersinfo *liveUsersInfo, id, gender, status, tick int) bool {
@@ -85,7 +88,7 @@ func checkLiveUserBackground(usersinfo *liveUsersInfo, id int) bool {
 	usersinfo.lock.Lock()
 	info, ok := usersinfo.users[id]
 	if true == ok {
-		if LIVEUSER_STATUS_BACKGROUND == info.status {
+		if LiveUserStatusBackGround == info.status {
 			bBackground = true
 		}
 	}
@@ -100,6 +103,7 @@ func deleteLiveUserInfo(usersinfo *liveUsersInfo, id int) {
 	usersinfo.lock.Unlock()
 }
 
+// DeleteLiveUser .
 func DeleteLiveUser(id int) {
 	gCountRegist = gCountRegist - 1
 	updateUserActive()
@@ -107,15 +111,17 @@ func DeleteLiveUser(id int) {
 	deleteLiveUserInfo(gLiveUsersInfo, id)
 }
 
+// GetLiveUserNumber .
 func GetLiveUserNumber() int {
 	return len(gLiveUsersInfo.users)
 }
 
+// GetActiveUserNumber .
 func GetActiveUserNumber() int {
 	var num int
 
 	for _, user := range gLiveUsersInfo.users {
-		if LIVEUSER_STATUS_ONLINE == user.status {
+		if LiveUserStatusOnline == user.status {
 			num = num + 1
 		}
 	}
@@ -123,18 +129,12 @@ func GetActiveUserNumber() int {
 	return num
 }
 
+// GetRegistUserNumber .
 func GetRegistUserNumber() int {
 	return gCountRegist
 }
 
-/*
- |    Function: UpdateVipUserInfo
- |      Author: Mr.Sancho
- |        Date: 2016-07-03
- | Description:
- |      Return:
- |
-*/
+// UpdateVipUserInfo .
 func UpdateVipUserInfo(id, gender, level, days int, expiretime int64) bool {
 	gVipUsersInfo.lock.Lock()
 	info, ok := gVipUsersInfo.users[id]
@@ -152,17 +152,18 @@ func UpdateVipUserInfo(id, gender, level, days int, expiretime int64) bool {
 }
 
 func onlineProc(id, gender int) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Update_Online, gender)
+	sentence := lib.SQLSentence(lib.SQLMapUpdateOnline, gender)
 	lib.SQLExec(sentence, lib.CurrentTimeUTCInt64(), id)
 }
 
 func backgroundProc(id, gender int) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Update_Background, gender)
+	sentence := lib.SQLSentence(lib.SQLMapUpdateBackground, gender)
 	lib.SQLExec(sentence, id)
 }
 
+// OfflineProc .
 func OfflineProc(id, gender int) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Update_Offline, gender)
+	sentence := lib.SQLSentence(lib.SQLMapUpdateOffline, gender)
 	lib.SQLExec(sentence, id)
 }
 
@@ -176,17 +177,17 @@ func OfflineProc(id, gender int) {
 */
 func getSearchAgeRange(gender int, age int) (int, int) {
 	min, max := 0, 0
-	if config.Conf_AgeMin <= age && age <= config.Conf_AgeMax {
+	if config.ConfAgeMin <= age && age <= config.ConfAgeMax {
 		if 0 == gender {
 			min = age - gSubAgeNum[gender]
 			max = age + gAddAgeNum[gender]
 
-			if min < config.Conf_AgeMin {
-				min = config.Conf_AgeMin
+			if min < config.ConfAgeMin {
+				min = config.ConfAgeMin
 			}
 
-			if max > config.Conf_AgeMax {
-				max = config.Conf_AgeMax
+			if max > config.ConfAgeMax {
+				max = config.ConfAgeMax
 			}
 		} else {
 			min = 18
@@ -197,23 +198,14 @@ func getSearchAgeRange(gender int, age int) (int, int) {
 	return min, max
 }
 
-/*
- |    Function: getRandomHeartbeatId
- |      Author: Mr.Sancho
- |        Date: 2016-02-21
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
-func getRandomHeartbeatId(id, gender int) int {
+func getRandomHeartbeatID(id, gender int) int {
 	var tmpid int
 	var baselimit int
 	var sentence string
 
 	province, exist := lib.GetRedisDistrict(id)
 	if true == exist {
-		sentence = lib.SQLSentence(lib.SQLMAP_Select_HeartbeatRandomProvId, gender)
+		sentence = lib.SQLSentence(lib.SQLMapSelectHeartbeatRandomProvID, gender)
 
 		baselimit = getHeartbeatBaseCountByProvinceGender(province, gender)
 		randomvalue := lib.Intn(baselimit)
@@ -225,19 +217,11 @@ func getRandomHeartbeatId(id, gender int) int {
 		}
 	}
 
-	return getRandomUserId(id, gender)
+	return getRandomUserID(id, gender)
 }
 
-/*
- |    Function: getRandomUserId
- |      Author: Mr.Sancho
- |        Date: 2016-01-01
- |   Arguments:
- |      Return:
- | Description: 根据用户的id与性别,获取一个合适的随机id
- |
-*/
-func getRandomUserId(id, gender int) int {
+// getRandomUserID 根据用户的id与性别,获取一个合适的随机id
+func getRandomUserID(id, gender int) int {
 	var tmpid int
 	var baselimit int
 
@@ -248,7 +232,7 @@ func getRandomUserId(id, gender int) int {
 		getcount := false
 		rangecount := 0
 		_, info := GetUserInfo(id, gender)
-		if config.Conf_AgeMin <= info.Age && info.Age <= config.Conf_AgeMax {
+		if config.ConfAgeMin <= info.Age && info.Age <= config.ConfAgeMax {
 			min, max := getSearchAgeRange(info.Gender, info.Age)
 			if 0 != min {
 				for tmpage := min; tmpage <= max; tmpage = tmpage + 1 {
@@ -256,7 +240,7 @@ func getRandomUserId(id, gender int) int {
 					if true == exist {
 						rangecount = rangecount + count
 					} else {
-						sentence := lib.SQLSentence(lib.SQLMAP_Select_CountByProvAge, gender)
+						sentence := lib.SQLSentence(lib.SQLMapSelectCountByProvAge, gender)
 						err := lib.SQLQueryRow(sentence, province, tmpage).Scan(&count)
 						if nil == err && 0 != count {
 							lib.SetRedisProvAgeCount(province, gender, tmpage, count)
@@ -268,7 +252,7 @@ func getRandomUserId(id, gender int) int {
 				}
 
 				if 0 != rangecount {
-					sentence := lib.SQLSentence(lib.SQLMAP_Select_RandomProvAgeId, gender)
+					sentence := lib.SQLSentence(lib.SQLMapSelectRandomProvAgeID, gender)
 					baselimit = lib.Intn(rangecount)
 					err := lib.SQLQueryRow(sentence, province, min, max, baselimit).Scan(&tmpid)
 					if nil == err && 1 < tmpid {
@@ -285,7 +269,7 @@ func getRandomUserId(id, gender int) int {
 		getcount = false
 		count, exist := lib.GetRedisProvCount(province, gender)
 		if false == exist {
-			sentence := lib.SQLSentence(lib.SQLMAP_Select_CountByProv, gender)
+			sentence := lib.SQLSentence(lib.SQLMapSelectCountByProv, gender)
 			err := lib.SQLQueryRow(sentence, province).Scan(&count)
 			if nil == err && 0 != count {
 				lib.SetRedisProvCount(province, gender, count)
@@ -298,7 +282,7 @@ func getRandomUserId(id, gender int) int {
 		}
 
 		if true == getcount {
-			sentence := lib.SQLSentence(lib.SQLMAP_Select_RandomProvId, gender)
+			sentence := lib.SQLSentence(lib.SQLMapSelectRandomProvID, gender)
 			baselimit = lib.Intn(count)
 			err := lib.SQLQueryRow(sentence, province, baselimit).Scan(&tmpid)
 			if nil == err && 1 < tmpid {
@@ -317,7 +301,7 @@ func getRandomUserId(id, gender int) int {
 		baselimit = lib.Intn(gCountGuys)
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_RandomId, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectRandomID, gender)
 	err := lib.SQLQueryRow(sentence, baselimit).Scan(&tmpid)
 	if nil != err || 1 >= tmpid {
 		lib.SQLQueryRow(sentence, 2).Scan(&tmpid)
@@ -326,26 +310,19 @@ func getRandomUserId(id, gender int) int {
 	return tmpid
 }
 
-/*
- *
- *    Function: GetGenderUsertypeById
- *      Author: sunchao
- *        Date: 15/6/22
- * Description: get gender usertype by id, if return false means there is no such id in tables
- *
- */
-func GetGenderUsertypeById(id int) (bool, int, int) {
+// GetGenderUsertypeByID get gender usertype by id, if return false means there is no such id in tables
+func GetGenderUsertypeByID(id int) (bool, int, int) {
 	if 0 != id {
 		var idtmp int
 		var usertype int
 
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_UserType, 0)
+		sentence := lib.SQLSentence(lib.SQLMapSelectUserType, 0)
 		err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 		if nil == err && id == idtmp {
 			return true, 0, usertype
 		}
 
-		sentence = lib.SQLSentence(lib.SQLMAP_Select_UserType, 1)
+		sentence = lib.SQLSentence(lib.SQLMapSelectUserType, 1)
 		err = lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 		if nil == err && id == idtmp {
 			return true, 1, usertype
@@ -355,20 +332,12 @@ func GetGenderUsertypeById(id int) (bool, int, int) {
 	return false, 1, 0
 }
 
-/*
- |    Function: GetUsertypeByIdGender
- |      Author: Mr.Sancho
- |        Date: 2016-01-09
- |   Arguments:
- |      Return:
- | Description: 根据id和性别获取用户类型
- |
-*/
-func GetUsertypeByIdGender(id, gender int) (bool, int) {
+// GetUsertypeByIDGender 根据id和性别获取用户类型
+func GetUsertypeByIDGender(id, gender int) (bool, int) {
 	var idtmp int
 	var usertype int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_UserType, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectUserType, gender)
 	err := lib.SQLQueryRow(sentence, id).Scan(&idtmp, &usertype)
 	if nil == err && id == idtmp {
 		return true, usertype
@@ -377,15 +346,8 @@ func GetUsertypeByIdGender(id, gender int) (bool, int) {
 	return false, 0
 }
 
-/*
- *
- *    Function: getGenderById
- *      Author: sunchao
- *        Date: 15/6/22
- * Description: get gender by id, if return false means there is no such id in tables
- *
- */
-func getGenderById(id int) (bool, int) {
+// getGenderByID get gender by id, if return false means there is no such id in tables
+func getGenderByID(id int) (bool, int) {
 	gender, exist := lib.GetRedisUserGender(id)
 	if true == exist {
 		return true, gender
@@ -393,14 +355,14 @@ func getGenderById(id int) (bool, int) {
 
 	var idstr int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidId, 0)
+	sentence := lib.SQLSentence(lib.SQLMapSelectCheckIsValidID, 0)
 	err := lib.SQLQueryRow(sentence, id).Scan(&idstr)
 	if nil == err {
 		lib.SetRedisUserGender(id, 0)
 		return true, 0
 	}
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidId, 1)
+	sentence = lib.SQLSentence(lib.SQLMapSelectCheckIsValidID, 1)
 	err = lib.SQLQueryRow(sentence, id).Scan(&idstr)
 	if nil == err {
 		lib.SetRedisUserGender(id, 1)
@@ -410,25 +372,18 @@ func getGenderById(id int) (bool, int) {
 	return false, 1
 }
 
-/*
- *
- *    Function: GetGenderByIdPw
- *      Author: sunchao
- *        Date: 15/6/23
- * Description: get gender by id and password, if return false means there is no such id in tables
- *
- */
-func getGenderByIdPw(id int, pw string) (bool, int) {
+// getGenderByIDPw get gender by id and password, if return false means there is no such id in tables
+func getGenderByIDPw(id int, pw string) (bool, int) {
 	if 0 != id {
 		var idScan int
 
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidPasswd, 0)
+		sentence := lib.SQLSentence(lib.SQLMapSelectCheckIsValidPasswd, 0)
 		err := lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 0
 		}
 
-		sentence = lib.SQLSentence(lib.SQLMAP_Select_CheckIsValidPasswd, 1)
+		sentence = lib.SQLSentence(lib.SQLMapSelectCheckIsValidPasswd, 1)
 		err = lib.SQLQueryRow(sentence, id, pw).Scan(&idScan)
 		if nil == err {
 			return true, 1
@@ -438,15 +393,8 @@ func getGenderByIdPw(id int, pw string) (bool, int) {
 	return false, 1
 }
 
-/*
- *
- *    Function: GetIdGenderByRequest
- *      Author: sunchao
- *        Date: 15/7/10
- * Description: 根据用户请求获取id和性别
- *
- */
-func getIdGenderByRequest(c *gin.Context) (bool, int, int) {
+// getIDGenderByRequest 根据用户请求获取id和性别
+func getIDGenderByRequest(c *gin.Context) (bool, int, int) {
 	idStr := c.Query("id")
 	pwStr := c.Query("password")
 	if "" == idStr || "" == pwStr {
@@ -454,7 +402,7 @@ func getIdGenderByRequest(c *gin.Context) (bool, int, int) {
 	}
 
 	id, _ := strconv.Atoi(idStr)
-	bExist, gender := getGenderByIdPw(id, pwStr)
+	bExist, gender := getGenderByIDPw(id, pwStr)
 	if true != bExist {
 		return false, 0, 0
 	}
@@ -465,7 +413,7 @@ func getIdGenderByRequest(c *gin.Context) (bool, int, int) {
 func checkIfUserHavePicture(id, gender int) bool {
 	var filename string
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchPictures, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectSearchPictures, gender)
 
 	/* 获取头像 */
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
@@ -490,7 +438,7 @@ func checkIfUserHaveViplevel(id, gender int) bool {
 	var vipdays int
 	var expiretime int64
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_VipLevelByID, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectVipLevelByID, gender)
 	err := lib.SQLQueryRow(sentence, id).Scan(&viplevel, &vipdays, &expiretime)
 	if nil == err && 0 != viplevel {
 		return true
@@ -512,12 +460,12 @@ func checkIfUserHaveViplevel(id, gender int) bool {
 func getUserPictrues(id, gender int, info *common.PersonInfo) {
 	var filename string
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchPictures, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectSearchPictures, gender)
 
 	/* 获取头像 */
 	err := lib.SQLQueryRow(sentence, id, 1).Scan(&filename)
 	if nil == err && "" != filename {
-		info.IconUrl = lib.GetQiniuUserImageURL(id, filename)
+		info.IconURL = lib.GetQiniuUserImageURL(id, filename)
 	}
 
 	info.Pics = make([]string, 0)
@@ -540,19 +488,11 @@ func getUserPictrues(id, gender int, info *common.PersonInfo) {
 	return
 }
 
-/*
- |    Function: GetUserInfoById
- |      Author: Mr.Sancho
- |        Date: 2016-02-23
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
-func GetUserInfoById(id int) (int, common.PersonInfo) {
+// GetUserInfoByID .
+func GetUserInfoByID(id int) (int, common.PersonInfo) {
 	var info common.PersonInfo
 
-	exist, gender := getGenderById(id)
+	exist, gender := getGenderByID(id)
 	if false == exist {
 		return 404, info
 	}
@@ -565,14 +505,7 @@ func GetUserInfoById(id int) (int, common.PersonInfo) {
 	return 200, info
 }
 
-/*
- |    Function: GetUserBeans
- |      Author: Mr.Sancho
- |        Date: 2016-04-30
- | Description: 获取用户的金币数量
- |      Return:
- |
-*/
+// GetUserGoldBeans 获取用户的金币数量
 func GetUserGoldBeans(id int) int {
 	var beans int
 	var consumed int
@@ -582,29 +515,22 @@ func GetUserGoldBeans(id int) int {
 		return beans
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GoldBeansById)
+	sentence := lib.SQLSentence(lib.SQLMapSelectGoldBeansByID)
 	lib.SQLQueryRow(sentence, id).Scan(&beans, &consumed)
 
 	lib.SetRedisGoldBeans(id, beans)
 	return beans
 }
 
-/*
- |    Function: GetUserRecvGiftList
- |      Author: Mr.Sancho
- |        Date: 2016-04-24
- | Description: 获取收到的礼物列表
- |      Return:
- |
-*/
+// GetUserRecvGiftList 获取收到的礼物列表
 func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
 	redislist, exist := lib.GetRedisGiftRecvList(id)
 	if true == exist {
 		return *redislist
 	}
 
-	infolist := make([]common.GiftSendRecvInfo, 0)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvSum)
+	var infolist []common.GiftSendRecvInfo
+	sentence := lib.SQLSentence(lib.SQLMapSelectGiftRecvSum)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		return infolist
@@ -622,21 +548,22 @@ func GetUserRecvGiftList(id int) []common.GiftSendRecvInfo {
 	}
 
 	for k, v := range giftnuminfo {
-		infolist = append(infolist, common.GiftSendRecvInfo{GiftId: k, Number: v})
+		infolist = append(infolist, common.GiftSendRecvInfo{GiftID: k, Number: v})
 	}
 
 	lib.SetRedisGiftRecvList(id, &infolist)
 	return infolist
 }
 
+// PrepareUserRecvGiftList .
 func PrepareUserRecvGiftList(id int) {
 	_, exist := lib.GetRedisGiftRecvList(id)
 	if true == exist {
 		return
 	}
 
-	infolist := make([]common.GiftSendRecvInfo, 0)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftRecvSum)
+	var infolist []common.GiftSendRecvInfo
+	sentence := lib.SQLSentence(lib.SQLMapSelectGiftRecvSum)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		return
@@ -654,29 +581,22 @@ func PrepareUserRecvGiftList(id int) {
 	}
 
 	for k, v := range giftnuminfo {
-		infolist = append(infolist, common.GiftSendRecvInfo{GiftId: k, Number: v})
+		infolist = append(infolist, common.GiftSendRecvInfo{GiftID: k, Number: v})
 	}
 
 	lib.SetRedisGiftRecvList(id, &infolist)
 	return
 }
 
-/*
- |    Function: GetUserSendGiftList
- |      Author: Mr.Sancho
- |        Date: 2016-04-24
- | Description: 获取送出的礼物列表
- |      Return:
- |
-*/
+// GetUserSendGiftList 获取送出的礼物列表
 func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
 	redislist, exist := lib.GetRedisGiftSendList(id)
 	if true == exist {
 		return *redislist
 	}
 
-	infolist := make([]common.GiftSendRecvInfo, 0)
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_GiftSendSum)
+	var infolist []common.GiftSendRecvInfo
+	sentence := lib.SQLSentence(lib.SQLMapSelectGiftSendSum)
 	rows, err := lib.SQLQuery(sentence, id)
 	if nil != err {
 		return infolist
@@ -694,21 +614,14 @@ func GetUserSendGiftList(id int) []common.GiftSendRecvInfo {
 	}
 
 	for k, v := range giftnuminfo {
-		infolist = append(infolist, common.GiftSendRecvInfo{GiftId: k, Number: v})
+		infolist = append(infolist, common.GiftSendRecvInfo{GiftID: k, Number: v})
 	}
 
 	lib.SetRedisGiftSendList(id, &infolist)
 	return infolist
 }
 
-/*
- *
- *    Function: GetUserInfo
- *      Author: sunchao
- *        Date: 15/7/11
- * Description: get the user information by id and gender
- *
- */
+// GetUserInfo get the user information by id and gender
 func GetUserInfo(id int, gender int) (int, common.PersonInfo) {
 	redisinfo, exist := lib.GetRedisUserInfo(id)
 	if true == exist {
@@ -717,16 +630,16 @@ func GetUserInfo(id int, gender int) (int, common.PersonInfo) {
 
 	var info common.PersonInfo
 	var timeValue int64
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_PersonInfo, gender)
-	err := lib.SQLQueryRow(sentence, id).Scan(&info.Id, &info.Name, &info.Age, &info.Gender, &info.OnlineStatus, &info.VipLevel, &timeValue, &info.Height, &info.Weight,
+	sentence := lib.SQLSentence(lib.SQLMapSelectPersonInfo, gender)
+	err := lib.SQLQueryRow(sentence, id).Scan(&info.ID, &info.Name, &info.Age, &info.Gender, &info.OnlineStatus, &info.VipLevel, &timeValue, &info.Height, &info.Weight,
 		&info.LoveType, &info.BodyType, &info.Marriage, &info.Province, &info.District, &info.Native, &info.Education, &info.Income, &info.IncomeMin, &info.IncomeMax,
 		&info.Occupation, &info.Housing, &info.Carstatus, &info.Introduction, &info.School, &info.Speciality,
 		&info.Animal, &info.Constellation, &info.Lang, &info.BloodType, &info.Selfjudge, &info.Companytype, &info.Companyindustry,
-		&info.Nationnality, &info.Religion, &info.Charactor, &info.Hobbies, &info.CityLove, &info.Naken, &info.Allow_age, &info.Allow_residence,
-		&info.Allow_height, &info.Allow_marriage, &info.Allow_education, &info.Allow_housing, &info.Allow_income, &info.Allow_kidstatus)
+		&info.Nationnality, &info.Religion, &info.Charactor, &info.Hobbies, &info.CityLove, &info.Naken, &info.AllowAge, &info.AllowResidence,
+		&info.AllowHeight, &info.AllowMarriage, &info.AllowEducation, &info.AllowHousing, &info.AllowIncome, &info.AllowKidStatus)
 	if nil == err {
 		if 0 != info.VipLevel {
-			info.VipExpireTime = lib.Int64_To_UTCTime(timeValue)
+			info.VipExpireTime = lib.Int64ToUTCTime(timeValue)
 		}
 
 		getUserPictrues(id, gender, &info)
@@ -742,19 +655,21 @@ func GetUserInfo(id int, gender int) (int, common.PersonInfo) {
 	return 200, info
 }
 
-func GetClientIdByUserId(id int) string {
+// GetClientIDByUserID .
+func GetClientIDByUserID(id int) string {
 	var clientid string
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_ClientID, 0)
+	sentence := lib.SQLSentence(lib.SQLMapSelectClientID, 0)
 	lib.SQLQueryRow(sentence, id).Scan(&clientid)
 	if "" == clientid {
-		sentence = lib.SQLSentence(lib.SQLMAP_Select_ClientID, 1)
+		sentence = lib.SQLSentence(lib.SQLMapSelectClientID, 1)
 		lib.SQLQueryRow(sentence, id).Scan(&clientid)
 	}
 
 	return clientid
 }
 
+// UpdateProfile .
 func UpdateProfile(req *http.Request, id, gender int) int {
 	v := req.URL.Query()
 
@@ -766,16 +681,14 @@ func UpdateProfile(req *http.Request, id, gender int) int {
 
 					if gender == 0 {
 						return "update girls set province=?,district='' where id=?"
-					} else {
-						return "update guys set province=?,district='' where id=?"
 					}
-				} else {
-					if gender == 0 {
-						return "update girls set " + key + "=? where id=?"
-					} else {
-						return "update guys set " + key + "=? where id=?"
-					}
+					return "update guys set province=?,district='' where id=?"
 				}
+
+				if gender == 0 {
+					return "update girls set " + key + "=? where id=?"
+				}
+				return "update guys set " + key + "=? where id=?"
 			}()
 
 			lib.SQLExec(sqlStr, values[0], id)
@@ -784,7 +697,7 @@ func UpdateProfile(req *http.Request, id, gender int) int {
 
 	newpassword := v.Get("newpassword")
 	if "" != newpassword {
-		sentense := lib.SQLSentence(lib.SQLMAP_Update_Password, gender)
+		sentense := lib.SQLSentence(lib.SQLMapUpdatePassword, gender)
 		_, err := lib.SQLExec(sentense, newpassword, id)
 		if nil != err {
 			log.Error(err.Error())
@@ -796,16 +709,9 @@ func UpdateProfile(req *http.Request, id, gender int) int {
 	return http.StatusOK
 }
 
-/*
- *
- *    Function: SetProfile
- *      Author: sunchao
- *        Date: 15/7/10
- * Description: 配置用户属性
- *
- */
+// SetProfile 配置用户属性
 func SetProfile(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -821,18 +727,11 @@ func SetProfile(c *gin.Context) {
 	c.JSON(code, info)
 }
 
-/*
- *
- *    Function: GetPersonInfo
- *      Author: sunchao
- *        Date: 15/10/5
- * Description: 获取人物信息
- *
- */
+// GetPersonInfo 获取人物信息
 func GetPersonInfo(c *gin.Context) {
 	idstr := c.Query("id")
 	id, _ := strconv.Atoi(idstr)
-	exist, gender := getGenderById(id)
+	exist, gender := getGenderByID(id)
 	if false == exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -848,23 +747,17 @@ func GetPersonInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, info)
 }
 
+// DeleteUserImage .
 func DeleteUserImage(id, gender int, imagename string) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Delete_Picture, gender)
+	sentence := lib.SQLSentence(lib.SQLMapDeletePicture, gender)
 	lib.SQLExec(sentence, id, imagename)
 
 	lib.DeleteImageFromQiniu(id, imagename)
 }
 
-/*
- *
- *    Function: PostImage
- *      Author: sunchao
- *        Date: 15/10/6
- * Description: 上传图片处理
- *
- */
+// PostImage 上传图片处理
 func PostImage(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -908,23 +801,23 @@ func PostImage(c *gin.Context) {
 		var oldfilename string
 
 		//delete picture from Qiniu
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_SearchPictures, gender)
+		sentence := lib.SQLSentence(lib.SQLMapSelectSearchPictures, gender)
 		lib.SQLQueryRow(sentence, id, 1).Scan(&oldfilename)
 		lib.DeleteImageFromQiniu(id, oldfilename)
 
 		//delete database
-		sentence = lib.SQLSentence(lib.SQLMAP_Delete_Picture, gender)
+		sentence = lib.SQLSentence(lib.SQLMapDeletePicture, gender)
 		lib.SQLExec(sentence, id, oldfilename)
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Picture, gender)
+	sentence := lib.SQLSentence(lib.SQLMapInsertPicture, gender)
 	_, err = lib.SQLExec(sentence, id, imagename, ([2]int{1, 0})[pictype])
 	if nil != err {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Update_InfoPictureFlag, gender)
+	sentence = lib.SQLSentence(lib.SQLMapUpdateInfoPictureFlag, gender)
 	lib.SQLExec(sentence, id)
 
 	lib.DelRedisUserInfo(id)
@@ -935,7 +828,7 @@ func PostImage(c *gin.Context) {
 
 // DeleteImage delete image
 func DeleteImage(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -966,7 +859,7 @@ func DeleteImage(c *gin.Context) {
  |
 */
 func getSearchBaselineSQLSentence(gender int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) string {
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_Count, 1-gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectCount, 1-gender)
 
 	if "在线" == status {
 		sentence += "((usertype=1 and onlineStatus=1) or usertype!=1) and "
@@ -1026,7 +919,7 @@ func getSearchBaseline(gender, agemin, agemax, heightmin, heightmax, incomemin, 
  |
 */
 func getUserSearchIndexSQLSentence(gender int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) string {
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_Search, 1-gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectSearch, 1-gender)
 
 	if 0 != agemax {
 		sentence += "age<=" + strconv.Itoa(agemax) + " and "
@@ -1078,16 +971,9 @@ func getUserSearchIndex(id, gender int, agemin, agemax, heightmin, heightmax, in
 	return index
 }
 
-/*
- *
- *    Function: Search
- *      Author: sunchao
- *        Date: 15/7/26
- * Description: handler the search request
- *
- */
+// Search handler the search request
 func Search(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -1158,7 +1044,7 @@ func Search(c *gin.Context) {
 		}
 	}
 
-	page, count := lib.Get_pageid_count_fromreq(c)
+	page, count := lib.GetPageidCount(c)
 	if true == useheartbeat && page <= 2 {
 		code, content := doReqHeartbeat(id, gender, count)
 		c.String(code, content)
@@ -1186,7 +1072,7 @@ func Search(c *gin.Context) {
 	var idtmp int
 	var code int
 
-	infos := make([]common.PersonInfo, 0)
+	var infos []common.PersonInfo
 	gender = 1 - gender
 	for rows.Next() {
 		err = rows.Scan(&idtmp)
@@ -1203,14 +1089,7 @@ func Search(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-/*
- *
- *    Function: Register
- *      Author: sunchao
- *        Date: 15/6/22
- * Description: New user register
- *
- */
+// Register New user register
 func Register(c *gin.Context) {
 	ageStr := c.Query("age")
 	genderStr := c.Query("gender")
@@ -1221,64 +1100,63 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Delete_MultiClientID, 0)
+	sentence := lib.SQLSentence(lib.SQLMapDeleteMultiClientID, 0)
 	lib.SQLExec(sentence, cid)
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Delete_MultiClientID, 1)
+	sentence = lib.SQLSentence(lib.SQLMapDeleteMultiClientID, 1)
 	lib.SQLExec(sentence, cid)
 
-	girlLastIdSentence := lib.SQLSentence(lib.SQLMAP_Select_LastId, 0)
-	guylLastIdSentence := lib.SQLSentence(lib.SQLMAP_Select_LastId, 1)
+	girlLastIDSentence := lib.SQLSentence(lib.SQLMapSelectLastID, 0)
+	guylLastIDSentence := lib.SQLSentence(lib.SQLMapSelectLastID, 1)
 	gender, _ := strconv.Atoi(genderStr)
-	insertSentence := lib.SQLSentence(lib.SQLMAP_Insert_Info, gender)
+	insertSentence := lib.SQLSentence(lib.SQLMapInsertInfo, gender)
 
 	gRegLock.Lock()
 	defer gRegLock.Unlock()
 
 	/* First get the girls last id */
-	var girlsLastId int
-	lib.SQLQueryRow(girlLastIdSentence).Scan(&girlsLastId)
-	if 0 == girlsLastId {
+	var girlsLastID int
+	lib.SQLQueryRow(girlLastIDSentence).Scan(&girlsLastID)
+	if 0 == girlsLastID {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	var guysLastId int
-	lib.SQLQueryRow(guylLastIdSentence).Scan(&guysLastId)
-	if 0 == guysLastId {
+	var guysLastID int
+	lib.SQLQueryRow(guylLastIDSentence).Scan(&guysLastID)
+	if 0 == guysLastID {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	var lastId = func() int {
-		if girlsLastId > guysLastId {
-			return girlsLastId + 1
-		} else {
-			return guysLastId + 1
+	var lastID = func() int {
+		if girlsLastID > guysLastID {
+			return girlsLastID + 1
 		}
+		return guysLastID + 1
 	}()
 
 	var blacklistlastid int
-	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMAP_Select_BlacklistLastId)).Scan(&blacklistlastid)
-	if blacklistlastid == lastId {
-		lastId = lastId + 1
+	lib.SQLQueryRow(lib.SQLSentence(lib.SQLMapSelectBlacklistLastID)).Scan(&blacklistlastid)
+	if blacklistlastid == lastID {
+		lastID = lastID + 1
 	}
 
 	password := strconv.Itoa((lib.Intn(1000000) + lib.Intn(1000000)) % 1000000)
-	name := strconv.Itoa(lastId)
+	name := strconv.Itoa(lastID)
 	gender, _ = strconv.Atoi(genderStr)
 	age, _ := strconv.Atoi(ageStr)
 	height := [2]int{160, 175}[gender]
 	weight := [2]int{45, 65}[gender]
 
-	province, district := GetIpAddress(c.Request)
-	_, err := lib.SQLExec(insertSentence, lastId, password, name, gender, lib.CurrentTimeUTCInt64(), age, common.USERTYPE_USER, cid, height, weight, province, district, 0, 0)
+	province, district := GetIPAddress(c.Request)
+	_, err := lib.SQLExec(insertSentence, lastID, password, name, gender, lib.CurrentTimeUTCInt64(), age, common.UserTypeUser, cid, height, weight, province, district, 0, 0)
 	if nil == err {
 		var info registerInfo
-		info.Id = lastId
+		info.ID = lastID
 		info.PassWord = password
-		info.Member.Id = lastId
-		info.Member.Name = strconv.Itoa(lastId)
+		info.Member.ID = lastID
+		info.Member.Name = strconv.Itoa(lastID)
 		info.Member.Age = age
 		info.Member.OnlineStatus = 1
 		info.Member.Gender = gender
@@ -1293,11 +1171,11 @@ func Register(c *gin.Context) {
 
 		//发送欢迎信息
 		go func() {
-			msg := config.Conf_WelcomeMessage
+			msg := config.ConfWelcomeMessage
 			timevalue := lib.CurrentTimeUTCInt64()
-			RecommendInsertMessageToDB(1, lastId, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-			lib.SetRedisDistrict(lastId, province)
-			RecommendPushMessage(1, lastId, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+			RecommendInsertMessageToDB(1, lastID, CommentMsgTypeTalk, msg, timevalue)
+			lib.SetRedisDistrict(lastID, province)
+			RecommendPushMessage(1, lastID, 1, 1, push.PushMsgComment, msg, timevalue)
 			push.DoPush()
 		}()
 
@@ -1310,7 +1188,7 @@ func Register(c *gin.Context) {
 			gCountGuys = gCountGuys + 1
 		}
 
-		go updateLiveUserInfo(gLiveUsersInfo, lastId, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+		go updateLiveUserInfo(gLiveUsersInfo, lastID, gender, LiveUserStatusOnline, LiveUserTickOnline)
 
 		c.JSON(http.StatusOK, info)
 	} else {
@@ -1319,16 +1197,9 @@ func Register(c *gin.Context) {
 	}
 }
 
-/*
- *
- *    Function: Login
- *      Author: sunchao
- *        Date: 15/6/22
- * Description: user login
- *
- */
+// Login user login
 func Login(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -1341,19 +1212,19 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	_, usertype := GetUsertypeByIdGender(id, gender)
-	if common.USERTYPE_USER != usertype {
+	_, usertype := GetUsertypeByIDGender(id, gender)
+	if common.UserTypeUser != usertype {
 		c.Status(http.StatusForbidden)
 		return
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Delete_MultiClientID, 0)
+	sentence := lib.SQLSentence(lib.SQLMapDeleteMultiClientID, 0)
 	lib.SQLExec(sentence, cid)
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Delete_MultiClientID, 1)
+	sentence = lib.SQLSentence(lib.SQLMapDeleteMultiClientID, 1)
 	lib.SQLExec(sentence, cid)
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Update_LoginInfo, gender)
+	sentence = lib.SQLSentence(lib.SQLMapUpdateLoginInfo, gender)
 	_, err := lib.SQLExec(sentence, cid, lib.CurrentTimeUTCInt64(), id)
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -1362,11 +1233,11 @@ func Login(c *gin.Context) {
 
 	_, exist = lib.GetRedisDistrict(id)
 	if true != exist {
-		province, _ := GetIpAddress(c.Request)
+		province, _ := GetIPAddress(c.Request)
 		lib.SetRedisDistrict(id, province)
 	}
 
-	go updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+	go updateLiveUserInfo(gLiveUsersInfo, id, gender, LiveUserStatusOnline, LiveUserTickOnline)
 
 	lib.DelRedisUserInfo(id)
 	code, info := GetUserInfo(id, gender)
@@ -1375,34 +1246,27 @@ func Login(c *gin.Context) {
 	c.JSON(code, info)
 }
 
-/*
- *
- *    Function: WatchDog
- *      Author: sunchao
- *        Date: 15/10/18
- * Description: 狗叫服务
- *
- */
+// WatchDog 狗叫服务
 func WatchDog(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	if true == config.Conf_EnableEvaluation {
+	if true == config.ConfEvaluationSwitch {
 		var lastEvaluationTime int64
-		sentence := lib.SQLSentence(lib.SQLMAP_Select_LastEvaluationTime, gender)
+		sentence := lib.SQLSentence(lib.SQLMapSelectLastEvaluationTime, gender)
 		lib.SQLQueryRow(sentence, id).Scan(&lastEvaluationTime)
 
 		go PeriodOnlineCommentPush(id, gender, lastEvaluationTime)
 	}
 
-	ok := updateLiveUserInfo(gLiveUsersInfo, id, gender, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+	ok := updateLiveUserInfo(gLiveUsersInfo, id, gender, LiveUserStatusOnline, LiveUserTickOnline)
 	if true != ok {
 		go func() {
 			if _, exist := lib.GetRedisDistrict(id); false == exist {
-				province, _ := GetIpAddress(c.Request)
+				province, _ := GetIPAddress(c.Request)
 				lib.SetRedisDistrict(id, province)
 			}
 		}()
@@ -1412,16 +1276,9 @@ func WatchDog(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-/*
- *
- *    Function: Logout
- *      Author: sunchao
- *        Date: 15/10/11
- * Description: 用户退出
- *
- */
+// Logout 用户退出
 func Logout(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -1447,16 +1304,16 @@ func liveUserGoRoute() {
 	var onlineid int
 	var onlineStatus int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_OnlineIds, 0)
+	sentence := lib.SQLSentence(lib.SQLMapSelectOnlineIDs, 0)
 	rows, err := lib.SQLQuery(sentence)
 	if nil == err {
 		for rows.Next() {
 			err = rows.Scan(&onlineid, &onlineStatus)
 			if nil == err {
-				if LIVEUSER_STATUS_ONLINE == onlineStatus {
-					updateLiveUserInfo(gLiveUsersInfo, onlineid, 0, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+				if LiveUserStatusOnline == onlineStatus {
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 0, LiveUserStatusOnline, LiveUserTickOnline)
 				} else {
-					updateLiveUserInfo(gLiveUsersInfo, onlineid, 0, LIVEUSER_STATUS_BACKGROUND, LIVEUSER_TICK_BACKGROUND)
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 0, LiveUserStatusBackGround, LiveUserTickBackGround)
 				}
 			}
 		}
@@ -1464,16 +1321,16 @@ func liveUserGoRoute() {
 		rows.Close()
 	}
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_OnlineIds, 1)
+	sentence = lib.SQLSentence(lib.SQLMapSelectOnlineIDs, 1)
 	rows, err = lib.SQLQuery(sentence)
 	if nil == err {
 		for rows.Next() {
 			err = rows.Scan(&onlineid, &onlineStatus)
 			if nil == err {
-				if LIVEUSER_STATUS_ONLINE == onlineStatus {
-					updateLiveUserInfo(gLiveUsersInfo, onlineid, 1, LIVEUSER_STATUS_ONLINE, LIVEUSER_TICK_ONLINE)
+				if LiveUserStatusOnline == onlineStatus {
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 1, LiveUserStatusOnline, LiveUserTickOnline)
 				} else {
-					updateLiveUserInfo(gLiveUsersInfo, onlineid, 1, LIVEUSER_STATUS_BACKGROUND, LIVEUSER_TICK_BACKGROUND)
+					updateLiveUserInfo(gLiveUsersInfo, onlineid, 1, LiveUserStatusBackGround, LiveUserTickBackGround)
 				}
 			}
 		}
@@ -1482,32 +1339,32 @@ func liveUserGoRoute() {
 	}
 
 	for {
-		time.Sleep(lib.SLEEP_DURATION_LIVESTATUS)
+		time.Sleep(lib.SleepDurationLiveStatus)
 
 		gLiveUsersInfo.lock.Lock()
 		for id, user := range gLiveUsersInfo.users {
 			user.livetick = user.livetick - 1
 			if 0 == user.livetick {
-				if LIVEUSER_STATUS_BACKGROUND == user.status {
+				if LiveUserStatusBackGround == user.status {
 					delete(gLiveUsersInfo.users, id)
 					OfflineProc(id, user.gender)
 					lib.DelRedisDistrict(id)
 				} else {
-					user.status = LIVEUSER_STATUS_BACKGROUND
-					user.livetick = LIVEUSER_TICK_BACKGROUND
+					user.status = LiveUserStatusBackGround
+					user.livetick = LiveUserTickBackGround
 
 					backgroundProc(id, user.gender)
 				}
 			}
 
 			user.livetime = user.livetime + 1
-			if 5 == user.livetime && LIVEUSER_STATUS_ONLINE == user.status {
+			if 5 == user.livetime && LiveUserStatusOnline == user.status {
 				if true != checkIfUserHavePicture(id, user.gender) {
 					//管理员发送第二封信
 					msg := "您还没有更新照片哦,上传照片获得更高的推荐机会!"
 					timevalue := lib.CurrentTimeUTCInt64()
-					RecommendInsertMessageToDB(1, id, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-					RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+					RecommendInsertMessageToDB(1, id, CommentMsgTypeTalk, msg, timevalue)
+					RecommendPushMessage(1, id, 1, 1, push.PushMsgComment, msg, timevalue)
 					push.DoPush()
 				}
 			}
@@ -1533,7 +1390,7 @@ func vipUserGoRoute() {
 
 	curtime := lib.CurrentTimeUTCInt64()
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_VIPRows, 0)
+	sentence := lib.SQLSentence(lib.SQLMapSelectVIPRows, 0)
 	rows, err := lib.SQLQuery(sentence)
 	if nil == err {
 		for rows.Next() {
@@ -1550,7 +1407,7 @@ func vipUserGoRoute() {
 		rows.Close()
 	}
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_VIPRows, 1)
+	sentence = lib.SQLSentence(lib.SQLMapSelectVIPRows, 1)
 	rows, err = lib.SQLQuery(sentence)
 	if nil == err {
 		for rows.Next() {
@@ -1569,7 +1426,7 @@ func vipUserGoRoute() {
 
 	needpush := false
 	for {
-		time.Sleep(lib.SLEEP_DURATION_VIPSTATUS)
+		time.Sleep(lib.SleepDurationVIPStatus)
 		needpush = false
 
 		gVipUsersInfo.lock.Lock()
@@ -1583,8 +1440,8 @@ func vipUserGoRoute() {
 				if 24 == difhours || 120 == difhours || 240 == difhours {
 					//发送信息, 提醒到期
 					msg := "您的 " + [...]string{"1级会员", "2级会员", "3级会员"}[user.level] + " 将在 " + strconv.Itoa(difhours/24) + " 天后到期."
-					RecommendInsertMessageToDB(1, id, RECOMMEND_MSGTYPE_TALK, msg, curtime)
-					RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, curtime)
+					RecommendInsertMessageToDB(1, id, CommentMsgTypeTalk, msg, curtime)
+					RecommendPushMessage(1, id, 1, 1, push.PushMsgComment, msg, curtime)
 					needpush = true
 				}
 			}
@@ -1600,29 +1457,22 @@ func vipUserGoRoute() {
 func detachVipFromUser(id, gender, level int) {
 	delete(gVipUsersInfo.users, id)
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
+	sentence := lib.SQLSentence(lib.SQLMapUpdateVIPByID, gender)
 	_, err := lib.SQLExec(sentence, 0, 0, 0, id)
 	if nil == err {
 		//发送信息, VIP权限已经取消
 		msg := "非常抱歉通知您, 您的 " + []string{"初始会员", "1级会员", "2级会员", "3级会员"}[level] + " 已经到期!"
 		timevalue := lib.CurrentTimeUTCInt64()
-		RecommendInsertMessageToDB(1, id, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-		RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+		RecommendInsertMessageToDB(1, id, CommentMsgTypeTalk, msg, timevalue)
+		RecommendPushMessage(1, id, 1, 1, push.PushMsgComment, msg, timevalue)
 
 		lib.DelRedisUserInfo(id)
 	}
 }
 
-/*
- *
- *    Function: BuyVip
- *      Author: sunchao
- *        Date: 15/11/8
- * Description: 购买服务后更新后台数据
- *
- */
+// BuyVip 购买服务后更新后台数据
 func BuyVip(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -1643,7 +1493,7 @@ func BuyVip(c *gin.Context) {
 	var olddays int
 	var expiretime int64
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_VipLevelByID, gender)
+	sentence := lib.SQLSentence(lib.SQLMapSelectVipLevelByID, gender)
 	lib.SQLQueryRow(sentence, id).Scan(&oldlevel, &olddays, &expiretime)
 	if 0 != oldlevel {
 		if oldlevel > level {
@@ -1659,7 +1509,7 @@ func BuyVip(c *gin.Context) {
 	}
 
 	expiretime += int64(days) * int64(time.Hour/time.Second) * 24
-	sentence = lib.SQLSentence(lib.SQLMAP_Update_VIPById, gender)
+	sentence = lib.SQLSentence(lib.SQLMapUpdateVIPByID, gender)
 	_, err := lib.SQLExec(sentence, level, days, expiretime, id)
 	if nil != err {
 		c.String(http.StatusNotFound, err.Error())
@@ -1672,12 +1522,12 @@ func BuyVip(c *gin.Context) {
 	go UpdateVipUserInfo(id, gender, level, days, expiretime)
 
 	//发送信息, VIP已经开通
-	expireUTC := lib.Int64_To_UTCTime(expiretime)
+	expireUTC := lib.Int64ToUTCTime(expiretime)
 	msg := "您的 " + []string{"初始会员", "写信会员", "钻石会员", "至尊会员"}[level] + " 已经开通啦! 会员到期时间：" +
 		fmt.Sprintf("%d年%d月%d日", expireUTC.Year(), expireUTC.Month(), expireUTC.Day())
 	timevalue := lib.CurrentTimeUTCInt64()
-	RecommendInsertMessageToDB(1, id, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-	RecommendPushMessage(1, id, 1, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+	RecommendInsertMessageToDB(1, id, CommentMsgTypeTalk, msg, timevalue)
+	RecommendPushMessage(1, id, 1, 1, push.PushMsgComment, msg, timevalue)
 	push.DoPush()
 
 	lib.DelRedisUserInfo(id)
@@ -1685,22 +1535,17 @@ func BuyVip(c *gin.Context) {
 	c.JSON(code, info)
 }
 
-/*
- *
- *    Function: VipPrice
- *      Author: sunchao
- *        Date: 15/7/11
- * Description: get the vip price information
- *
- */
+// VipPrice get the vip price information
 func VipPrice(c *gin.Context) {
 	c.JSON(http.StatusOK, gVipLevels)
 }
 
+// GetBuyVIPCount .
 func GetBuyVIPCount() int {
 	return gCountBuyVIP
 }
 
+// SubUserCount .
 func SubUserCount(gender int) {
 	if 0 == gender {
 		if gCountGirls > 0 {
@@ -1713,16 +1558,9 @@ func SubUserCount(gender int) {
 	}
 }
 
-/*
- |    Function: GetAppConfig
- |      Author: Mr.Sancho
- |        Date: 2016-07-17
- | Description:
- |      Return:
- |
-*/
+// GetAppConfig .
 func GetAppConfig(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -1732,7 +1570,7 @@ func GetAppConfig(c *gin.Context) {
 	var code int
 	code, appconfig.Person = GetUserInfo(id, gender)
 	appconfig.Person.SendGiftList = GetUserSendGiftList(id)
-	appconfig.StartupView.ImageUrl = "http://7xjwto.com1.z0.glb.clouddn.com/images/startup/c44eb332f28cfe1b8d067d7da68ffc1e.png"
+	appconfig.StartupView.ImageURL = "http://7xjwto.com1.z0.glb.clouddn.com/images/startup/c44eb332f28cfe1b8d067d7da68ffc1e.png"
 	appconfig.StartupView.Duration = 4
 	appconfig.StartupView.LinkEnable = false
 	appconfig.VersionInfo.VersionStr = ""

@@ -5,23 +5,23 @@ import (
 	"time"
 )
 
-/*
- * APIs about convert between time and int64
- *
- */
+// CurrentTimeUTCInt64 .
 func CurrentTimeUTCInt64() int64 {
 	return time.Now().UTC().Unix()
 }
 
-func Int64_To_UTCTime(value int64) time.Time {
+// Int64ToUTCTime .
+func Int64ToUTCTime(value int64) time.Time {
 	return time.Unix(value, 0).UTC()
 }
 
-func Time_To_UTCInt64(timeUTC time.Time) int64 {
+// TimeToUTCInt64 .
+func TimeToUTCInt64(timeUTC time.Time) int64 {
 	return timeUTC.UTC().Unix()
 }
 
-func TimeStr_To_UTCInt64(timestr string) int64 {
+// TimeStrToUTCInt64 .
+func TimeStrToUTCInt64(timestr string) int64 {
 	var utcvalue int64
 
 	loc, _ := time.LoadLocation("UTC")
@@ -33,23 +33,28 @@ func TimeStr_To_UTCInt64(timestr string) int64 {
 	return utcvalue
 }
 
-/*
- * Get random sleep duration with particular type
- *
- */
 const (
-	SLEEP_DURATION_VIPSTATUS      = time.Hour
-	SLEEP_DURATION_LIVESTATUS     = time.Minute
-	SLEEP_DURATION_NOTIFYMSG      = time.Second * 15
-	SLEEP_DURATION_PUSH_QUEUEMSG  = time.Second
-	SLEEP_BASELINE_ROBOTRECOMMEND = int64(time.Minute * 30)
-	SLEEP_BASELINE_ROBOTVISIT     = int64(time.Minute * 90)
+	// SleepDurationVIPStatus  .
+	SleepDurationVIPStatus = time.Hour
+	// SleepDurationLiveStatus .
+	SleepDurationLiveStatus = time.Minute
+	// SleepDurationNotifyMsg .
+	SleepDurationNotifyMsg = time.Second * 15
+	// SleepDurationPushQueuMsg .
+	SleepDurationPushQueuMsg = time.Second
+	// SleepBaseLineRobotComment .
+	SleepBaseLineRobotComment = int64(time.Minute * 30)
+	// SleepBaseLineRobotVisit .
+	SleepBaseLineRobotVisit = int64(time.Minute * 90)
 )
 
 const (
-	SLEEP_TYPE_ROBOTREPLY     = 0
-	SLEEP_TYPE_ROBOTRECOMMEND = 1
-	SLEEP_TYPE_ROBOTVISIT     = 2
+	// SleepTypeRobotReply .
+	SleepTypeRobotReply = 0
+	// SleepTypeRobotComment .
+	SleepTypeRobotComment = 1
+	// SleepTypeRobotVisit .
+	SleepTypeRobotVisit = 2
 )
 
 var gHourDuration = [24]time.Duration{
@@ -79,15 +84,7 @@ var gHourDuration = [24]time.Duration{
 	time.Minute * 2,  //23
 }
 
-/*
- |    Function: SleepTimeDuration
- |      Author: Mr.Sancho
- |        Date: 2016-01-13
- |   Arguments:
- |      Return:
- | Description: get the sleep time duration by the current time
- |
-*/
+// SleepTimeDuration get the sleep time duration by the current time
 func SleepTimeDuration(sleeptype int) time.Duration {
 	base := int64(gHourDuration[time.Now().Hour()%24])
 
@@ -95,17 +92,17 @@ func SleepTimeDuration(sleeptype int) time.Duration {
 	r := rand.New(src)
 
 	switch sleeptype {
-	case SLEEP_TYPE_ROBOTRECOMMEND:
-		if base < SLEEP_BASELINE_ROBOTRECOMMEND {
-			base = SLEEP_BASELINE_ROBOTRECOMMEND
+	case SleepTypeRobotComment:
+		if base < SleepBaseLineRobotComment {
+			base = SleepBaseLineRobotComment
 		}
 		return time.Duration(r.Int63n(base) + r.Int63n(base))
-	case SLEEP_TYPE_ROBOTVISIT:
-		if base < SLEEP_BASELINE_ROBOTVISIT {
-			base = SLEEP_BASELINE_ROBOTVISIT
+	case SleepTypeRobotVisit:
+		if base < SleepBaseLineRobotVisit {
+			base = SleepBaseLineRobotVisit
 		}
 		return time.Duration(r.Int63n(base) + r.Int63n(base))
-	case SLEEP_TYPE_ROBOTREPLY:
+	case SleepTypeRobotReply:
 		return time.Duration(r.Int63n(base) + r.Int63n(base))
 	default:
 		return time.Second

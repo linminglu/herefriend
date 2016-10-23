@@ -79,7 +79,7 @@ func WaitStop() {
 */
 func checkUserIdExist(id int) bool {
 	var tmpid int
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckZQUserId)
+	sentence := lib.SQLSentence(lib.SQLMapSelectCheckZQUserID)
 	err := lib.SQLQueryRow(sentence, id).Scan(&tmpid)
 	if nil != err || 0 == tmpid {
 		return false
@@ -114,13 +114,13 @@ func crawlUserInfo(idstr string) {
 	pageuser.SetPersonInfo(pinfo.Info)
 	pageuser.Save()
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_ZQId)
+	sentence := lib.SQLSentence(lib.SQLMapInsertZQID)
 	id, _ := strconv.Atoi(idstr)
 	_, err := lib.SQLExec(sentence, id)
 	if nil != err {
 		fmt.Println(err)
 	}
-	sentence = lib.SQLSentence(lib.SQLMAP_Insert_Heartbeat)
+	sentence = lib.SQLSentence(lib.SQLMapInsertHeartbeat)
 	_, err = lib.SQLExec(sentence, pageuser.GetUsrId(), pageuser.GetGender(), pageuser.GetProvince())
 	if nil != err {
 		fmt.Println(err)
@@ -147,7 +147,7 @@ func DoCrawl() {
 	var url string
 	var sentence string
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_ZQProcess)
+	sentence = lib.SQLSentence(lib.SQLMapSelectZQProcess)
 	err := lib.SQLQueryRow(sentence, gCurrentGender).Scan(&areaindex, &areapage)
 	if nil != err {
 		panic(err)
@@ -157,7 +157,7 @@ func DoCrawl() {
 		for {
 			fmt.Printf("[area] area:%s page:%d\r\n", gProvinceList[areaindex].Desc, areapage)
 
-			sentence = lib.SQLSentence(lib.SQLMAP_Update_ZQProcess)
+			sentence = lib.SQLSentence(lib.SQLMapUpdateZQProcess)
 			_, err := lib.SQLExec(sentence, areaindex, areapage, gCurrentGender)
 			if nil != err {
 				panic(err.Error())

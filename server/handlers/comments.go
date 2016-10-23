@@ -26,14 +26,16 @@ import (
  * 聊天消息类型,存放到数据库中
  */
 const (
-	RECOMMEND_MSGTYPE_GREET  = 1 //打招呼
-	RECOMMEND_MSGTYPE_TALK   = 2 //普通聊天信息
-	RECOMMEND_MSGTYPE_HEART  = 3 //心动消息
-	RECOMMEND_MSGTYPE_ASKMSG = 4 //请求上传图片...
-)
-
-const (
-	RECOMMEND_MAX_UNREADNUMBER = 20
+	// CommentMsgTypeGreet 打招呼
+	CommentMsgTypeGreet = 1
+	// CommentMsgTypeTalk 普通聊天信息
+	CommentMsgTypeTalk = 2
+	// CommentMsgTypeHeart 心动消息
+	CommentMsgTypeHeart = 3
+	// CommentMsgTypeAskMsg 请求上传图片...
+	CommentMsgTypeAskMsg = 4
+	// CommentMaxUnreadNum .
+	CommentMaxUnreadNum = 20
 )
 
 var gRecommendReg *regexp.Regexp
@@ -42,21 +44,21 @@ var gRecommendQueue *list.List
 var gRecommendQueueLock sync.RWMutex
 var gRecommendInUnreadCount string
 var gRecommendNumber int
-var gCountApiRecommend int
+var gCountAPIRecommend int
 var gMsgTemplates []string
-var gRobotUrl string
+var gRobotURL string
 
 func init() {
 	gRecommendReg, _ = regexp.Compile("(?:#)([^#]+)(?:#)")
 	gRecommendRegUser, _ = regexp.Compile("(?:#USER_)([^#]+)(?:#)")
-	gRecommendInUnreadCount = lib.SQLSentence(lib.SQLMAP_Select_UnreadMessageCount)
+	gRecommendInUnreadCount = lib.SQLSentence(lib.SQLMapSelectUnreadMessageCount)
 	gRecommendQueue = list.New()
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_AllRecommendCount)
+	sentence := lib.SQLSentence(lib.SQLMapSelectAllRecommendCount)
 	lib.SQLQueryRow(sentence).Scan(&gRecommendNumber)
 
 	ReloadRecommendTemplates()
-	InitRobotUrl()
+	InitRobotURL()
 
 	// start push workroutine here
 	push.InitPush()
@@ -64,16 +66,19 @@ func init() {
 	go recommendRobotRoutine()
 }
 
+// GetRecommendNumber .
 func GetRecommendNumber() int {
 	return gRecommendNumber
 }
 
-func InitRobotUrl() {
-	lib.SQLQueryRow("select url from robotURL where id=1").Scan(&gRobotUrl)
+// InitRobotURL .
+func InitRobotURL() {
+	lib.SQLQueryRow("select url from robotURL where id=1").Scan(&gRobotURL)
 }
 
+// ReloadRecommendTemplates .
 func ReloadRecommendTemplates() {
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_AllMsgTemplate)
+	sentence := lib.SQLSentence(lib.SQLMapSelectAllMsgTemplate)
 	rows, err := lib.SQLQuery(sentence, 0, -1)
 	if nil != err {
 		return
@@ -92,17 +97,9 @@ func ReloadRecommendTemplates() {
 	}
 }
 
-/*
- |    Function: RecommendInsertMessageToDB
- |      Author: Mr.Sancho
- |        Date: 2016-04-13
- |   Arguments:
- |      Return:
- | Description: insert new comment to database
- |
-*/
+// RecommendInsertMessageToDB insert new comment to database
 func RecommendInsertMessageToDB(fromid, toid int, msgtype int, msg string, timevalue int64) (int, error) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Insert_Recomment)
+	sentence := lib.SQLSentence(lib.SQLMapInsertRecomment)
 	result, err := lib.SQLExec(sentence, fromid, toid, timevalue, msgtype, msg)
 	if nil != err {
 		return -1, err
@@ -118,42 +115,35 @@ func RecommendInsertMessageToDB(fromid, toid int, msgtype int, msg string, timev
 	return int(lastid), nil
 }
 
-/*
- *
- *    Function: RecommendPushMessage
- *      Author: sunchao
- *        Date: 15/11/2
- * Description: 添加一条消息
- *
- */
+// RecommendPushMessage 添加一条消息
 func RecommendPushMessage(fromid, toid int, fromusertyp, tousertyp int, pushtype int, msg string, timevalue int64) {
 	if 1 == tousertyp {
-		clientid := GetClientIdByUserId(toid)
+		clientid := GetClientIDByUserID(toid)
 
 		var title string
 
 		if 1 == fromid {
 			title = "来自管理员的消息"
 		} else {
-			_, gender := getGenderById(fromid)
+			_, gender := getGenderByID(fromid)
 			_, userinfo := GetUserInfo(fromid, gender)
 
 			switch pushtype {
-			case push.PUSHMSG_TYPE_VISIT:
+			case push.PushMsgVisit:
 				title = "有新的来访者"
 				msg = "[" + userinfo.Name + "] 查看了你的资料"
-			case push.PUSHMSG_TYPE_RECOMMEND:
+			case push.PushMsgComment:
 				title = "收到 [" + userinfo.Name + "] 的消息"
 			}
 		}
 
-		recommendCount := recommend_GetUnreadNum(toid, 0)
-		visitCount := visit_GetUnreadNum(toid, 0)
+		recommendCount := recommendGetUnreadNum(toid, 0)
+		visitCount := visitGetUnreadNum(toid, 0)
 		push.Add(recommendCount+visitCount, clientid, pushtype, 0, title, msg)
 	}
 
 	//虚拟用户给该用户发普通信(打招呼、回招呼、回消息)后,25%概率出现在此,访问时间为发信时间±1分钟随机
-	if push.PUSHMSG_TYPE_VISIT != pushtype && common.USERTYPE_RB == fromusertyp && 1 != fromid && true == lib.RandomHitPercent(25) {
+	if push.PushMsgVisit != pushtype && common.UserTypeRobot == fromusertyp && 1 != fromid && true == lib.RandomHitPercent(25) {
 		visitAddVisitor(toid, fromid, timevalue-60, timevalue+60)
 	}
 }
@@ -163,9 +153,9 @@ type reobotResponse struct {
 	Result   int    `json:"result"`
 }
 
-func getPostMessageBySessionId(sessionid string, msg string) (int, string) {
+func getPostMessageBySessionID(sessionid string, msg string) (int, string) {
 	msg = url.QueryEscape(msg)
-	buffer, err := lib.GetResultByMethod("GET", gRobotUrl+msg, nil)
+	buffer, err := lib.GetResultByMethod("GET", gRobotURL+msg, nil)
 	if nil != err {
 		return 404, ""
 	}
@@ -197,7 +187,7 @@ func getFormatMsg(id int) (bool, string) {
 		_, info := GetUserInfo(id, 0)
 		table := reflect.ValueOf(info)
 
-		for word, _ := range keywords {
+		for word := range keywords {
 			el := table.FieldByName(word)
 
 			switch el.Kind() {
@@ -238,7 +228,7 @@ func tulingResponseCheck(str string, id int) bool {
 
 	//如果回复过相同的话，不再回复
 	var count int
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_HaveSameReply)
+	sentence := lib.SQLSentence(lib.SQLMapSelectHaveSameReply)
 	lib.SQLQueryRow(sentence, id, str).Scan(&count)
 	if 0 != count {
 		return false
@@ -270,7 +260,7 @@ func tulingResponseChange(id int) string {
  */
 func getResponseMsg(node *recommendQueueNode) string {
 	sessionid := strconv.Itoa(node.fromid) + strconv.Itoa(node.toid)
-	code, message := getPostMessageBySessionId(sessionid, node.message)
+	code, message := getPostMessageBySessionID(sessionid, node.message)
 
 	if 200 == code {
 		if true != tulingResponseCheck(message, node.fromid) {
@@ -283,15 +273,7 @@ func getResponseMsg(node *recommendQueueNode) string {
 	return message
 }
 
-/*
- |    Function: RemoveCommentToPush
- |      Author: Mr.Sancho
- |        Date: 2016-04-15
- |   Arguments:
- |      Return:
- | Description: 删除要推送的消息
- |
-*/
+// RemoveCommentToPush 删除要推送的消息
 func RemoveCommentToPush(fromid, toid int) {
 	gRecommendQueueLock.Lock()
 	for e := gRecommendQueue.Front(); e != nil; {
@@ -318,7 +300,7 @@ func RemoveCommentToPush(fromid, toid int) {
 func recommendPushRoutine() {
 	needpush := false
 	for {
-		time.Sleep(lib.SLEEP_DURATION_PUSH_QUEUEMSG)
+		time.Sleep(lib.SleepDurationPushQueuMsg)
 		needpush = false
 
 		gRecommendQueueLock.Lock()
@@ -333,7 +315,7 @@ func recommendPushRoutine() {
 				// 通过几率过滤
 				if 1 == n.msgtype {
 					count := 0
-					sentence := lib.SQLSentence(lib.SQLMAP_Select_RecommendCount)
+					sentence := lib.SQLSentence(lib.SQLMapSelectRecommendCount)
 					lib.SQLQueryRow(sentence, 1, n.fromid, n.toid).Scan(&count)
 					if 0 < count && true == lib.RandomHitPercent(25) {
 						needreplay = false
@@ -345,22 +327,21 @@ func recommendPushRoutine() {
 					msg := getResponseMsg(n)
 					if "" != msg {
 						// 多次发送消息，则自动设置为VIP
-						if true == checkAlreadySendSameCommentToday(n.toid, n.fromid, RECOMMEND_MSGTYPE_TALK) {
-							_, gender := getGenderById(n.toid)
+						if true == checkAlreadySendSameCommentToday(n.toid, n.fromid, CommentMsgTypeTalk) {
+							_, gender := getGenderByID(n.toid)
 							if true != checkIfUserHaveViplevel(n.toid, gender) {
 								changevipsentence := func() string {
 									if 0 == gender {
 										return "update girls set viplevel=1 where id=?"
-									} else {
-										return "update guys set viplevel=1 where id=?"
 									}
+									return "update guys set viplevel=1 where id=?"
 								}()
 								lib.SQLExec(changevipsentence, n.toid)
 							}
 						}
 
 						RecommendInsertMessageToDB(n.toid, n.fromid, n.msgtype, msg, timevalue)
-						RecommendPushMessage(n.toid, n.fromid, n.tousertype, n.fromusertype, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+						RecommendPushMessage(n.toid, n.fromid, n.tousertype, n.fromusertype, push.PushMsgComment, msg, timevalue)
 						needpush = true
 					}
 				}
@@ -393,14 +374,14 @@ func recommendRobotRoutine() {
 
 	needpush := false
 	for {
-		time.Sleep(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTRECOMMEND))
+		time.Sleep(lib.SleepTimeDuration(lib.SleepTypeRobotComment))
 		needpush = false
 
 		gLiveUsersInfo.lock.RLock()
 		for id, user := range gLiveUsersInfo.users {
 			count = 0
 			err := lib.SQLQueryRow(gRecommendInUnreadCount, id, 0).Scan(&count)
-			if nil != err || RECOMMEND_MAX_UNREADNUMBER <= count {
+			if nil != err || CommentMaxUnreadNum <= count {
 				if nil != err {
 					lib.SQLError(gRecommendInUnreadCount, err, id, 0)
 				}
@@ -421,12 +402,12 @@ func recommendRobotRoutine() {
 			}
 
 			/* get the random id */
-			fromid := getRandomHeartbeatId(id, 1-user.gender)
+			fromid := getRandomHeartbeatID(id, 1-user.gender)
 			if 0 == fromid {
 				continue
 			} else {
-				_, usertype := GetUsertypeByIdGender(id, 1-user.gender)
-				if common.USERTYPE_USER == usertype {
+				_, usertype := GetUsertypeByIDGender(id, 1-user.gender)
+				if common.UserTypeUser == usertype {
 					continue
 				}
 			}
@@ -437,14 +418,13 @@ func recommendRobotRoutine() {
 			}
 
 			// 多次发送消息，则自动设置为VIP
-			if true == checkAlreadySendSameCommentToday(fromid, id, RECOMMEND_MSGTYPE_TALK) {
+			if true == checkAlreadySendSameCommentToday(fromid, id, CommentMsgTypeTalk) {
 				if true != checkIfUserHaveViplevel(fromid, 1-user.gender) {
 					changevipsentence := func() string {
 						if 0 == 1-user.gender {
 							return "update girls set viplevel=1 where id=?"
-						} else {
-							return "update guys set viplevel=1 where id=?"
 						}
+						return "update guys set viplevel=1 where id=?"
 					}()
 
 					lib.SQLExec(changevipsentence, fromid)
@@ -452,8 +432,8 @@ func recommendRobotRoutine() {
 			}
 
 			timevalue := lib.CurrentTimeUTCInt64()
-			RecommendInsertMessageToDB(fromid, id, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
-			RecommendPushMessage(fromid, id, 0, 1, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+			RecommendInsertMessageToDB(fromid, id, CommentMsgTypeTalk, msg, timevalue)
+			RecommendPushMessage(fromid, id, 0, 1, push.PushMsgComment, msg, timevalue)
 			needpush = true
 		}
 		gLiveUsersInfo.lock.RUnlock()
@@ -474,13 +454,13 @@ func recommendRobotRoutine() {
  */
 func checkAlreadySendSameCommentToday(fromid, toid, msgtype int) bool {
 	var timevalue int64
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckCommentDailyLock)
+	sentence := lib.SQLSentence(lib.SQLMapSelectCheckCommentDailyLock)
 	err := lib.SQLQueryRow(sentence, fromid, toid, msgtype).Scan(&timevalue)
 	if nil != err || 0 == timevalue {
 		return false
 	}
 
-	timeUTC := lib.Int64_To_UTCTime(timevalue)
+	timeUTC := lib.Int64ToUTCTime(timevalue)
 	todyUTC := time.Now().UTC()
 	if timeUTC.Year() == todyUTC.Year() && timeUTC.Month() == todyUTC.Month() && timeUTC.Day() == todyUTC.Day() {
 		return true
@@ -502,17 +482,17 @@ func incomeGreetCommentProc(id, gender, toid, togender int, msg string, timevalu
 		return 403, -1, "抱歉,同性之间不能打招呼.", false
 	}
 
-	if true == checkAlreadySendSameCommentToday(id, toid, RECOMMEND_MSGTYPE_GREET) {
+	if true == checkAlreadySendSameCommentToday(id, toid, CommentMsgTypeGreet) {
 		return 403, -1, "抱歉,一天只能向同一个人打招呼一次.", false
 	}
 
-	RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_GREET, "", timevalue)
+	RecommendInsertMessageToDB(id, toid, CommentMsgTypeGreet, "", timevalue)
 	ok, replymsg := getFormatMsg(id)
 	if !ok {
 		replymsg = gHelloArray[lib.Intn(len(gHelloArray))]
 	}
 
-	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_TALK, replymsg, timevalue)
+	lastid, err := RecommendInsertMessageToDB(id, toid, CommentMsgTypeTalk, replymsg, timevalue)
 	if nil != err {
 		return 404, -1, err.Error(), false
 	}
@@ -534,11 +514,11 @@ func incomeHeartCommentProc(id, gender, toid, togender int, msg string, timevalu
 		return 403, -1, "抱歉,同性之间不能发心动消息.", false
 	}
 
-	if true == checkAlreadySendSameCommentToday(id, toid, RECOMMEND_MSGTYPE_HEART) {
+	if true == checkAlreadySendSameCommentToday(id, toid, CommentMsgTypeHeart) {
 		return 403, -1, "抱歉,一天只能向同一个人发送一次心动消息.", false
 	}
 
-	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_HEART, "", timevalue)
+	lastid, err := RecommendInsertMessageToDB(id, toid, CommentMsgTypeHeart, "", timevalue)
 	if nil != err {
 		return 404, -1, err.Error(), false
 	}
@@ -559,12 +539,12 @@ func incomeAskCommentProc(id, gender, toid, togender int, msg string, timevalue 
 		return 403, -1, "抱歉,同性之间不能发消息.", false
 	}
 
-	if true == checkAlreadySendSameCommentToday(id, toid, RECOMMEND_MSGTYPE_ASKMSG) {
+	if true == checkAlreadySendSameCommentToday(id, toid, CommentMsgTypeAskMsg) {
 		return 403, -1, "抱歉,一天只能向同一个人邀请一次.", false
 	}
 
-	RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_ASKMSG, "", timevalue)
-	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
+	RecommendInsertMessageToDB(id, toid, CommentMsgTypeAskMsg, "", timevalue)
+	lastid, err := RecommendInsertMessageToDB(id, toid, CommentMsgTypeTalk, msg, timevalue)
 	if nil != err {
 		return 404, -1, err.Error(), false
 	}
@@ -586,16 +566,15 @@ func incomeTalkCommentProc(id, gender, toid, togender int, msg string, timevalue
 		return 403, -1, "抱歉,同性之间不能发消息.", false
 	}
 
-	lastid, err := RecommendInsertMessageToDB(id, toid, RECOMMEND_MSGTYPE_TALK, msg, timevalue)
+	lastid, err := RecommendInsertMessageToDB(id, toid, CommentMsgTypeTalk, msg, timevalue)
 	if nil != err {
 		return 404, -1, err.Error(), false
 	}
 
 	if 1 == toid {
 		return 200, lastid, msg, false
-	} else {
-		return 200, lastid, msg, true
 	}
+	return 200, lastid, msg, true
 }
 
 /*
@@ -611,13 +590,13 @@ func incomeCommentPushMsgProc(id, gender, toid, msgtype int, msg string, timeval
 		return
 	}
 
-	_, _, tousertype := GetGenderUsertypeById(toid)
-	if common.USERTYPE_USER == tousertype {
+	_, _, tousertype := GetGenderUsertypeByID(toid)
+	if common.UserTypeUser == tousertype {
 		/*
 		 * 注册用户直接发送
 		 * 这里发送者一定是注册用户
 		 */
-		RecommendPushMessage(id, toid, common.USERTYPE_USER, common.USERTYPE_USER, push.PUSHMSG_TYPE_RECOMMEND, msg, timevalue)
+		RecommendPushMessage(id, toid, common.UserTypeUser, common.UserTypeUser, push.PushMsgComment, msg, timevalue)
 		push.DoPush()
 	} else {
 		/*
@@ -625,7 +604,7 @@ func incomeCommentPushMsgProc(id, gender, toid, msgtype int, msg string, timeval
 		 * 1.索要照片等信息除外
 		 * 2.如果发消息用户为VIP用户,也不会缓存
 		 */
-		if RECOMMEND_MSGTYPE_ASKMSG == msgtype {
+		if CommentMsgTypeAskMsg == msgtype {
 			return
 		}
 
@@ -635,28 +614,21 @@ func incomeCommentPushMsgProc(id, gender, toid, msgtype int, msg string, timeval
 
 		gRecommendQueueLock.Lock()
 		gRecommendQueue.PushBack(&recommendQueueNode{
-			timewait:     int64(lib.SleepTimeDuration(lib.SLEEP_TYPE_ROBOTREPLY) / time.Second),
+			timewait:     int64(lib.SleepTimeDuration(lib.SleepTypeRobotReply) / time.Second),
 			fromid:       id,
 			toid:         toid,
-			fromusertype: common.USERTYPE_USER,
-			tousertype:   common.USERTYPE_RB,
-			msgtype:      RECOMMEND_MSGTYPE_TALK,
+			fromusertype: common.UserTypeUser,
+			tousertype:   common.UserTypeRobot,
+			msgtype:      CommentMsgTypeTalk,
 			message:      msg,
 			timevalue:    timevalue})
 		gRecommendQueueLock.Unlock()
 	}
 }
 
-/*
- *
- *    Function: ActionRecommend
- *      Author: sunchao
- *        Date: 15/8/16
- * Description: 打招呼
- *
- */
+// ActionRecommend 打招呼
 func ActionRecommend(c *gin.Context) {
-	exist, id, gender := getIdGenderByRequest(c)
+	exist, id, gender := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusForbidden)
 		return
@@ -673,7 +645,7 @@ func ActionRecommend(c *gin.Context) {
 	toid, _ := strconv.Atoi(toidStr)
 
 	/* the dest id not exist */
-	exist, togender := getGenderById(toid)
+	exist, togender := getGenderByID(toid)
 	if true != exist {
 		c.Status(http.StatusForbidden)
 		return
@@ -681,20 +653,20 @@ func ActionRecommend(c *gin.Context) {
 
 	msg := c.Query("msg")
 	t := time.Now()
-	timevalue := lib.Time_To_UTCInt64(t)
+	timevalue := lib.TimeToUTCInt64(t)
 
 	var code, lastid int
 	var replymsg string
 	var bpush bool
 
 	switch msgtype {
-	case RECOMMEND_MSGTYPE_GREET:
+	case CommentMsgTypeGreet:
 		code, lastid, replymsg, bpush = incomeGreetCommentProc(id, gender, toid, togender, msg, timevalue)
-	case RECOMMEND_MSGTYPE_HEART:
+	case CommentMsgTypeHeart:
 		code, lastid, replymsg, bpush = incomeHeartCommentProc(id, gender, toid, togender, msg, timevalue)
-	case RECOMMEND_MSGTYPE_ASKMSG:
+	case CommentMsgTypeAskMsg:
 		code, lastid, replymsg, bpush = incomeAskCommentProc(id, gender, toid, togender, msg, timevalue)
-	case RECOMMEND_MSGTYPE_TALK:
+	case CommentMsgTypeTalk:
 		code, lastid, replymsg, bpush = incomeTalkCommentProc(id, gender, toid, togender, msg, timevalue)
 	default:
 		c.Status(http.StatusNotFound)
@@ -711,28 +683,21 @@ func ActionRecommend(c *gin.Context) {
 		go incomeCommentPushMsgProc(id, gender, toid, msgtype, replymsg, timevalue)
 	}
 
-	gCountApiRecommend = gCountApiRecommend + 1
+	gCountAPIRecommend = gCountAPIRecommend + 1
 
 	c.JSON(http.StatusOK, messageInfo{
-		MsgId:     lastid,
+		MsgID:     lastid,
 		MsgText:   replymsg,
-		UserId:    toid,
-		Direction: MESSAGE_DIRECTION_FROMME,
+		UserID:    toid,
+		Direction: MessageDirectionFromMe,
 		Readed:    false,
 		TimeUTC:   t,
 	})
 }
 
-/*
- *
- *    Function: DelRecommend
- *      Author: sunchao
- *        Date: 15/8/16
- * Description: delete the recommend
- *
- */
+// DelRecommend delete the recommend
 func DelRecommend(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusForbidden)
 		return
@@ -753,7 +718,7 @@ func DelRecommend(c *gin.Context) {
 	/* the dest id not exist */
 	msgid, _ := strconv.Atoi(msgidStr)
 	talkid, _ := strconv.Atoi(talkidStr)
-	sentence := lib.SQLSentence(lib.SQLMAP_Delete_Recommend)
+	sentence := lib.SQLSentence(lib.SQLMapDeleteRecommend)
 	lib.SQLExec(sentence, msgid, talkid, id, id, talkid)
 	gRecommendNumber = gRecommendNumber - 1
 
@@ -777,11 +742,11 @@ func getRecommendByRows(id int, rows *sql.Rows) []messageInfo {
 	var timetmp int64
 	var err error
 
-	infos := make([]messageInfo, 0)
+	var infos []messageInfo
 	for rows.Next() {
-		err = rows.Scan(&info.MsgId, &fromid, &toid, &readtmp, &timetmp, &info.MsgText)
+		err = rows.Scan(&info.MsgID, &fromid, &toid, &readtmp, &timetmp, &info.MsgText)
 		if nil == err {
-			info.TimeUTC = lib.Int64_To_UTCTime(timetmp)
+			info.TimeUTC = lib.Int64ToUTCTime(timetmp)
 
 			if fromid == id || 1 == readtmp {
 				info.Readed = true
@@ -790,11 +755,11 @@ func getRecommendByRows(id int, rows *sql.Rows) []messageInfo {
 			}
 
 			if fromid == id {
-				info.UserId = toid
-				info.Direction = MESSAGE_DIRECTION_FROMME
+				info.UserID = toid
+				info.Direction = MessageDirectionFromMe
 			} else {
-				info.UserId = fromid
-				info.Direction = MESSAGE_DIRECTION_TOME
+				info.UserID = fromid
+				info.Direction = MessageDirectionToMe
 			}
 
 			infos = append(infos, info)
@@ -806,14 +771,7 @@ func getRecommendByRows(id int, rows *sql.Rows) []messageInfo {
 	return infos
 }
 
-/*
- *
- *    Function: GetWaterFlow
- *      Author: sunchao
- *        Date: 15/8/16
- * Description: 获取聊天流水
- *
- */
+// GetWaterFlow 获取聊天流水
 func GetWaterFlow(c *gin.Context) {
 	talkidStr := c.Query("talkid")
 	if talkidStr == "" {
@@ -821,31 +779,31 @@ func GetWaterFlow(c *gin.Context) {
 		return
 	}
 
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	var lastMsgId int
-	lastMsgIdStr := c.Query("lastmsgid")
-	if "" != lastMsgIdStr {
-		lastMsgId, _ = strconv.Atoi(lastMsgIdStr)
-		if 0 > lastMsgId {
-			lastMsgId = 0
+	var lastMsgID int
+	lastMsgIDStr := c.Query("lastmsgid")
+	if "" != lastMsgIDStr {
+		lastMsgID, _ = strconv.Atoi(lastMsgIDStr)
+		if 0 > lastMsgID {
+			lastMsgID = 0
 		}
 	}
 
-	pageid, count := lib.Get_pageid_count_fromreq(c)
+	pageid, count := lib.GetPageidCount(c)
 	talkid, _ := strconv.Atoi(talkidStr)
-	exist, _ = getGenderById(talkid)
+	exist, _ = getGenderByID(talkid)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_MessageHistory)
-	rows, err := lib.SQLQuery(sentence, RECOMMEND_MSGTYPE_TALK, lastMsgId, id, talkid, talkid, id, (pageid-1)*count, count)
+	sentence := lib.SQLSentence(lib.SQLMapSelectMessageHistory)
+	rows, err := lib.SQLQuery(sentence, CommentMsgTypeTalk, lastMsgID, id, talkid, talkid, id, (pageid-1)*count, count)
 	if nil != err {
 		c.Status(http.StatusNotFound)
 		return
@@ -855,32 +813,25 @@ func GetWaterFlow(c *gin.Context) {
 
 	infos := getRecommendByRows(id, rows)
 	if len(infos) > 0 {
-		sentence := lib.SQLSentence(lib.SQLMAP_Update_RecommendRead)
-		lib.SQLExec(sentence, talkid, id, infos[0].MsgId)
+		sentence := lib.SQLSentence(lib.SQLMapUpdateRecommendRead)
+		lib.SQLExec(sentence, talkid, id, infos[0].MsgID)
 	}
 
 	c.JSON(http.StatusOK, infos)
 }
 
-/*
- *
- *    Function: GetRecommendAll
- *      Author: sunchao
- *        Date: 15/10/5
- * Description: 获取所有的聊天信息
- *
- */
+// GetRecommendAll 获取所有的聊天信息
 func GetRecommendAll(timeline int64, id, pageid, count int) ([]messageInfo, error) {
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_DistinctRecommend)
-	rows, err := lib.SQLQuery(sentence, id, RECOMMEND_MSGTYPE_TALK, timeline, id, RECOMMEND_MSGTYPE_TALK, timeline, (pageid-1)*count, count)
+	sentence := lib.SQLSentence(lib.SQLMapSelectDistinctRecommend)
+	rows, err := lib.SQLQuery(sentence, id, CommentMsgTypeTalk, timeline, id, CommentMsgTypeTalk, timeline, (pageid-1)*count, count)
 	if nil == err {
 		defer rows.Close()
 		var gender int
 
 		infos := getRecommendByRows(id, rows)
-		for i, _ := range infos {
-			_, gender = getGenderById(infos[i].UserId)
-			_, userinfo := GetUserInfo(infos[i].UserId, gender)
+		for i := range infos {
+			_, gender = getGenderByID(infos[i].UserID)
+			_, userinfo := GetUserInfo(infos[i].UserID, gender)
 			infos[i].UserInfo = &userinfo
 		}
 
@@ -890,16 +841,9 @@ func GetRecommendAll(timeline int64, id, pageid, count int) ([]messageInfo, erro
 	return nil, err
 }
 
-/*
- *
- *    Function: GetAllMessage
- *      Author: sunchao
- *        Date: 15/10/5
- * Description: 获取所有的聊天信息和谁看过我信息
- *
- */
+// GetAllMessage 获取所有的聊天信息和谁看过我信息
 func GetAllMessage(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -908,11 +852,11 @@ func GetAllMessage(c *gin.Context) {
 	var timeline int64
 	timelinestr := c.Query("lasttime")
 	if "" != timelinestr {
-		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+		timeline = lib.TimeStrToUTCInt64(timelinestr)
 	}
 
 	var allmessage allMessageInfo
-	pageid, count := lib.Get_pageid_count_fromreq(c)
+	pageid, count := lib.GetPageidCount(c)
 
 	recommendAlls, err := GetRecommendAll(timeline, id, pageid, count)
 	if nil == err {
@@ -927,16 +871,9 @@ func GetAllMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, allmessage)
 }
 
-/*
- |    Function: GetComments
- |      Author: Mr.Sancho
- |        Date: 2016-07-03
- | Description:
- |      Return:
- |
-*/
+// GetComments .
 func GetComments(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if !exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -945,10 +882,10 @@ func GetComments(c *gin.Context) {
 	var timeline int64
 	timelinestr := c.Query("lasttime")
 	if timelinestr != "" {
-		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+		timeline = lib.TimeStrToUTCInt64(timelinestr)
 	}
 
-	pageid, count := lib.Get_pageid_count_fromreq(c)
+	pageid, count := lib.GetPageidCount(c)
 	recommendAlls, err := GetRecommendAll(timeline, id, pageid, count)
 	if err != nil {
 		c.Status(http.StatusNotFound)
@@ -958,16 +895,9 @@ func GetComments(c *gin.Context) {
 	c.JSON(http.StatusOK, recommendAlls)
 }
 
-/*
- |    Function: GetVisits
- |      Author: Mr.Sancho
- |        Date: 2016-07-03
- | Description:
- |      Return:
- |
-*/
+// GetVisits .
 func GetVisits(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -976,10 +906,10 @@ func GetVisits(c *gin.Context) {
 	var timeline int64
 	timelinestr := c.Query("lasttime")
 	if "" != timelinestr {
-		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+		timeline = lib.TimeStrToUTCInt64(timelinestr)
 	}
 
-	pageid, count := lib.Get_pageid_count_fromreq(c)
+	pageid, count := lib.GetPageidCount(c)
 	visitAlls, err := getVisitAll(timeline, id, pageid, count)
 	if nil != err {
 		c.Status(http.StatusNotFound)
@@ -989,16 +919,9 @@ func GetVisits(c *gin.Context) {
 	c.JSON(http.StatusOK, visitAlls)
 }
 
-/*
- |    Function: GetUnreadMessage
- |      Author: Mr.Sancho
- |        Date: 2016-05-06
- | Description: get the unread message
- |      Return:
- |
-*/
+// GetUnreadMessage get the unread message
 func GetUnreadMessage(c *gin.Context) {
-	exist, id, _ := getIdGenderByRequest(c)
+	exist, id, _ := getIDGenderByRequest(c)
 	if true != exist {
 		c.Status(http.StatusNotFound)
 		return
@@ -1008,62 +931,49 @@ func GetUnreadMessage(c *gin.Context) {
 
 	timelinestr := c.Query("lasttime")
 	if "" != timelinestr {
-		timeline = lib.TimeStr_To_UTCInt64(timelinestr)
+		timeline = lib.TimeStrToUTCInt64(timelinestr)
 	}
 
-	recommendCount := recommend_GetUnreadNum(id, timeline)
-	visitCount := visit_GetUnreadNum(id, timeline)
+	recommendCount := recommendGetUnreadNum(id, timeline)
+	visitCount := visitGetUnreadNum(id, timeline)
 	unreadmsg := unreadMessageInfo{UnreadRecommend: recommendCount, UnreadVisit: visitCount, Badge: recommendCount + visitCount}
 
 	c.JSON(http.StatusOK, unreadmsg)
 }
 
-func recommend_GetUnreadNum(id int, timeline int64) int {
+func recommendGetUnreadNum(id int, timeline int64) int {
 	var count int
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_UnreadMessageCount)
+	sentence := lib.SQLSentence(lib.SQLMapSelectUnreadMessageCount)
 	lib.SQLQueryRow(sentence, id, timeline).Scan(&count)
 
 	return count
 }
 
-func GetApiRecommendCount() int {
-	return gCountApiRecommend
+// GetAPIRecommendCount .
+func GetAPIRecommendCount() int {
+	return gCountAPIRecommend
 }
 
-/*
- |    Function: PeriodOnlineCommentSet
- |      Author: Mr.Sancho
- |        Date: 2016-04-24
- | Description: 定期推送消息设置
- |      Return:
- |
-*/
+// PeriodOnlineCommentSet 定期推送消息设置
 func PeriodOnlineCommentSet(enable bool, msg string) {
-	config.Conf_EnableEvaluation = enable
-	config.Conf_EvaluationMsgContent = msg
+	config.ConfEvaluationSwitch = enable
+	config.ConfEvaluationMsgContent = msg
 }
 
-/*
- |    Function: PeriodOnlineCommentPush
- |      Author: Mr.Sancho
- |        Date: 2016-04-24
- | Description: 定期推送消息处理
- |      Return:
- |
-*/
+// PeriodOnlineCommentPush 定期推送消息处理
 func PeriodOnlineCommentPush(id, gender int, lastEvaluationTime int64) {
 	curTime := lib.CurrentTimeUTCInt64()
 	if 0 == lastEvaluationTime || 43200 <= (curTime-lastEvaluationTime) {
-		evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: config.Conf_EvaluationMsgContent}
+		evaluationMsg := PushMsgEvaluation{Enable: true, ShowMessage: config.ConfEvaluationMsgContent}
 		jsonRlt, _ := json.Marshal(evaluationMsg)
-		notifymsg := PushMessageInfo{Type: push.PUSH_NOTIFYMSG_EVALUATION, Value: string(jsonRlt)}
+		notifymsg := PushMessageInfo{Type: push.NotifyMsgEvaluation, Value: string(jsonRlt)}
 		jsonRlt, _ = json.Marshal(notifymsg)
 
-		push.Add(0, GetClientIdByUserId(id), push.PUSHMSG_TYPE_NOTIFYMSG, push.PUSH_NOTIFYMSG_EVALUATION, "", string(jsonRlt))
+		push.Add(0, GetClientIDByUserID(id), push.PushMsgNotify, push.NotifyMsgEvaluation, "", string(jsonRlt))
 		push.DoPush()
 
-		sentence := lib.SQLSentence(lib.SQLMAP_Update_EvaluationTime, gender)
+		sentence := lib.SQLSentence(lib.SQLMapUpdateEvaluationTime, gender)
 		lib.SQLExec(sentence, curTime, id)
 	}
 

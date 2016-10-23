@@ -17,15 +17,15 @@ import (
 	"github.com/shirou/gopsutil/mem"
 )
 
-type Process struct {
+type process struct {
 	pid int
 	cpu float64
 }
 
-func getCpuUsage() float64 {
+func getCPUUsage() float64 {
 	var out bytes.Buffer
 
-	processes := make([]*Process, 0)
+	var processes []*process
 	cmd := exec.Command("ps", "aux")
 
 	cmd.Stdout = &out
@@ -38,7 +38,7 @@ func getCpuUsage() float64 {
 		}
 
 		tokens := strings.Split(line, " ")
-		ft := make([]string, 0)
+		var ft []string
 		for _, t := range tokens {
 			if t != "" && t != "\t" {
 				ft = append(ft, t)
@@ -50,7 +50,7 @@ func getCpuUsage() float64 {
 		}
 		cpu, err := strconv.ParseFloat(ft[2], 64)
 		if err == nil {
-			processes = append(processes, &Process{pid, cpu})
+			processes = append(processes, &process{pid, cpu})
 		}
 	}
 
@@ -66,15 +66,7 @@ func getCpuUsage() float64 {
 	return usage
 }
 
-/*
- |    Function: SystemInfo
- |      Author: Mr.Sancho
- |        Date: 2016-02-12
- |   Arguments:
- |      Return:
- | Description: 获取最新的系统信息
- |
-*/
+// SystemInfo 获取最新的系统信息
 func SystemInfo(c *gin.Context) {
 	meminfo, _ := mem.VirtualMemory()
 	cpuinfo, _ := cpu.CPUInfo()
@@ -83,7 +75,7 @@ func SystemInfo(c *gin.Context) {
 
 	info := cmsSystemSummary{
 		OSDescribe:  fmt.Sprintf("%s %s", hostinfo.OS, hostinfo.PlatformVersion),
-		CpuDescribe: fmt.Sprintf("%s %d Cores", cpuinfo[0].ModelName, cpuinfo[0].Cores),
+		CPUDescribe: fmt.Sprintf("%s %d Cores", cpuinfo[0].ModelName, cpuinfo[0].Cores),
 		MemTotal:    meminfo.Total / 1024 / 1024,
 		MemUsed:     meminfo.Used / 1024 / 1024,
 		MemUsage:    lib.TruncFloat(meminfo.UsedPercent, 1),
@@ -95,31 +87,16 @@ func SystemInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: CpuInfo
- |      Author: Mr.Sancho
- |        Date: 2016-02-28
- |   Arguments:
- |      Return:
- | Description:
- |
-*/
-func CpuInfo(c *gin.Context) {
-	info := cmsCpuInfo{
-		CpuUsage: lib.TruncFloat(getCpuUsage(), 1),
+// CPUInfo .
+func CPUInfo(c *gin.Context) {
+	info := cmsCPUInfo{
+		CPUUsage: lib.TruncFloat(getCPUUsage(), 1),
 	}
 
 	c.JSON(http.StatusOK, info)
 }
 
-/*
- |    Function: Log
- |      Author: Mr.Sancho
- |        Date: 2016-05-08
- | Description:
- |      Return:
- |
-*/
+// Log .
 func Log(c *gin.Context) {
 	t, err := template.ParseFiles("/var/log/herefriend.log")
 	if err != nil {

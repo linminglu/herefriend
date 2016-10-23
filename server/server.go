@@ -87,7 +87,7 @@ func main() {
 	{
 		cmsGroup.GET("/log", cms.Log)
 		cmsGroup.GET("/sysinfo", cms.SystemInfo)
-		cmsGroup.GET("/cpuinfo", cms.CpuInfo)
+		cmsGroup.GET("/cpuinfo", cms.CPUInfo)
 		cmsGroup.GET("/sysuserinfo", cms.SystemUserInfo)
 		cmsGroup.GET("/commentinfo", cms.CommentInfo)
 		cmsGroup.GET("/recentComments", cms.RecentComments)

@@ -12,32 +12,32 @@ import (
 )
 
 const (
-	//userinfo_${id}
-	REDIS_PREFIX_USERINFO = "userinfo_%d"
-	//gender_${id}
-	REDIS_PREFIX_USERGENDER = "gender_%d"
-	//district_${gender}
-	REDIS_PREFIX_DISTRICT = "district_%d"
-	//provcount_${province}_${gender}
-	REDIS_PREFIX_PROVCOUNT = "provcount_%s_%d"
-	//heartbeat_provcount_${province}_${gender}
-	REDIS_PREFIX_HEARTBEAT_PROVCOUNT = "heartbeat_provcount_%s_%d"
-	//provcountage_${province}_${gender}_${age}
-	REDIS_PREFIX_PROVAGECOUNT = "provcountage_%s_%d_%d"
-	//search_${id}_${provicne}_${agemin-max}_${heightmin-max}_${incomemin-max}_${education}_${occupation}_${status}
-	REDIS_PREFIX_SEARCHINDEX = "search_%d_%s_%d-%d_%d-%d_%d-%d_%s_%s_%s"
-	//searchbase_${provicne}_${agemin-max}_${heightmin-max}_${incomemin-max}_${education}_${occupation}_${status}
-	REDIS_PREFIX_SEARCHBASE = "searchbase_%s_%d-%d_%d-%d_%d-%d_%s_%s_%s"
-	//goldbeans_${id}
-	REDIS_PREFIX_GOLDBENS = "goldbeans_%d"
-	//gift_recvlist_${id}
-	REDIS_PREFIX_GIFT_RECVLIST = "gift_recvlist_%d"
-	//gift_sendlist_${id}
-	REDIS_PREFIX_GIFT_SENDLIST = "gift_sendlist_%d"
-	//charm_toplist_${gender}_${year}_${month}_${day} (the charm list for last weak)
-	REDIS_PREFIX_CHARM_TOPLIST = "charm_toplist_%d_%04d_%02d_%02d"
-	//wealth_toplist_${year}_${month}_${day} (the wealth list for last weak)
-	REDIS_PREFIX_WEALTH_TOPLIST = "wealth_toplist_%d_%04d_%02d_%02d"
+	// RedisPrefixUserInfo formats userinfo_${id}
+	RedisPrefixUserInfo = "userinfo_%d"
+	// RedisPrefixUserGender gender_${id}
+	RedisPrefixUserGender = "gender_%d"
+	// RedisPrefixDistrict district_${gender}
+	RedisPrefixDistrict = "district_%d"
+	// RedisPrefixProvCount provcount_${province}_${gender}
+	RedisPrefixProvCount = "provcount_%s_%d"
+	// RedisPrefixHeartbeatProvCount heartbeat_provcount_${province}_${gender}
+	RedisPrefixHeartbeatProvCount = "heartbeat_provcount_%s_%d"
+	// RedisPrefixProvAgeCount provcountage_${province}_${gender}_${age}
+	RedisPrefixProvAgeCount = "provcountage_%s_%d_%d"
+	// RedisPrefixSearchIndex search_${id}_${provicne}_${agemin-max}_${heightmin-max}_${incomemin-max}_${education}_${occupation}_${status}
+	RedisPrefixSearchIndex = "search_%d_%s_%d-%d_%d-%d_%d-%d_%s_%s_%s"
+	// RedisPrefixSearchBase searchbase_${provicne}_${agemin-max}_${heightmin-max}_${incomemin-max}_${education}_${occupation}_${status}
+	RedisPrefixSearchBase = "searchbase_%s_%d-%d_%d-%d_%d-%d_%s_%s_%s"
+	// RedisPrefixGoldBeans goldbeans_${id}
+	RedisPrefixGoldBeans = "goldbeans_%d"
+	// RedisPrefixGiftRecvlist gift_recvlist_${id}
+	RedisPrefixGiftRecvlist = "gift_recvlist_%d"
+	// RedisPrefixGiftSendlist gift_sendlist_${id}
+	RedisPrefixGiftSendlist = "gift_sendlist_%d"
+	// RedisPrefixCharmToplist charm_toplist_${gender}_${year}_${month}_${day} (the charm list for last weak)
+	RedisPrefixCharmToplist = "charm_toplist_%d_%04d_%02d_%02d"
+	// RedisPrefixWealthToplist wealth_toplist_${year}_${month}_${day} (the wealth list for last weak)
+	RedisPrefixWealthToplist = "wealth_toplist_%d_%04d_%02d_%02d"
 )
 
 var gRedisPool *redis.Pool
@@ -56,14 +56,6 @@ func init() {
 	}
 }
 
-/*
- |    Function: setRedisKeyValue
- |      Author: Mr.Sancho
- |        Date: 2016-05-22
- | Description:
- |      Return:
- |
-*/
 func setRedisValue(key string, v interface{}) {
 	var content []byte
 
@@ -88,14 +80,6 @@ func setRedisValue(key string, v interface{}) {
 	c.Do("Set", key, content)
 }
 
-/*
- |    Function: getRedisValue
- |      Author: Mr.Sancho
- |        Date: 2016-05-22
- | Description:
- |      Return:
- |
-*/
 func getRedisValue(key string) ([]byte, bool) {
 	c := gRedisPool.Get()
 	defer c.Close()
@@ -108,14 +92,6 @@ func getRedisValue(key string) ([]byte, bool) {
 	return content.([]byte), true
 }
 
-/*
- |    Function: delRedisValue
- |      Author: Mr.Sancho
- |        Date: 2016-05-22
- | Description:
- |      Return:
- |
-*/
 func delRedisValue(key string) {
 	c := gRedisPool.Get()
 	defer c.Close()
@@ -123,16 +99,15 @@ func delRedisValue(key string) {
 	c.Do("Del", key)
 }
 
-/*
- * user info
- */
+// SetRedisUserInfo .
 func SetRedisUserInfo(id int, info *common.PersonInfo) {
-	key := fmt.Sprintf(REDIS_PREFIX_USERINFO, id)
+	key := fmt.Sprintf(RedisPrefixUserInfo, id)
 	setRedisValue(key, info)
 }
 
+// GetRedisUserInfo .
 func GetRedisUserInfo(id int) (*common.PersonInfo, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_USERINFO, id)
+	key := fmt.Sprintf(RedisPrefixUserInfo, id)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		var info common.PersonInfo
@@ -145,21 +120,21 @@ func GetRedisUserInfo(id int) (*common.PersonInfo, bool) {
 	return nil, false
 }
 
+// DelRedisUserInfo .
 func DelRedisUserInfo(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_USERINFO, id)
+	key := fmt.Sprintf(RedisPrefixUserInfo, id)
 	delRedisValue(key)
 }
 
-/*
- * gold beans
- */
+// SetRedisGoldBeans .
 func SetRedisGoldBeans(id, beans int) {
-	key := fmt.Sprintf(REDIS_PREFIX_GOLDBENS, id)
+	key := fmt.Sprintf(RedisPrefixGoldBeans, id)
 	setRedisValue(key, beans)
 }
 
+// GetRedisGoldBeans .
 func GetRedisGoldBeans(id int) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_GOLDBENS, id)
+	key := fmt.Sprintf(RedisPrefixGoldBeans, id)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		beanstr := string(value)
@@ -170,21 +145,21 @@ func GetRedisGoldBeans(id int) (int, bool) {
 	return 0, false
 }
 
+// DelRedisGoldBeans .
 func DelRedisGoldBeans(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_GOLDBENS, id)
+	key := fmt.Sprintf(RedisPrefixGoldBeans, id)
 	delRedisValue(key)
 }
 
-/*
- * gift recv & send list
- */
+// SetRedisGiftRecvList .
 func SetRedisGiftRecvList(id int, list *[]common.GiftSendRecvInfo) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_RECVLIST, id)
+	key := fmt.Sprintf(RedisPrefixGiftRecvlist, id)
 	setRedisValue(key, list)
 }
 
+// GetRedisGiftRecvList .
 func GetRedisGiftRecvList(id int) (*[]common.GiftSendRecvInfo, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_RECVLIST, id)
+	key := fmt.Sprintf(RedisPrefixGiftRecvlist, id)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		var list []common.GiftSendRecvInfo
@@ -197,18 +172,21 @@ func GetRedisGiftRecvList(id int) (*[]common.GiftSendRecvInfo, bool) {
 	return nil, false
 }
 
+// DelRedisGiftRecvList .
 func DelRedisGiftRecvList(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_RECVLIST, id)
+	key := fmt.Sprintf(RedisPrefixGiftRecvlist, id)
 	delRedisValue(key)
 }
 
+// SetRedisGiftSendList .
 func SetRedisGiftSendList(id int, list *[]common.GiftSendRecvInfo) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_SENDLIST, id)
+	key := fmt.Sprintf(RedisPrefixGiftSendlist, id)
 	setRedisValue(key, list)
 }
 
+// GetRedisGiftSendList .
 func GetRedisGiftSendList(id int) (*[]common.GiftSendRecvInfo, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_SENDLIST, id)
+	key := fmt.Sprintf(RedisPrefixGiftSendlist, id)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		var list []common.GiftSendRecvInfo
@@ -221,21 +199,21 @@ func GetRedisGiftSendList(id int) (*[]common.GiftSendRecvInfo, bool) {
 	return nil, false
 }
 
+// DelRedisGiftSendList .
 func DelRedisGiftSendList(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_GIFT_SENDLIST, id)
+	key := fmt.Sprintf(RedisPrefixGiftSendlist, id)
 	delRedisValue(key)
 }
 
-/*
- * user gender
- */
+// SetRedisUserGender .
 func SetRedisUserGender(id, gender int) {
-	key := fmt.Sprintf(REDIS_PREFIX_USERGENDER, id)
+	key := fmt.Sprintf(RedisPrefixUserGender, id)
 	setRedisValue(key, gender)
 }
 
+// GetRedisUserGender .
 func GetRedisUserGender(id int) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_USERGENDER, id)
+	key := fmt.Sprintf(RedisPrefixUserGender, id)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		genderstr := string(value)
@@ -246,25 +224,25 @@ func GetRedisUserGender(id int) (int, bool) {
 	return 0, false
 }
 
+// DelRedisUserGender .
 func DelRedisUserGender(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_USERGENDER, id)
+	key := fmt.Sprintf(RedisPrefixUserGender, id)
 	delRedisValue(key)
 }
 
-/*
- * district
- */
+// SetRedisDistrict .
 func SetRedisDistrict(id int, dist string) {
 	if "" == dist {
 		return
 	}
 
-	key := fmt.Sprintf(REDIS_PREFIX_DISTRICT, id)
+	key := fmt.Sprintf(RedisPrefixDistrict, id)
 	setRedisValue(key, dist)
 }
 
+// GetRedisDistrict .
 func GetRedisDistrict(id int) (string, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_DISTRICT, id)
+	key := fmt.Sprintf(RedisPrefixDistrict, id)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		return string(value), true
@@ -273,25 +251,25 @@ func GetRedisDistrict(id int) (string, bool) {
 	return "", false
 }
 
+// DelRedisDistrict .
 func DelRedisDistrict(id int) {
-	key := fmt.Sprintf(REDIS_PREFIX_DISTRICT, id)
+	key := fmt.Sprintf(RedisPrefixDistrict, id)
 	delRedisValue(key)
 }
 
-/*
- * count
- */
+// SetRedisProvCount .
 func SetRedisProvCount(province string, gender int, count int) {
 	if 0 == count {
 		return
 	}
 
-	key := fmt.Sprintf(REDIS_PREFIX_PROVCOUNT, province, gender)
+	key := fmt.Sprintf(RedisPrefixProvCount, province, gender)
 	setRedisValue(key, count)
 }
 
+// GetRedisProvCount .
 func GetRedisProvCount(province string, gender int) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_PROVCOUNT, province, gender)
+	key := fmt.Sprintf(RedisPrefixProvCount, province, gender)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		countstr := string(value)
@@ -302,22 +280,25 @@ func GetRedisProvCount(province string, gender int) (int, bool) {
 	return 0, false
 }
 
+// DelRedisProvCount .
 func DelRedisProvCount(province string, gender int) {
-	key := fmt.Sprintf(REDIS_PREFIX_PROVCOUNT, province, gender)
+	key := fmt.Sprintf(RedisPrefixProvCount, province, gender)
 	delRedisValue(key)
 }
 
+// SetRedisProvAgeCount .
 func SetRedisProvAgeCount(province string, gender, age, count int) {
 	if 0 == count {
 		return
 	}
 
-	key := fmt.Sprintf(REDIS_PREFIX_PROVAGECOUNT, province, gender, age)
+	key := fmt.Sprintf(RedisPrefixProvAgeCount, province, gender, age)
 	setRedisValue(key, count)
 }
 
+// GetRedisProvAgeCount .
 func GetRedisProvAgeCount(province string, gender, age int) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_PROVAGECOUNT, province, gender, age)
+	key := fmt.Sprintf(RedisPrefixProvAgeCount, province, gender, age)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		countstr := string(value)
@@ -328,25 +309,25 @@ func GetRedisProvAgeCount(province string, gender, age int) (int, bool) {
 	return 0, false
 }
 
+// DelRedisProvAgeCount .
 func DelRedisProvAgeCount(province string, gender, age int) {
-	key := fmt.Sprintf(REDIS_PREFIX_PROVAGECOUNT, province, gender, age)
+	key := fmt.Sprintf(RedisPrefixProvAgeCount, province, gender, age)
 	delRedisValue(key)
 }
 
-/*
- * heartbeat province count
- */
+// SetRedisHeartbeatProvCount .
 func SetRedisHeartbeatProvCount(province string, gender int, count int) {
 	if 0 == count {
 		return
 	}
 
-	key := fmt.Sprintf(REDIS_PREFIX_HEARTBEAT_PROVCOUNT, province, gender)
+	key := fmt.Sprintf(RedisPrefixHeartbeatProvCount, province, gender)
 	setRedisValue(key, count)
 }
 
+// GetRedisHeartbeatProvCount .
 func GetRedisHeartbeatProvCount(province string, gender int) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_HEARTBEAT_PROVCOUNT, province, gender)
+	key := fmt.Sprintf(RedisPrefixHeartbeatProvCount, province, gender)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		countstr := string(value)
@@ -357,25 +338,25 @@ func GetRedisHeartbeatProvCount(province string, gender int) (int, bool) {
 	return 0, false
 }
 
+// DelRedisHeartbeatProvCount .
 func DelRedisHeartbeatProvCount(province string, gender int) {
-	key := fmt.Sprintf(REDIS_PREFIX_HEARTBEAT_PROVCOUNT, province, gender)
+	key := fmt.Sprintf(RedisPrefixHeartbeatProvCount, province, gender)
 	delRedisValue(key)
 }
 
-/*
- * search info
- */
+// SetRedisSearchIndex .
 func SetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string, index int) {
 	if 0 == index {
 		return
 	}
 
-	key := fmt.Sprintf(REDIS_PREFIX_SEARCHINDEX, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	key := fmt.Sprintf(RedisPrefixSearchIndex, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
 	setRedisValue(key, index)
 }
 
+// GetRedisSearchIndex .
 func GetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_SEARCHINDEX, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	key := fmt.Sprintf(RedisPrefixSearchIndex, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		indexstr := string(value)
@@ -386,23 +367,25 @@ func GetRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin
 	return 0, false
 }
 
+// DelRedisSearchIndex .
 func DelRedisSearchIndex(id int, agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) {
-	key := fmt.Sprintf(REDIS_PREFIX_SEARCHINDEX, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	key := fmt.Sprintf(RedisPrefixSearchIndex, id, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
 	delRedisValue(key)
 }
 
-//base
+// SetRedisSearchBase .
 func SetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string, base int) {
 	if 0 == base {
 		return
 	}
 
-	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	key := fmt.Sprintf(RedisPrefixSearchBase, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
 	setRedisValue(key, base)
 }
 
+// GetRedisSearchBase .
 func GetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) (int, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	key := fmt.Sprintf(RedisPrefixSearchBase, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		basestr := string(value)
@@ -413,21 +396,21 @@ func GetRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomem
 	return 0, false
 }
 
+// DelRedisSearchBase .
 func DelRedisSearchBase(agemin, agemax, heightmin, heightmax, incomemin, incomemax int, province, education, occupation, status string) {
-	key := fmt.Sprintf(REDIS_PREFIX_SEARCHBASE, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
+	key := fmt.Sprintf(RedisPrefixSearchBase, province, agemin, agemax, heightmin, heightmax, incomemin, incomemax, education, occupation, status)
 	delRedisValue(key)
 }
 
-/*
- * charm toplist
- */
+// SetRedisCharmToplist .
 func SetRedisCharmToplist(gender, year int, month time.Month, day int, list *[]common.UserCharmInfo) {
-	key := fmt.Sprintf(REDIS_PREFIX_CHARM_TOPLIST, gender, year, month, day)
+	key := fmt.Sprintf(RedisPrefixCharmToplist, gender, year, month, day)
 	setRedisValue(key, list)
 }
 
+// GetRedisCharmToplist .
 func GetRedisCharmToplist(gender, year int, month time.Month, day int) (*[]common.UserCharmInfo, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_CHARM_TOPLIST, gender, year, month, day)
+	key := fmt.Sprintf(RedisPrefixCharmToplist, gender, year, month, day)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		var list []common.UserCharmInfo
@@ -440,21 +423,21 @@ func GetRedisCharmToplist(gender, year int, month time.Month, day int) (*[]commo
 	return nil, false
 }
 
+// DelRedisCharmToplist .
 func DelRedisCharmToplist(gender, year int, month time.Month, day int) {
-	key := fmt.Sprintf(REDIS_PREFIX_CHARM_TOPLIST, gender, year, month, day)
+	key := fmt.Sprintf(RedisPrefixCharmToplist, gender, year, month, day)
 	delRedisValue(key)
 }
 
-/*
- * wealth toplist
- */
+// SetRedisWealthToplist .
 func SetRedisWealthToplist(year int, month time.Month, day int, list *[]common.UserWealthInfo) {
-	key := fmt.Sprintf(REDIS_PREFIX_WEALTH_TOPLIST, year, month, day)
+	key := fmt.Sprintf(RedisPrefixWealthToplist, year, month, day)
 	setRedisValue(key, list)
 }
 
+// GetRedisWealthToplist .
 func GetRedisWealthToplist(year int, month time.Month, day int) (*[]common.UserWealthInfo, bool) {
-	key := fmt.Sprintf(REDIS_PREFIX_WEALTH_TOPLIST, year, month, day)
+	key := fmt.Sprintf(RedisPrefixWealthToplist, year, month, day)
 	value, exist := getRedisValue(key)
 	if true == exist {
 		var list []common.UserWealthInfo
@@ -467,7 +450,8 @@ func GetRedisWealthToplist(year int, month time.Month, day int) (*[]common.UserW
 	return nil, false
 }
 
+// DelRedisWealthToplist .
 func DelRedisWealthToplist(year int, month time.Month, day int) {
-	key := fmt.Sprintf(REDIS_PREFIX_WEALTH_TOPLIST, year, month, day)
+	key := fmt.Sprintf(RedisPrefixWealthToplist, year, month, day)
 	delRedisValue(key)
 }

@@ -178,18 +178,18 @@ func AnalysisAllowVerbose(info *common.PersonInfo, title, content string) {
 
 	switch title {
 	case "年    龄":
-		info.Allow_age = content
+		info.AllowAge = content
 	case "身    高":
-		info.Allow_height = content
+		info.AllowHeight = content
 	case "学    历":
-		info.Allow_education = content
+		info.AllowEducation = content
 	case "婚姻状况":
-		info.Allow_marriage = content
+		info.AllowMarriage = content
 	case "是否有孩子":
-		info.Allow_kidstatus = content
+		info.AllowKidStatus = content
 	case "购房情况":
-		info.Allow_housing = content
+		info.AllowHousing = content
 	case "所在地":
-		info.Allow_residence = content
+		info.AllowResidence = content
 	}
 }

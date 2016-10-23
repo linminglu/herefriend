@@ -79,7 +79,7 @@ func WaitStop() {
 */
 func checkVGirlIdExist(id string) bool {
 	var tmpid string
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_CheckVGirlId)
+	sentence := lib.SQLSentence(lib.SQLMapSelectCheckVGirlID)
 	err := lib.SQLQueryRow(sentence, id).Scan(&tmpid)
 	if nil != err || "" == tmpid {
 		return false
@@ -114,11 +114,11 @@ func crawlVGirlInfo(idstr string) {
 	//get a random girl from girlsid
 	g_randomidlock.Lock()
 
-	sentence := lib.SQLSentence(lib.SQLMAP_Select_RandomUncrawlGirlsId)
+	sentence := lib.SQLSentence(lib.SQLMapSelectRandomUncrawlGirlsID)
 	randomlimit := rand.Intn(2000000)
 	lib.SQLQueryRow(sentence, randomlimit).Scan(&crawid)
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Delete_UnCrawledGirlsId)
+	sentence = lib.SQLSentence(lib.SQLMapDeleteUnCrawledGirlsID)
 	lib.SQLExec(sentence, crawid)
 
 	g_randomidlock.Unlock()
@@ -143,12 +143,12 @@ func crawlVGirlInfo(idstr string) {
 	pageuser.SetImages(ppic.imgs)
 	pageuser.Save()
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Insert_VGirlId)
+	sentence = lib.SQLSentence(lib.SQLMapInsertVGirlID)
 	_, err := lib.SQLExec(sentence, idstr, pfensi.fensi, pageuser.GetUsrId())
 	if nil != err {
 		fmt.Println(err)
 	}
-	sentence = lib.SQLSentence(lib.SQLMAP_Insert_Heartbeat)
+	sentence = lib.SQLSentence(lib.SQLMapInsertHeartbeat)
 	_, err = lib.SQLExec(sentence, pageuser.GetUsrId(), 0)
 	if nil != err {
 		fmt.Println(err)
@@ -175,7 +175,7 @@ func DoCrawl() {
 	var url string
 	var sentence string
 
-	sentence = lib.SQLSentence(lib.SQLMAP_Select_VGirlProcess)
+	sentence = lib.SQLSentence(lib.SQLMapSelectVGirlProcess)
 	err := lib.SQLQueryRow(sentence).Scan(&areaindex, &areapage)
 	if nil != err {
 		panic(err.Error())
@@ -185,7 +185,7 @@ func DoCrawl() {
 		for ; areapage < G_VGirls[areaindex].PageNum; areapage = areapage + 1 {
 			fmt.Printf("[area] area:%s page:%d\r\n", G_VGirls[areaindex].Area, areapage+1)
 
-			sentence = lib.SQLSentence(lib.SQLMAP_Update_VGirlProcess)
+			sentence = lib.SQLSentence(lib.SQLMapUpdateVGirlProcess)
 			_, err := lib.SQLExec(sentence, areaindex, areapage)
 			if nil != err {
 				panic(err.Error())
