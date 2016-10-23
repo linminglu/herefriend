@@ -3,7 +3,6 @@ package cms
 import (
 	"bytes"
 	"fmt"
-	"herefriend/lib"
 	"html/template"
 	"net/http"
 	"os/exec"
@@ -15,6 +14,8 @@ import (
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
+
+	"herefriend/lib"
 )
 
 type process struct {
