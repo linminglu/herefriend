@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CmsDashBoard .
-func CmsDashBoard(c *gin.Context) {
+// DashBoard .
+func DashBoard(c *gin.Context) {
 	username := c.DefaultPostForm("username", "")
 	if username != "sc" && username != "fan" {
 		t, _ := template.ParseFiles("public/err500.html")

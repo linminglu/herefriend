@@ -74,15 +74,18 @@ func main() {
 	}
 
 	/*
-	 * CMS
+	 * html
 	 */
 	{
 		r.StaticFile("/login", "public/signin.html")
-		r.Static("assets", "public/assets")
-		r.POST("/www/dashboard", cms.CmsDashBoard)
+		r.POST("/www/dashboard", cms.DashBoard)
 		r.Static("/www", "public")
+		r.Static("assets", "public/assets")
 	}
 
+	/*
+	 * CMS
+	 */
 	cmsGroup := r.Group("/cms")
 	{
 		cmsGroup.GET("/log", cms.Log)
